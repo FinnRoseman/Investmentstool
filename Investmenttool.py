@@ -44,10 +44,12 @@ for t in ticker_liste:
             
             fremd_check = st.checkbox(f"In EUR umrechnen?", key=f"check_{t}")
             if fremd_check:
+                w_options = ["USD", "JPY", "GBP", "CHF", "SEK", "CAD"]
+                current_idx = w_options.index(st.session_state[f"curr_{t}"]) if f"curr_{t}" in st.session_state else 0
                 waehrung = st.selectbox(
                     f"Ursprüngliche Währung von {t}",
-                    options=["USD", "JPY", "GBP", "CHF", "SEK", "CAD"],
-                    index=0,
+                    options=w_options,
+                    index=current_idx,
                     key=f"curr_{t}"
                 )
                 fx_map[t] = f"{waehrung}EUR=X"
