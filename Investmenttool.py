@@ -10,6 +10,8 @@ st.set_page_config(page_title="Portfolio Analyzer", layout="wide")
 
 
 # --- 1. SETUP ---
+if 'total_ret' not in locals(): 
+    total_ret = 0.0
 st.sidebar.header("Portfolio Zusammenstellung")
 def clear_ticker_input():
     st.session_state.ticker_temp = st.session_state.widget_eingabe
@@ -120,6 +122,24 @@ if not ticker_liste:
     st.stop()
 if "run_analysis" not in st.session_state:
     st.session_state.run_analysis = False
+
+# Euro Rechner
+st.sidebar.markdown("---")
+st.sidebar.header("Kapitalauswahl")
+startkapital = st.sidebar.number_input("Startkapital (€)", value=0, min_value=0, step=1000)
+endsumme = startkapital * (1 + total_ret)
+absoluter_gewinn = endsumme - startkapital
+farbe = "#28a745" if total_ret >= 0 else "#dc3545"
+st.subheader(f"Wertentwicklung bei {startkapital:,.0f} € Investment")
+e1, e2, e3 = st.columns([1.5, 1.2, 1])
+e1.metric("Endwert Heute", f"{endsumme:,.2f} €")
+if startkapital > 0:
+    e2.metric("Seit Kauf Absolut", f"{absoluter_gewinn:,.2f} €")
+    e3.metric("Seit Kauf Relativ", f"{total_ret:.2%}")
+else:
+    e2.metric("Seit Kauf Absolut", "0.00€")
+    e3.metric("Seit Kauf Relativ", "0.00%")
+    
 if not st.session_state.run_analysis:
     if ticker_liste:
         st.warning("👈 Gewichtung einstellen und auf 'Go' klicken, um die Analyse zu starten.")
@@ -192,23 +212,6 @@ paths = np.prod(1 + sim_returns, axis=0) - 1
 schwellenwert = np.percentile(paths, 5)
 mc_var_95_jahr = schwellenwert * -1
 mc_es_95_jahr = paths[paths <= schwellenwert].mean() * -1
-
-# Euro Rechner
-st.sidebar.markdown("---")
-st.sidebar.header("Kapitalauswahl")
-startkapital = st.sidebar.number_input("Startkapital (€)", value=0, min_value=0, step=1000)
-endsumme = startkapital * (1 + total_ret)
-absoluter_gewinn = endsumme - startkapital
-farbe = "#28a745" if total_ret >= 0 else "#dc3545"
-st.subheader(f"Wertentwicklung bei {startkapital:,.0f} € Investment")
-e1, e2, e3 = st.columns([1.5, 1.2, 1])
-e1.metric("Endwert Heute", f"{endsumme:,.2f} €")
-if startkapital > 0:
-    e2.metric("Seit Kauf Absolut", f"{absoluter_gewinn:,.2f} €")
-    e3.metric("Seit Kauf Relativ", f"{total_ret:.2%}")
-else:
-    e2.metric("Seit Kauf Absolut", "0.00€")
-    e3.metric("Seit Kauf Relativ", "0.00%")
 
 # --- 4. ANZEIGEN ---
 
