@@ -124,6 +124,10 @@ if not st.session_state.run_analysis:
 raw_data = {}
 for t in ticker_liste + [benchmark]:
     df = yf.download(t, period=period_yf, progress=False)
+    if df.empty:
+        st.error(f"⚠️ Der Ticker '{t}' konnte nicht gefunden werden oder liefert keine Daten. Bitte prüfe das Symbol.")
+        st.info("Hinweis: Ticker an deutschen Börsen benötigen oft ein Suffix (z.B. .DE für Xetra).")
+        st.stop()
     if not df.empty:
         if isinstance(df.columns, pd.MultiIndex):
             price = df['Close'][t].copy()
