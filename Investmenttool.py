@@ -261,7 +261,7 @@ with g_col2:
     st.subheader("Risiko-Verteilung")
     labels = verfuegbare 
     fig_pie, ax_pie = plt.subplots(figsize=(10, 9))
-    fig_pie.patch.set_facecolor('none')
+    fig_pie.patch.set_facecolor('white')
 
     wedges, texts, autotexts = ax_pie.pie(
         rel_risk_contrib, 
@@ -274,7 +274,7 @@ with g_col2:
         colors=sns.color_palette("viridis", len(verfuegbare)),
         textprops={'fontsize': 10, 'weight': 'bold'}
     )
-    plt.setp(autotexts, size=9, weight="bold", color="white")
+    plt.setp(autotexts, size=12, weight="bold", color="white")
     centre_circle = plt.Circle((0,0), 0.70, fc='white')
     fig_pie.gca().add_artist(centre_circle)
     
