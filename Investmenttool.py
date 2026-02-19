@@ -66,9 +66,6 @@ go_button = st.sidebar.button("Go", use_container_width=True)
 if go_button:
     st.session_state.run_analysis = True
 
-st.sidebar.header("Kapitalauswahl")
-startkapital = st.sidebar.number_input("Startkapital (€)", value=0, min_value=0, step=1000, key="mein_kapital")
-
 risk_free_rate = 0.02
 
 # --- 2. DESIGN ---
@@ -94,6 +91,9 @@ zeitraum_optionen = {
 }
 ausgewaehlter_zeitraum = st.sidebar.selectbox("Zeitraum", list(zeitraum_optionen.keys()), index=2)
 period_yf = zeitraum_optionen[ausgewaehlter_zeitraum]
+
+st.sidebar.header("Kapitalauswahl")
+startkapital = st.sidebar.number_input("Startkapital (€)", value=0, min_value=0, step=1000, key="mein_kapital")
 
 zuordnung = dict(zip(ticker_liste, anteile_orig))
 
