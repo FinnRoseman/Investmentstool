@@ -45,14 +45,20 @@ for t in ticker_liste:
            fremd_check = st.checkbox(f"In EUR umrechnen?", key=f"check_{t}")
             if fremd_check:
                 w_options = ["USD", "JPY", "GBP", "CHF", "SEK", "CAD"]
+                
+                # Das hier sorgt dafür, dass die Auswahl für Ticker 't' im Speicher bleibt
                 if f"val_{t}" not in st.session_state:
                     st.session_state[f"val_{t}"] = "USD"
+                
                 waehrung = st.selectbox(
                     f"Ursprüngliche Währung von {t}",
                     options=w_options,
+                    # Hier wird der gespeicherte Wert als Startwert gesetzt
                     index=w_options.index(st.session_state[f"val_{t}"]),
                     key=f"curr_{t}"
                 )
+                
+                # Speichere die aktuelle Auswahl sofort wieder ab
                 st.session_state[f"val_{t}"] = waehrung
                 fx_map[t] = f"{waehrung}EUR=X"
 
