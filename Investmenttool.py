@@ -258,7 +258,7 @@ with g_col1:
     st.pyplot(fig_corr)
 
 with g_col2:
-    st.subheader("Wahre Risiko-Verteilung")
+    st.subheader("Risiko-Verteilung")
     labels = [ticker_namen.get(t, t) for t in verfuegbare]
     
     fig_pie, ax_pie = plt.subplots(figsize=(10, 8))
@@ -267,13 +267,14 @@ with g_col2:
         labels=labels, 
         autopct='%1.1f%%', 
         startangle=140, 
-        pctdistance=0.85,
+        pctdistance=0.75,
         colors=sns.color_palette("viridis", len(verfuegbare))
     )
     centre_circle = plt.Circle((0,0), 0.70, fc='white')
     fig_pie.gca().add_artist(centre_circle)
     
-    ax_pie.axis('equal') 
+    ax_pie.axis('equal')
+    plt.tight_layout()
     st.pyplot(fig_pie)
 
 st.markdown("---")
