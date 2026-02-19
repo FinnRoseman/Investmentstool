@@ -67,7 +67,7 @@ if go_button:
     st.session_state.run_analysis = True
 
 st.sidebar.header("Kapitalauswahl")
-startkapital = st.sidebar.number_input("Startkapital (€)", value=0, min_value=0, step=1000)
+startkapital = st.sidebar.number_input("Startkapital (€)", value=0, min_value=0, step=1000, key="mein_kapital")
 
 risk_free_rate = 0.02
 
