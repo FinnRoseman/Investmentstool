@@ -92,7 +92,7 @@ for t in ticker_liste:
     except:
         ticker_namen[t] = t
 
-st.title("📈 Portfolio Backtest Dashboart")
+st.title("📈 Portfolio Backtest Dashboard")
 with st.expander("📋 Portfolio-Zusammensetzung (Namen & Gewichtung)"):
     legende_df = pd.DataFrame({
         "Ticker": ticker_liste,
