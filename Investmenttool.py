@@ -31,6 +31,12 @@ ticker_liste = st.sidebar.multiselect(
     default=st.session_state.meine_ticker
 )
 st.session_state.meine_ticker = ticker_liste
+if 'ticker_kontrolle' not in st.session_state:
+    st.session_state.ticker_kontrolle = list(ticker_liste)
+if ticker_liste != st.session_state.ticker_kontrolle:
+    st.session_state.run_analysis = False
+    st.session_state.ticker_kontrolle = list(ticker_liste)
+    
 anteile_orig = []
 fx_map = {}
 for t in ticker_liste:
