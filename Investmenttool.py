@@ -259,22 +259,27 @@ with g_col1:
 
 with g_col2:
     st.subheader("Risiko-Verteilung")
-    labels = [ticker_namen.get(t, t) for t in verfuegbare]
-    
-    fig_pie, ax_pie = plt.subplots(figsize=(10, 8))
+    labels = verfuegbare 
+    fig_pie, ax_pie = plt.subplots(figsize=(10, 9))
+    fig_pie.patch.set_facecolor('none')
+
     wedges, texts, autotexts = ax_pie.pie(
         rel_risk_contrib, 
         labels=labels, 
         autopct='%1.1f%%', 
         startangle=140, 
         pctdistance=0.75,
-        colors=sns.color_palette("viridis", len(verfuegbare))
+        labeldistance=1.1, 
+        radius=1.2,        
+        colors=sns.color_palette("viridis", len(verfuegbare)),
+        textprops={'fontsize': 10, 'weight': 'bold'}
     )
+    plt.setp(autotexts, size=9, weight="bold", color="white")
     centre_circle = plt.Circle((0,0), 0.70, fc='white')
     fig_pie.gca().add_artist(centre_circle)
     
     ax_pie.axis('equal')
-    plt.tight_layout()
+    plt.tight_layout(pad=0) 
     st.pyplot(fig_pie)
 
 st.markdown("---")
