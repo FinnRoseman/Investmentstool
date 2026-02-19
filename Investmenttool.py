@@ -42,16 +42,18 @@ for t in ticker_liste:
             )
             anteile_orig.append(gewicht / 100)
             
-            fremd_check = st.checkbox(f"In EUR umrechnen?", key=f"check_{t}")
+           fremd_check = st.checkbox(f"In EUR umrechnen?", key=f"check_{t}")
             if fremd_check:
                 w_options = ["USD", "JPY", "GBP", "CHF", "SEK", "CAD"]
-                current_idx = w_options.index(st.session_state[f"curr_{t}"]) if f"curr_{t}" in st.session_state else 0
+                if f"val_{t}" not in st.session_state:
+                    st.session_state[f"val_{t}"] = "USD"
                 waehrung = st.selectbox(
                     f"Ursprüngliche Währung von {t}",
                     options=w_options,
-                    index=current_idx,
+                    index=w_options.index(st.session_state[f"val_{t}"]),
                     key=f"curr_{t}"
                 )
+                st.session_state[f"val_{t}"] = waehrung
                 fx_map[t] = f"{waehrung}EUR=X"
 
 st.sidebar.markdown("---")
