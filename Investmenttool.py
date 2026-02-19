@@ -124,23 +124,25 @@ if not st.session_state.run_analysis:
 raw_data = {}
 for t in ticker_liste + [benchmark]:
     df = yf.download(t, period=period_yf, progress=False)
+    
     if df.empty:
-        st.error(f"⚠️ Der Ticker '{t}' konnte nicht gefunden werden oder liefert keine Daten. Bitte prüfe das Symbol.")
-        st.info("Hinweis: Ticker an deutschen Börsen benötigen oft ein Suffix (z.B. .DE für Xetra).")
+        st.error(f"⚠️ Der Ticker '{t}' konnte nicht gefunden werden oder liefert keine Daten.")
+        st.info("Hinweis: Ticker an deutschen Börsen benötigen oft ein Suffix (z.B. .DE).")
         st.stop()
-    if not df.empty:
-        if isinstance(df.columns, pd.MultiIndex):
-            price = df['Close'][t].copy()
-        else:
-            price = df['Close'].copy()
+    
+    if isinstance(df.columns, pd.MultiIndex):
+        price = df['Close'][t].copy()
+    else:
+        price = df['Close'].copy()
         
-        if t in fx_map:
-            fx_df = yf.download(fx_map[t], period=period_yf, progress=False)
-            if not fx_df.empty:
-                fx = fx_df['Close'].iloc[:, 0] if isinstance(fx_df.columns, pd.MultiIndex) else fx_df['Close']
-                comb = pd.concat([price, fx], axis=1).ffill().dropna()
-                price = comb.iloc[:, 0] * comb.iloc[:, 1]
-        raw_data[t] = price
+    if t in fx_map:
+        fx_df = yf.download(fx_map[t], period=period_yf, progress=False)
+        if not fx_df.empty:
+            fx = fx_df['Close'].iloc[:, 0] if isinstance(fx_df.columns, pd.MultiIndex) else fx_df['Close']
+            comb = pd.concat([price, fx], axis=1).ffill().dropna()
+            price = comb.iloc[:, 0] * comb.iloc[:, 1]
+    
+    raw_data[t] = price
 
 daten = pd.concat(raw_data, axis=1).ffill().dropna()
 renditen = daten.pct_change().dropna()
