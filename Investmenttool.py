@@ -66,6 +66,9 @@ go_button = st.sidebar.button("Go", use_container_width=True)
 if go_button:
     st.session_state.run_analysis = True
 
+st.sidebar.header("Kapitalauswahl")
+startkapital = st.sidebar.number_input("Startkapital (€)", value=0, min_value=0, step=1000)
+
 risk_free_rate = 0.02
 
 # --- 2. DESIGN ---
@@ -196,9 +199,6 @@ mc_es_95_jahr = paths[paths <= schwellenwert].mean() * -1
 # Euro Rechner
 st.sidebar.markdown("---")
 st.sidebar.header("Kapitalauswahl")
-startkapital = st.sidebar.number_input("Startkapital (€)", value=0, min_value=0, step=1000)
-endsumme = startkapital * (1 + total_ret)
-absoluter_gewinn = endsumme - startkapital
 farbe = "#28a745" if total_ret >= 0 else "#dc3545"
 st.subheader(f"Wertentwicklung bei {startkapital:,.0f} € Investment")
 e1, e2, e3 = st.columns([1.5, 1.2, 1])
