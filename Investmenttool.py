@@ -105,7 +105,7 @@ for t in ticker_liste:
         ticker_namen[t] = t
 
 st.title("📈 Portfolio Backtest Dashboard")
-with st.expander("📋 Portfolio-Zusammensetzung (Namen & Gewichtung)"):
+with st.expander("📋 Portfolio-Zusammensetzung (Name & Gewichtung)"):
     legende_df = pd.DataFrame({
         "Ticker": ticker_liste,
         "Name": [ticker_namen.get(t, t) for t in ticker_liste],
