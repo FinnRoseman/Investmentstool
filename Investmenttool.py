@@ -197,9 +197,9 @@ mc_var_95_jahr = schwellenwert * -1
 mc_es_95_jahr = paths[paths <= schwellenwert].mean() * -1
 
 # Euro Rechner
-st.sidebar.markdown("---")
-st.sidebar.header("Kapitalauswahl")
-farbe = "#28a745" if total_ret >= 0 else "#dc3545"
+st.markdown("---")
+endsumme = startkapital * (1 + total_ret)
+absoluter_gewinn = endsumme - startkapital
 st.subheader(f"Wertentwicklung bei {startkapital:,.0f} € Investment")
 e1, e2, e3 = st.columns([1.5, 1.2, 1])
 e1.metric("Endwert Heute", f"{endsumme:,.2f} €")
