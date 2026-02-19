@@ -196,6 +196,13 @@ schwellenwert = np.percentile(paths, 5)
 mc_var_95_jahr = schwellenwert * -1
 mc_es_95_jahr = paths[paths <= schwellenwert].mean() * -1
 
+# --- NEU: RISIKOBEITRAG BERECHNUNG ---
+cov_matrix = renditen[verfuegbare].cov() * 252
+port_vola = np.sqrt(np.dot(anteile, np.dot(cov_matrix, anteile)))
+marginal_contrib = np.dot(cov_matrix, anteile) / port_vola
+abs_risk_contrib = anteile * marginal_contrib
+rel_risk_contrib = abs_risk_contrib / port_vola
+
 # Euro Rechner
 st.markdown("---")
 endsumme = startkapital * (1 + total_ret)
@@ -229,25 +236,45 @@ col9.metric("Tracking Error", f"{tracking_error:.2%}")
 st.markdown("---")
 
 # Grafiken
+st.subheader("Performance Vergleich (%)")
+fig_perf, ax_perf = plt.subplots(figsize=(12, 5), constrained_layout=True)
+port_kum = ((1 + port_rendite).cumprod() - 1) * 100
+bench_kum = ((1 + bench_rendite).cumprod() - 1) * 100
+ax_perf.plot(port_kum, label='Portfolio', linewidth=2, color='blue')
+ax_perf.plot(bench_kum, label=f'Benchmark', linewidth=1.5, color='grey', linestyle='--')
+ax_perf.set_ylabel('Entwicklung in %')
+ax_perf.legend()
+ax_perf.grid(True, alpha=0.3)
+st.pyplot(fig_perf)
+
+st.markdown("---")
+
 g_col1, g_col2 = st.columns(2)
 
 with g_col1:
-    st.subheader("Performance Vergleich (%)")
-    fig_perf, ax_perf = plt.subplots(figsize=(10, 6), constrained_layout=True)
-    port_kum = ((1 + port_rendite).cumprod() - 1) * 100
-    bench_kum = ((1 + bench_rendite).cumprod() - 1) * 100
-    ax_perf.plot(port_kum, label='Portfolio', linewidth=2, color='blue')
-    ax_perf.plot(bench_kum, label=f'Benchmark', linewidth=1.5, color='grey', linestyle='--')
-    ax_perf.set_ylabel('Entwicklung in %')
-    ax_perf.legend()
-    ax_perf.grid(True, alpha=0.3)
-    st.pyplot(fig_perf)
-
-with g_col2:
-    st.subheader("Diversifikation")
-    fig_corr, ax_corr = plt.subplots(figsize=(10, 6), constrained_layout=True)
+    st.subheader("Korrelationsmatrix")
+    fig_corr, ax_corr = plt.subplots(figsize=(10, 8))
     sns.heatmap(renditen[verfuegbare].corr(), annot=True, cmap='RdYlGn_r', center=0.3, fmt=".2f", linewidths=0.5, ax=ax_corr)
     st.pyplot(fig_corr)
+
+with g_col2:
+    st.subheader("Wahre Risiko-Verteilung")
+    labels = [ticker_namen.get(t, t) for t in verfuegbare]
+    
+    fig_pie, ax_pie = plt.subplots(figsize=(10, 8))
+    wedges, texts, autotexts = ax_pie.pie(
+        rel_risk_contrib, 
+        labels=labels, 
+        autopct='%1.1f%%', 
+        startangle=140, 
+        pctdistance=0.85,
+        colors=sns.color_palette("viridis", len(verfuegbare))
+    )
+    centre_circle = plt.Circle((0,0), 0.70, fc='white')
+    fig_pie.gca().add_artist(centre_circle)
+    
+    ax_pie.axis('equal') 
+    st.pyplot(fig_pie)
 
 st.markdown("---")
 
