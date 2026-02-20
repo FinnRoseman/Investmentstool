@@ -282,7 +282,6 @@ with g_col2:
         ax_pie.axis('equal')
         st.pyplot(fig_pie)
     else:
-        st.info("💡 Negative Risikobeiträge erkannt: Darstellung als Balkendiagramm, um Diversifikationseffekte korrekt anzuzeigen.")
         
         fig_bar, ax_bar = plt.subplots(figsize=(10, 8), constrained_layout=True)
         colors = ['#440154' if x > 0 else '#22a884' for x in rel_risk_contrib]
