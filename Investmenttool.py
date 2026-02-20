@@ -260,49 +260,23 @@ with g_col1:
 
 with g_col2:
     st.subheader("Risiko-Verteilung")
+    fig_bar, ax_bar = plt.subplots(figsize=(10, 8), constrained_layout=True)
+    colors = ['#440154' if x > 0 else '#22a884' for x in rel_risk_contrib]
+    y_pos = np.arange(len(verfuegbare))
+    bars = ax_bar.barh(y_pos, rel_risk_contrib * 100, color=colors)
+    ax_bar.set_yticks(y_pos)
+    ax_bar.set_yticklabels(verfuegbare, fontweight='bold')
+    ax_bar.invert_yaxis()  # Zeigt den ersten Ticker ganz oben an
+    ax_bar.axvline(0, color='black', linewidth=1, alpha=0.5)
+    ax_bar.set_xlabel('Relativer Risikobeitrag (%)', fontweight='bold')
+    ax_bar.grid(axis='x', linestyle='--', alpha=0.7)
+    for bar in bars:
+        width = bar.get_width()
+        ax_bar.text(width, bar.get_y() + bar.get_height()/2, 
+                    f' {width:.1f}%', 
+                    va='center', fontweight='bold', fontsize=11)
     
-    if not has_negative_risk:
-        fig_pie, ax_pie = plt.subplots(figsize=(10, 8), constrained_layout=True)
-        fig_pie.patch.set_facecolor('white')
-        
-        wedges, texts, autotexts = ax_pie.pie(
-            rel_risk_contrib, 
-            labels=verfuegbare, 
-            autopct='%1.1f%%', 
-            startangle=140, 
-            pctdistance=0.75,
-            labeldistance=1.1, 
-            radius=1.2,        
-            colors=sns.color_palette("viridis", len(verfuegbare)),
-            textprops={'fontsize': 10, 'weight': 'bold'}
-        )
-        plt.setp(autotexts, size=12, weight="bold", color="white")
-        centre_circle = plt.Circle((0,0), 0.70, fc='white')
-        fig_pie.gca().add_artist(centre_circle)
-        ax_pie.axis('equal')
-        st.pyplot(fig_pie)
-    else:
-        
-        fig_bar, ax_bar = plt.subplots(figsize=(10, 8), constrained_layout=True)
-        colors = ['#440154' if x > 0 else '#22a884' for x in rel_risk_contrib]
-        
-        y_pos = np.arange(len(verfuegbare))
-        bars = ax_bar.barh(y_pos, rel_risk_contrib * 100, color=colors)
-        
-        ax_bar.set_yticks(y_pos)
-        ax_bar.set_yticklabels(verfuegbare, fontweight='bold')
-        ax_bar.invert_yaxis()
-        ax_bar.axvline(0, color='black', linewidth=1, alpha=0.5)
-        ax_bar.set_xlabel('Relativer Risikobeitrag (%)', fontweight='bold')
-        ax_bar.grid(axis='x', linestyle='--', alpha=0.7)
-
-        for bar in bars:
-            width = bar.get_width()
-            ax_bar.text(width, bar.get_y() + bar.get_height()/2, 
-                        f' {width:.1f}%', 
-                        va='center', fontweight='bold', fontsize=11)
-        
-        st.pyplot(fig_bar)
+    st.pyplot(fig_bar)
 
 st.markdown("---")
 
