@@ -253,14 +253,14 @@ g_col1, g_col2 = st.columns(2)
 
 with g_col1:
     st.subheader("Korrelationsmatrix")
-    fig_corr, ax_corr = plt.subplots(figsize=(10, 8))
+    fig_corr, ax_corr = plt.subplots(figsize=(10, 8), constrained_layout=True)
     sns.heatmap(renditen[verfuegbare].corr(), annot=True, cmap='RdYlGn_r', center=0.3, fmt=".2f", linewidths=0.5, ax=ax_corr)
     st.pyplot(fig_corr)
 
 with g_col2:
     st.subheader("Risiko-Verteilung")
     labels = verfuegbare 
-    fig_pie, ax_pie = plt.subplots(figsize=(10, 9))
+    fig_pie, ax_pie = plt.subplots(figsize=(10, 8), constrained_layout=True)
     fig_pie.patch.set_facecolor('white')
 
     wedges, texts, autotexts = ax_pie.pie(
