@@ -255,7 +255,7 @@ with att_col1:
     st.subheader("Rolling Returns (12 Monate)")
     rolling_1y = port_rendite.rolling(window=252).apply(lambda x: (1 + x).prod() - 1)
     
-    fig_roll, ax_roll = plt.subplots(figsize=(10, 6))
+    fig_roll, ax_roll = plt.subplots(figsize=(10, 6), constrained_layout=True)
     ax_roll.plot(rolling_1y * 100, color='blue', alpha=0.8)
     ax_roll.axhline(rolling_1y.mean() * 100, color='red', linestyle='--', label='Schnitt')
     ax_roll.axhline(0, color='black', linewidth=1)
@@ -273,7 +273,7 @@ with att_col2:
         gewicht = anteile[verfuegbare.index(t)]
         beitraege.append(einzel_ret * gewicht)
     
-    fig_att, ax_att = plt.subplots(figsize=(10, 6))
+    fig_att, ax_att = plt.subplots(figsize=(10, 6), constrained_layout=True)
     y_pos_att = np.arange(len(verfuegbare))
     ax_att.barh(y_pos_att, np.array(beitraege) * 100, color='skyblue')
     ax_att.set_yticks(y_pos_att)
