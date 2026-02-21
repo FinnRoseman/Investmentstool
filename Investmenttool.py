@@ -210,13 +210,13 @@ endsumme = startkapital * (1 + total_ret)
 absoluter_gewinn = endsumme - startkapital
 st.subheader(f"Wertentwicklung bei {startkapital:,.0f} € Investment")
 e1, e2, e3 = st.columns([1.5, 1.2, 1])
-farbe = "green" if absoluter_gewinn >= 0 else "red"
+e1.metric("Endwert Heute", f"{endsumme:,.2f} €")
 if startkapital > 0:
-    e2.markdown(f"**Seit Kauf Absolut** \n<span style='color:{farbe}; font-size:20px; font-weight:bold;'>{absoluter_gewinn:,.2f} €</span>", unsafe_allow_html=True)
-    e3.markdown(f"**Seit Kauf Relativ** \n<span style='color:{farbe}; font-size:20px; font-weight:bold;'>{total_ret:.2%}</span>", unsafe_allow_html=True)
+    e2.metric("Seit Kauf Absolut", f"{absoluter_gewinn:,.2f} €")
+    e3.metric("Seit Kauf Relativ", f"{total_ret:.2%}")
 else:
-    e2.write("**Seit Kauf Absolut** \n0.00 €")
-    e3.write("**Seit Kauf Relativ** \n0.00 %")
+    e2.metric("Seit Kauf Absolut", "0.00€")
+    e3.metric("Seit Kauf Relativ", "0.00%")
 
 # --- 4. ANZEIGEN ---
 
