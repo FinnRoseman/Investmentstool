@@ -296,7 +296,7 @@ risiko_data = {
 }
 st.table(pd.DataFrame(risiko_data).set_index('Methode'))
 
-# Mean-Variance Optimization
+# Mean-Variance-Optimization
 mu = renditen[verfuegbare].mean() * 252 
 cov = renditen[verfuegbare].cov() * 252 
 
@@ -315,6 +315,8 @@ for i in range(opt_simulations):
 
 max_sharpe_idx = np.argmax(results[2])
 best_w = weights_record[max_sharpe_idx]
+opt_ret = results[0, max_sharpe_idx]
+opt_vol = results[1, max_sharpe_idx]
 
 mask = (results[1,:] <= max_vola_input) & (results[0,:] >= min_ret_input)
 filtered_results = results[:, mask]
