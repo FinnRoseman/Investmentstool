@@ -244,15 +244,17 @@ col9.metric("Tracking Error", f"{tracking_error:.2%}")
 st.markdown("---")
 
 # Grafiken
-col_chart, col_bars = st.columns([2, 1])
+# --- OPTIMIERTES LAYOUT: PERFORMANCE & RENDITE-CHECK ---
+# Wir nutzen ein Verhältnis von 3:1 für eine bessere Breitenverteilung
+col_chart, col_bars = st.columns([3, 1])
 
 with col_chart:
     st.subheader("Performance & Trends")
-    fig_perf, ax_perf = plt.subplots(figsize=(10, 7.5))
+    # Die Höhe von 8 Einheiten ist der Anker für die rechte Seite
+    fig_perf, ax_perf = plt.subplots(figsize=(10, 8))
     
     port_kum = ((1 + port_rendite).cumprod() - 1) * 100
     bench_kum = ((1 + bench_rendite).cumprod() - 1) * 100
-    
     sma100 = port_kum.rolling(window=100).mean()
     sma200 = port_kum.rolling(window=200).mean()
 
@@ -262,41 +264,40 @@ with col_chart:
     ax_perf.plot(sma200, label='200-Tage-Linie', color='red', linewidth=1, alpha=0.8)
     
     ax_perf.set_ylabel('Entwicklung (%)')
-    ax_perf.legend(loc='upper left')
+    ax_perf.legend(loc='upper left', fontsize=9)
     ax_perf.grid(True, alpha=0.2)
     st.pyplot(fig_perf)
 
 with col_bars:
     st.subheader("Rendite-Check")
+    
+    # Daten für Jahre und Perioden berechnen (wie gehabt)
     yearly_ret = port_rendite.groupby(port_rendite.index.year).apply(lambda x: (1 + x).prod() - 1) * 100
     periods = {"1M": 21, "3M": 63, "6M": 126, "1Y": 252, "3Y": 756}
-    period_rets = {}
-    for label, days in periods.items():
-        if len(port_rendite) >= days:
-            ret = ((1 + port_rendite.iloc[-days:]).prod() - 1) * 100
-            period_rets[label] = ret
+    period_rets = {label: ((1 + port_rendite.iloc[-days:]).prod() - 1) * 100 
+                   for label, days in periods.items() if len(port_rendite) >= days}
     period_rets["MAX"] = total_ret * 100
-    fig_balken, (ax1, ax2) = plt.subplots(2, 1, figsize=(6, 10))
+            
+    # Wir passen die figsize hier so an, dass sie die gleiche Gesamthöhe wie links erreicht
+    fig_balken, (ax1, ax2) = plt.subplots(2, 1, figsize=(5, 8.4)) 
+    
+    # Kalenderjahre
     colors_y = ['#76b041' if x > 0 else '#e4572e' for x in yearly_ret]
-    bars1 = ax1.bar(yearly_ret.index.astype(str), yearly_ret.values, color=colors_y)
+    ax1.bar(yearly_ret.index.astype(str), yearly_ret.values, color=colors_y)
     ax1.set_title("Nach Kalenderjahren (%)", fontsize=10, fontweight='bold')
-    ax1.axhline(0, color='black', linewidth=0.8)
-    for bar in bars1:
-        yval = bar.get_height()
-        ax1.text(bar.get_x() + bar.get_width()/2, yval, f'{yval:.1f}%', 
-                 ha='center', va='bottom' if yval > 0 else 'top', fontsize=8)
-    if period_rets:
-        labels_p = list(period_rets.keys())
-        values_p = list(period_rets.values())
-        colors_p = ['#76b041' if x > 0 else '#e4572e' for x in values_p]
-        bars2 = ax2.bar(labels_p, values_p, color=colors_p)
-        ax2.set_title("Nach Zeiträumen / MAX (%)", fontsize=10, fontweight='bold')
-        ax2.axhline(0, color='black', linewidth=0.8)
-        for bar in bars2:
-            yval = bar.get_height()
-            ax2.text(bar.get_x() + bar.get_width()/2, yval, f'{yval:.1f}%', 
-                     ha='center', va='bottom' if yval > 0 else 'top', fontsize=8)
-    plt.tight_layout()
+    ax1.axhline(0, color='black', linewidth=0.5)
+    ax1.tick_params(axis='both', labelsize=8)
+
+    # Zeiträume / MAX
+    labels_p = list(period_rets.keys())
+    values_p = list(period_rets.values())
+    colors_p = ['#76b041' if x > 0 else '#e4572e' for x in values_p]
+    ax2.bar(labels_p, values_p, color=colors_p)
+    ax2.set_title("Zeiträume / MAX (%)", fontsize=10, fontweight='bold')
+    ax2.axhline(0, color='black', linewidth=0.5)
+    ax2.tick_params(axis='both', labelsize=8)
+
+    plt.tight_layout(pad=2.0)
     st.pyplot(fig_balken)
 
 st.markdown("---")
