@@ -323,7 +323,8 @@ st.subheader("🎯 Mean-Variance Optimierung (Vorschlag)")
 opt_col1, opt_col2 = st.columns([2, 1], vertical_alignment="bottom")
 
 with opt_col1:
-    fig_ef, ax_ef = plt.subplots(figsize=(10, 6.8))
+    dynamische_hoehe = 4.5 + (len(verfuegbare) * 0.3)
+    fig_ef, ax_ef = plt.subplots(figsize=(10, dynamische_hoehe))
     scatter = ax_ef.scatter(results[1,:], results[0,:], c=results[2,:], cmap='viridis', marker='o', alpha=0.3)
     ax_ef.scatter(vola, cagr, color='red', marker='*', s=200, label='Dein Portfolio')
     ax_ef.scatter(opt_vol, opt_ret, color='orange', marker='*', s=200, label='Optimiert (Max Sharpe)')
