@@ -285,6 +285,8 @@ with opt_col1:
     scatter = ax_ef.scatter(results[1,:], results[0,:], c=results[2,:], cmap='viridis', marker='o', alpha=0.3)
     ax_ef.scatter(vola, cagr, color='red', marker='o', s=200, label='Aktuelles Portfolio')
     ax_ef.scatter(opt_vol, opt_ret, color='orange', marker='o', s=200, label='Optimiertes Portfolio')
+    ax_ef.set_xticklabels([f'{x*100:.0f}%' for x in ax_ef.get_xticks()])
+    ax_ef.set_yticklabels([f'{y*100:.0f}%' for y in ax_ef.get_yticks()])
     
     ax_ef.set_xlabel('Volatilität p.a.')
     ax_ef.set_ylabel('Rendite p.a.')
