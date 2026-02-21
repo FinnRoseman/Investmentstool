@@ -250,45 +250,6 @@ st.pyplot(fig_perf)
 
 st.markdown("---")
 
-g_col1, g_col2 = st.columns(2)
-
-with g_col1:
-    st.subheader("Korrelationsmatrix")
-    fig_corr, ax_corr = plt.subplots(figsize=(10, 8), constrained_layout=True)
-    sns.heatmap(renditen[verfuegbare].corr(), annot=True, cmap='RdYlGn_r', center=0.3, fmt=".2f", linewidths=0.5, ax=ax_corr)
-    st.pyplot(fig_corr)
-
-with g_col2:
-    st.subheader("Risiko-Verteilung")
-    fig_bar, ax_bar = plt.subplots(figsize=(10, 8), constrained_layout=True)
-    colors = ['#440154' if x > 0 else '#22a884' for x in rel_risk_contrib]
-    y_pos = np.arange(len(verfuegbare))
-    bars = ax_bar.barh(y_pos, rel_risk_contrib * 100, color=colors)
-    ax_bar.set_yticks(y_pos)
-    ax_bar.set_yticklabels(verfuegbare, fontweight='bold')
-    ax_bar.invert_yaxis()  # Zeigt den ersten Ticker ganz oben an
-    ax_bar.axvline(0, color='black', linewidth=1, alpha=0.5)
-    ax_bar.set_xlabel('Relativer Risikobeitrag (%)', fontweight='bold')
-    ax_bar.grid(axis='x', linestyle='--', alpha=0.7)
-    for bar in bars:
-        width = bar.get_width()
-        ax_bar.text(width, bar.get_y() + bar.get_height()/2, 
-                    f' {width:.1f}%', 
-                    va='center', fontweight='bold', fontsize=11)
-    
-    st.pyplot(fig_bar)
-
-st.markdown("---")
-
-# Risiko-Tabelle
-st.subheader("Risiko-Analyse (1 Jahr)")
-risiko_data = {
-    "Methode": ["Parametrisch", "Historisch", "Monte-Carlo"],
-    "Value at Risk 95%": [f"{var_95_para:.2%}", f"{var_95_hist:.2%}", f"{mc_var_95_jahr:.2%}"],
-    "Expected Shortfall 95%": [f"{es_95_para:.2%}", f"{es_95_hist:.2%}", f"{mc_es_95_jahr:.2%}"]
-}
-st.table(pd.DataFrame(risiko_data).set_index('Methode'))
-
 # Mean-Variance-Optimization
 np.random.seed(42)
 opt_simulations = 10000
@@ -347,5 +308,46 @@ with opt_col2:
     - Optimierte Volatilität: {opt_vol:.2%}
     - Optimiertes Sharpe Ratio: {results[2, max_sharpe_idx]:.2f}
     """)
+
+st.markdown("---")
+
+g_col1, g_col2 = st.columns(2)
+
+with g_col1:
+    st.subheader("Korrelationsmatrix")
+    fig_corr, ax_corr = plt.subplots(figsize=(10, 8), constrained_layout=True)
+    sns.heatmap(renditen[verfuegbare].corr(), annot=True, cmap='RdYlGn_r', center=0.3, fmt=".2f", linewidths=0.5, ax=ax_corr)
+    st.pyplot(fig_corr)
+
+with g_col2:
+    st.subheader("Risiko-Verteilung")
+    fig_bar, ax_bar = plt.subplots(figsize=(10, 8), constrained_layout=True)
+    colors = ['#440154' if x > 0 else '#22a884' for x in rel_risk_contrib]
+    y_pos = np.arange(len(verfuegbare))
+    bars = ax_bar.barh(y_pos, rel_risk_contrib * 100, color=colors)
+    ax_bar.set_yticks(y_pos)
+    ax_bar.set_yticklabels(verfuegbare, fontweight='bold')
+    ax_bar.invert_yaxis()  # Zeigt den ersten Ticker ganz oben an
+    ax_bar.axvline(0, color='black', linewidth=1, alpha=0.5)
+    ax_bar.set_xlabel('Relativer Risikobeitrag (%)', fontweight='bold')
+    ax_bar.grid(axis='x', linestyle='--', alpha=0.7)
+    for bar in bars:
+        width = bar.get_width()
+        ax_bar.text(width, bar.get_y() + bar.get_height()/2, 
+                    f' {width:.1f}%', 
+                    va='center', fontweight='bold', fontsize=11)
+    
+    st.pyplot(fig_bar)
+
+st.markdown("---")
+
+# Risiko-Tabelle
+st.subheader("Risiko-Analyse (1 Jahr)")
+risiko_data = {
+    "Methode": ["Parametrisch", "Historisch", "Monte-Carlo"],
+    "Value at Risk 95%": [f"{var_95_para:.2%}", f"{var_95_hist:.2%}", f"{mc_var_95_jahr:.2%}"],
+    "Expected Shortfall 95%": [f"{es_95_para:.2%}", f"{es_95_hist:.2%}", f"{mc_es_95_jahr:.2%}"]
+}
+st.table(pd.DataFrame(risiko_data).set_index('Methode'))
 
 st.caption(f"Datenzeitraum: {daten.index[0].strftime('%d.%m.%Y')} bis {daten.index[-1].strftime('%d.%m.%Y')}")
