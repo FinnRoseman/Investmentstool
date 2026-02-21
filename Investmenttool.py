@@ -95,11 +95,6 @@ period_yf = zeitraum_optionen[ausgewaehlter_zeitraum]
 st.sidebar.header("Kapitalauswahl")
 startkapital = st.sidebar.number_input("Startkapital (€)", value=0, min_value=0, step=1000, key="mein_kapital")
 
-st.sidebar.markdown("---")
-st.sidebar.header("MVO Optimierung")
-opt_simulations = 10000
-st.sidebar.caption("Sucht die historisch beste Gewichtung basierend auf den Tickern.")
-
 zuordnung = dict(zip(ticker_liste, anteile_orig))
 
 ticker_namen = {}
@@ -296,6 +291,7 @@ st.table(pd.DataFrame(risiko_data).set_index('Methode'))
 
 # Mean-Variance-Optimization
 np.random.seed(42)
+opt_simulations = 10000
 mu = renditen[verfuegbare].mean() * 252  
 cov = renditen[verfuegbare].cov() * 252  
 results = np.zeros((3, opt_simulations))
