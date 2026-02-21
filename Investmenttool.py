@@ -420,9 +420,9 @@ st.pyplot(fig_mc_path)
 
 st.info(f"""
 **Ergebnis nach {mc_jahre} Jahren:**
-- Median-Szenario: **{median_pfad[-1]:,.2f} €**
-- Schlechtestes Szenario: **{bottom_pfad[-1]:,.2f} €**
-- Bestes Szenario: **{top_pfad[-1]:,.2f} €**
+- Mittleres Szenario: **{median_pfad[-1]:,.2f} €**
+- Pessimistisches Szenario: **{bottom_pfad[-1]:,.2f} €**
+- Optimistisches Szenario: **{top_pfad[-1]:,.2f} €**
 """)
 
 st.caption(f"Datenzeitraum: {daten.index[0].strftime('%d.%m.%Y')} bis {daten.index[-1].strftime('%d.%m.%Y')}")
