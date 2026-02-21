@@ -287,7 +287,7 @@ with opt_col1:
     ax_ef.scatter(opt_vol, opt_ret, color='orange', marker='o', s=200, label='Optimiertes Portfolio')
     
     ax_ef.set_xlabel('Volatilität p.a.')
-    ax_ef.set_ylabel('Rendite p.a. (CAGR)')
+    ax_ef.set_ylabel('Rendite p.a.')
     ax_ef.legend()
     plt.colorbar(scatter, label='Sharpe Ratio')
     fig_ef.tight_layout()
