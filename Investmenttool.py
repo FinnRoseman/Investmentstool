@@ -347,7 +347,7 @@ st.subheader("Risiko-Analyse (1 Jahr)")
 risiko_data = {
     "Methode": ["Parametrisch", "Historisch", "Monte-Carlo"],
     "Value at Risk 95%": [f"{var_95_para:.2%}", f"{var_95_hist:.2%}", f"{mc_var_95_jahr:.2%}"],
-    "Expected Shortfall 95%": [f"{es_95_para:.2%}", f"{es_95_hist:.2%}", f"{mc_es_95_jahr:.2%}"]
+    "Expected Shortfall": [f"{es_95_para:.2%}", f"{es_95_hist:.2%}", f"{mc_es_95_jahr:.2%}"]
 }
 st.table(pd.DataFrame(risiko_data).set_index('Methode'))
 
