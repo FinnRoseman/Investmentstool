@@ -323,7 +323,7 @@ st.subheader("🎯 Mean-Variance Optimierung (Vorschlag)")
 opt_col1, opt_col2 = st.columns([2, 1], vertical_alignment="top")
 
 with opt_col1:
-    fig_ef, ax_ef = plt.subplots(figsize=(10, 5.8))
+    fig_ef, ax_ef = plt.subplots(figsize=(10, 6.2))
     scatter = ax_ef.scatter(results[1,:], results[0,:], c=results[2,:], cmap='viridis', marker='o', alpha=0.3)
     ax_ef.scatter(vola, cagr, color='red', marker='*', s=200, label='Dein Portfolio')
     ax_ef.scatter(opt_vol, opt_ret, color='orange', marker='*', s=200, label='Optimiert (Max Sharpe)')
@@ -334,6 +334,7 @@ with opt_col1:
     plt.colorbar(scatter, label='Sharpe Ratio')
     fig_ef.tight_layout()
     st.pyplot(fig_ef)
+    fig_ef.subplots_adjust(left=0.1, right=0.95, top=0.95, bottom=0.15) 
 
 with opt_col2:
     st.write("**Optimierte Gewichtung:**")
