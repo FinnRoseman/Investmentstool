@@ -390,6 +390,7 @@ st.markdown("---")
 st.subheader("Monte Carlo Pfadsimulation (10 Jahre)")
 
 mc_jahre = 10
+aktuelles_jahr = pd.Timestamp.now().year
 mc_tage = 252 * mc_jahre
 mc_pfade = 100 
 mc_startkapital = startkapital if startkapital > 0 else 10000 
@@ -400,7 +401,7 @@ rand_rets = np.random.normal(mu_daily, sigma_daily, (mc_tage, mc_pfade))
 mc_pfade_daten = mc_startkapital * (1 + rand_rets).cumprod(axis=0)
 
 fig_mc_path, ax_mc_path = plt.subplots(figsize=(12, 6))
-zeit_achse = np.linspace(0, mc_jahre, mc_tage)
+zeit_achse = np.linspace(aktuelles_jahr, aktuelles_jahr + mc_jahre, mc_tage)
 ax_mc_path.plot(zeit_achse, mc_pfade_daten, color='blue', alpha=0.05)
 median_pfad = np.percentile(mc_pfade_daten, 50, axis=1)
 top_pfad = np.percentile(mc_pfade_daten, 95, axis=1)
@@ -411,7 +412,7 @@ ax_mc_path.plot(zeit_achse, top_pfad, color='green', linestyle='--', label='Opti
 ax_mc_path.plot(zeit_achse, bottom_pfad, color='red', linestyle='--', label='Pessimistisch (5%)')
 
 ax_mc_path.set_title(f"Simulation von {mc_pfade} möglichen Verläufen bei {mc_startkapital:,.0f}€ Startwert")
-ax_mc_path.set_xlabel("Jahre in der Zukunft")
+ax_mc_path.set_xlabel("Jahr")
 ax_mc_path.set_ylabel("Portfoliowert (€)")
 ax_mc_path.legend(loc='upper left')
 ax_mc_path.grid(True, alpha=0.2)
