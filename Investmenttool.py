@@ -340,8 +340,8 @@ with opt_col1:
 with opt_col2:
     opt_weights_df = pd.DataFrame({
         "Ticker": verfuegbare,
-        "Optimiert": [f"{w*100:.1f}%" for w in best_w],
         "Aktuell": [f"{a*100:.1f}%" for a in anteile]
+        "Optimiert": [f"{w*100:.1f}%" for w in best_w]
     })
     st.table(opt_weights_df.set_index('Ticker'))
     
