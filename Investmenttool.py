@@ -248,6 +248,8 @@ ax_perf.legend()
 ax_perf.grid(True, alpha=0.3)
 st.pyplot(fig_perf)
 
+st.markdown("---")
+
 # Rolling Returns & Attribution
 att_col1, att_col2 = st.columns(2)
 
