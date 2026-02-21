@@ -318,7 +318,7 @@ opt_ret = results[0, max_sharpe_idx]
 opt_vol = results[1, max_sharpe_idx]
 
 st.markdown("---")
-st.subheader("🎯 Mean-Variance Optimierung (Vorschlag)")
+st.subheader("🎯 Mean-Variance Optimierung")
 
 opt_col1, opt_col2 = st.columns([2, 1], vertical_alignment="bottom")
 
@@ -326,7 +326,7 @@ with opt_col1:
     dynamische_hoehe = 4.5 + (len(verfuegbare) * 0.3)
     fig_ef, ax_ef = plt.subplots(figsize=(10, dynamische_hoehe))
     scatter = ax_ef.scatter(results[1,:], results[0,:], c=results[2,:], cmap='viridis', marker='o', alpha=0.3)
-    ax_ef.scatter(vola, cagr, color='red', marker='*', s=200, label='Dein Portfolio')
+    ax_ef.scatter(vola, cagr, color='red', marker='o', s=200, label='Dein Portfolio')
     ax_ef.scatter(opt_vol, opt_ret, color='orange', marker='*', s=200, label='Optimiert (Max Sharpe)')
     
     ax_ef.set_xlabel('Volatilität p.a.')
@@ -338,7 +338,6 @@ with opt_col1:
     fig_ef.subplots_adjust(left=0.1, right=0.95, top=0.95, bottom=0.15) 
 
 with opt_col2:
-    st.write("**Optimierte Gewichtung:**")
     opt_weights_df = pd.DataFrame({
         "Ticker": verfuegbare,
         "Vorschlag": [f"{w*100:.1f}%" for w in best_w],
