@@ -95,6 +95,11 @@ period_yf = zeitraum_optionen[ausgewaehlter_zeitraum]
 st.sidebar.header("Kapitalauswahl")
 startkapital = st.sidebar.number_input("Startkapital (€)", value=0, min_value=0, step=1000, key="mein_kapital")
 
+st.sidebar.markdown("---")
+st.sidebar.header("MVO Optimierung")
+opt_simulations = st.sidebar.slider("Anzahl Simulationen für MVO", 1000, 10000, 5000, step=1000)
+st.sidebar.caption("Sucht die historisch beste Gewichtung basierend auf deinen Tickern.")
+
 zuordnung = dict(zip(ticker_liste, anteile_orig))
 
 ticker_namen = {}
@@ -288,5 +293,60 @@ risiko_data = {
     "Expected Shortfall 95%": [f"{es_95_para:.2%}", f"{es_95_hist:.2%}", f"{mc_es_95_jahr:.2%}"]
 }
 st.table(pd.DataFrame(risiko_data).set_index('Methode'))
+
+# Mean-Variance Optimierung
+mu = renditen[verfuegbare].mean() * 252 
+cov = renditen[verfuegbare].cov() * 252  
+results = np.zeros((3, opt_simulations))
+weights_record = []
+
+for i in range(opt_simulations):
+    w = np.random.random(len(verfuegbare))
+    w /= np.sum(w)
+    weights_record.append(w)
+    p_ret = np.sum(mu * w)
+    p_std = np.sqrt(np.dot(w.T, np.dot(cov, w)))
+    
+    results[0,i] = p_ret
+    results[1,i] = p_std
+    results[2,i] = (p_ret - risk_free_rate) / p_std
+
+max_sharpe_idx = np.argmax(results[2])
+best_w = weights_record[max_sharpe_idx]
+opt_ret = results[0, max_sharpe_idx]
+opt_vol = results[1, max_sharpe_idx]
+
+st.markdown("---")
+st.subheader("🎯 Mean-Variance Optimierung (Vorschlag)")
+
+opt_col1, opt_col2 = st.columns([2, 1])
+
+with opt_col1:
+    fig_ef, ax_ef = plt.subplots(figsize=(10, 6))
+    scatter = ax_ef.scatter(results[1,:], results[0,:], c=results[2,:], cmap='viridis', marker='o', alpha=0.3)
+    ax_ef.scatter(vola, cagr, color='red', marker='*', s=200, label='Dein Portfolio')
+    ax_ef.scatter(opt_vol, opt_ret, color='orange', marker='*', s=200, label='Optimiert (Max Sharpe)')
+    
+    ax_ef.set_xlabel('Volatilität p.a.')
+    ax_ef.set_ylabel('Rendite p.a. (CAGR)')
+    ax_ef.legend()
+    plt.colorbar(scatter, label='Sharpe Ratio')
+    st.pyplot(fig_ef)
+
+with opt_col2:
+    st.write("**Optimierte Gewichtung:**")
+    opt_weights_df = pd.DataFrame({
+        "Ticker": verfuegbare,
+        "Vorschlag": [f"{w*100:.1f}%" for w in best_w],
+        "Aktuell": [f"{a*100:.1f}%" for a in anteile]
+    })
+    st.table(opt_weights_df.set_index('Ticker'))
+    
+    st.info(f"""
+    **Vergleich:**
+    - Optimierte Rendite: {opt_ret:.2%}
+    - Optimierte Vola: {opt_vol:.2%}
+    - Optimiertes Sharpe: {results[2, max_sharpe_idx]:.2f}
+    """)
 
 st.caption(f"Datenzeitraum: {daten.index[0].strftime('%d.%m.%Y')} bis {daten.index[-1].strftime('%d.%m.%Y')}")
