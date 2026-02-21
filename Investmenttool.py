@@ -5,6 +5,12 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import streamlit as st
 
+# --- CACHING FUNKTION ---
+@st.cache_data(show_spinner="Marktdaten werden geladen...")
+def get_cached_data(ticker_tuple, period):
+    df = yf.download(list(ticker_tuple), period=period, progress=False)
+    return df
+
 # --- STREAMLIT PAGE CONFIGURATION ---
 st.set_page_config(page_title="Portfolio Analyzer", layout="wide")
 
@@ -130,24 +136,25 @@ if not st.session_state.run_analysis:
         st.info("Bitte füge Ticker in der Sidebar hinzu.")
     st.stop()
 
+alle_ticker = tuple(ticker_liste + [benchmark])
+data_full = get_cached_data(alle_ticker, period_yf)
+
 raw_data = {}
-for t in ticker_liste + [benchmark]:
-    df = yf.download(t, period=period_yf, progress=False)
-    if df.empty:
-        st.error(f"⚠️ Der Ticker '{t}' konnte nicht gefunden werden oder liefert keine Daten.")
-        st.info("Hinweis: Ticker an deutschen Börsen benötigen oft ein Suffix (z.B. .DE).")
-        st.stop()
-    if isinstance(df.columns, pd.MultiIndex):
-        price = df['Close'][t].copy()
+for t in alle_ticker:
+    if isinstance(data_full.columns, pd.MultiIndex):
+        price = data_full['Close'][t].copy()
     else:
-        price = df['Close'].copy()    
+        price = data_full['Close'].copy()
+    if price.dropna().empty:
+        st.error(f"⚠️ Keine Daten für {t}")
+        st.stop()
     if t in fx_map:
         fx_df = yf.download(fx_map[t], period=period_yf, progress=False)
         if not fx_df.empty:
             fx = fx_df['Close'].iloc[:, 0] if isinstance(fx_df.columns, pd.MultiIndex) else fx_df['Close']
             comb = pd.concat([price, fx], axis=1).ffill().dropna()
             price = comb.iloc[:, 0] * comb.iloc[:, 1]
-    
+            
     raw_data[t] = price
 
 daten = pd.concat(raw_data, axis=1).ffill().dropna()
