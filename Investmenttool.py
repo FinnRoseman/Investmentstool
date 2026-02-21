@@ -303,7 +303,6 @@ with opt_col2:
     st.table(opt_weights_df.set_index('Ticker'))
     
     st.info(f"""
-    **Vergleich:**
     - Optimierte Rendite: {opt_ret:.2%}
     - Optimierte Volatilität: {opt_vol:.2%}
     - Optimiertes Sharpe Ratio: {results[2, max_sharpe_idx]:.2f}
