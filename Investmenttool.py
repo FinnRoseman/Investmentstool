@@ -295,6 +295,7 @@ risiko_data = {
 st.table(pd.DataFrame(risiko_data).set_index('Methode'))
 
 # Mean-Variance-Optimization
+np.random.seed(42)
 mu = renditen[verfuegbare].mean() * 252  
 cov = renditen[verfuegbare].cov() * 252  
 results = np.zeros((3, opt_simulations))
