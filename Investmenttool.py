@@ -275,7 +275,7 @@ with att_col1:
     st.pyplot(fig_roll)
 
 with att_col2:
-    st.subheader("Performance Attribution")
+    st.subheader("Performance-Verteilung")
     beitraege = []
     for t in verfuegbare:
         einzel_ret = (1 + renditen[t]).prod() - 1
