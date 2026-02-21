@@ -330,7 +330,7 @@ with g_col2:
     ax_bar.set_yticklabels(verfuegbare, fontweight='bold')
     ax_bar.invert_yaxis()  # Zeigt den ersten Ticker ganz oben an
     ax_bar.axvline(0, color='black', linewidth=1, alpha=0.5)
-    ax_bar.set_xlabel('Relativer Risikobeitrag (%)', fontweight='bold')
+    ax_bar.set_xlabel('Beitrag zur Volatilität (%)', fontweight='bold')
     ax_bar.grid(axis='x', linestyle='--', alpha=0.7)
     for bar in bars:
         width = bar.get_width()
