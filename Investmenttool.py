@@ -377,7 +377,7 @@ with g_col2:
 st.markdown("---")
 
 # Risiko-Tabelle
-st.subheader("Risiko-Analyse (1 Jahr)")
+st.subheader("Risiko-Analyse (12 Monate)")
 risiko_data = {
     "Methode": ["Parametrisch", "Historisch", "Monte-Carlo"],
     "Value at Risk 95%": [f"{var_95_para:.2%}", f"{var_95_hist:.2%}", f"{mc_var_95_jahr:.2%}"],
