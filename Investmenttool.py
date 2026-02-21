@@ -97,8 +97,8 @@ startkapital = st.sidebar.number_input("Startkapital (€)", value=0, min_value=
 
 st.sidebar.markdown("---")
 st.sidebar.header("MVO Optimierung")
-opt_simulations = st.sidebar.slider("Anzahl Simulationen für MVO", 1000, 10000, 5000, step=1000)
-st.sidebar.caption("Sucht die historisch beste Gewichtung basierend auf deinen Tickern.")
+opt_simulations = 10000
+st.sidebar.caption("Sucht die historisch beste Gewichtung basierend auf den Tickern.")
 
 zuordnung = dict(zip(ticker_liste, anteile_orig))
 
