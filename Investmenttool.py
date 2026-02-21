@@ -320,7 +320,7 @@ opt_vol = results[1, max_sharpe_idx]
 st.markdown("---")
 st.subheader("🎯 Mean-Variance Optimierung (Vorschlag)")
 
-opt_col1, opt_col2 = st.columns([2, 1], vertical_alignment="top")
+opt_col1, opt_col2 = st.columns([2, 1], vertical_alignment="bottom")
 
 with opt_col1:
     fig_ef, ax_ef = plt.subplots(figsize=(10, 6.2))
