@@ -248,8 +248,12 @@ st.subheader("Performance Vergleich (%)")
 fig_perf, ax_perf = plt.subplots(figsize=(12, 5), constrained_layout=True)
 port_kum = ((1 + port_rendite).cumprod() - 1) * 100
 bench_kum = ((1 + bench_rendite).cumprod() - 1) * 100
+sma100 = port_kum.rolling(window=100).mean()
+sma200 = port_kum.rolling(window=200).mean()
 ax_perf.plot(port_kum, label='Portfolio', linewidth=2, color='blue')
 ax_perf.plot(bench_kum, label=f'Benchmark', linewidth=1.5, color='grey', linestyle='--')
+ax_perf.plot(sma100, label='100-Tage-Linie', color='orange', linewidth=1, alpha=0.8)
+ax_perf.plot(sma200, label='200-Tage-Linie', color='red', linewidth=1, alpha=0.8)
 ax_perf.set_ylabel('Entwicklung in %')
 ax_perf.legend()
 ax_perf.grid(True, alpha=0.3)
