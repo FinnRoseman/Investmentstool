@@ -327,7 +327,7 @@ with opt_col1:
     fig_ef, ax_ef = plt.subplots(figsize=(10, dynamische_hoehe))
     scatter = ax_ef.scatter(results[1,:], results[0,:], c=results[2,:], cmap='viridis', marker='o', alpha=0.3)
     ax_ef.scatter(vola, cagr, color='red', marker='o', s=200, label='Dein Portfolio')
-    ax_ef.scatter(opt_vol, opt_ret, color='orange', marker='o', s=200, label='Optimiert (Max Sharpe)')
+    ax_ef.scatter(opt_vol, opt_ret, color='orange', marker='o', s=200, label='Optimiert')
     
     ax_ef.set_xlabel('Volatilität p.a.')
     ax_ef.set_ylabel('Rendite p.a. (CAGR)')
@@ -340,16 +340,16 @@ with opt_col1:
 with opt_col2:
     opt_weights_df = pd.DataFrame({
         "Ticker": verfuegbare,
-        "Vorschlag": [f"{w*100:.1f}%" for w in best_w],
-        "Aktuell": [f"{a*100:.1f}%" for a in anteile]
+        "Soll": [f"{w*100:.1f}%" for w in best_w],
+        "Ist": [f"{a*100:.1f}%" for a in anteile]
     })
     st.table(opt_weights_df.set_index('Ticker'))
     
     st.info(f"""
     **Vergleich:**
     - Optimierte Rendite: {opt_ret:.2%}
-    - Optimierte Vola: {opt_vol:.2%}
-    - Optimiertes Sharpe: {results[2, max_sharpe_idx]:.2f}
+    - Optimierte Volatilität: {opt_vol:.2%}
+    - Optimiertes Sharpe Ratio: {results[2, max_sharpe_idx]:.2f}
     """)
 
 st.caption(f"Datenzeitraum: {daten.index[0].strftime('%d.%m.%Y')} bis {daten.index[-1].strftime('%d.%m.%Y')}")
