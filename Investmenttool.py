@@ -291,7 +291,7 @@ with opt_col1:
     ax_ef.legend()
     plt.colorbar(scatter, label='Sharpe Ratio')
     fig_ef.tight_layout()
-    fig_ef.subplots_adjust(left=0.1, right=0.95, top=1.0, bottom=0.15)
+    fig_ef.subplots_adjust(left=0.1, right=0.95, top=0.95, bottom=0.15)
     st.pyplot(fig_ef) 
 
 with opt_col2:
