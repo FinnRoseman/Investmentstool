@@ -248,6 +248,41 @@ ax_perf.legend()
 ax_perf.grid(True, alpha=0.3)
 st.pyplot(fig_perf)
 
+# Rolling Returns & Attribution
+att_col1, att_col2 = st.columns(2)
+
+with att_col1:
+    st.subheader("Rolling Returns (12 Monate)")
+    rolling_1y = port_rendite.rolling(window=252).apply(lambda x: (1 + x).prod() - 1)
+    
+    fig_roll, ax_roll = plt.subplots(figsize=(10, 6))
+    ax_roll.plot(rolling_1y * 100, color='blue', alpha=0.8)
+    ax_roll.axhline(rolling_1y.mean() * 100, color='red', linestyle='--', label='Schnitt')
+    ax_roll.axhline(0, color='black', linewidth=1)
+    ax_roll.set_ylabel('Rendite p.a. (%)')
+    ax_roll.fill_between(rolling_1y.index, rolling_1y * 100, 0, where=(rolling_1y > 0), facecolor='green', alpha=0.1)
+    ax_roll.fill_between(rolling_1y.index, rolling_1y * 100, 0, where=(rolling_1y < 0), facecolor='red', alpha=0.1)
+    ax_roll.grid(True, alpha=0.3)
+    st.pyplot(fig_roll)
+
+with att_col2:
+    st.subheader("Performance Attribution")
+    beitraege = []
+    for t in verfuegbare:
+        einzel_ret = (1 + renditen[t]).prod() - 1
+        gewicht = anteile[verfuegbare.index(t)]
+        beitraege.append(einzel_ret * gewicht)
+    
+    fig_att, ax_att = plt.subplots(figsize=(10, 6))
+    y_pos_att = np.arange(len(verfuegbare))
+    ax_att.barh(y_pos_att, np.array(beitraege) * 100, color='skyblue')
+    ax_att.set_yticks(y_pos_att)
+    ax_att.set_yticklabels(verfuegbare)
+    ax_att.invert_yaxis()
+    ax_att.set_xlabel('Beitrag zur Gesamtrendite (%)')
+    ax_att.grid(axis='x', linestyle='--', alpha=0.7)
+    st.pyplot(fig_att)
+
 st.markdown("---")
 
 # Mean-Variance-Optimization
@@ -349,5 +384,45 @@ risiko_data = {
     "Expected Shortfall": [f"{es_95_para:.2%}", f"{es_95_hist:.2%}", f"{mc_es_95_jahr:.2%}"]
 }
 st.table(pd.DataFrame(risiko_data).set_index('Methode'))
+
+# Monte Carlo Pfadsimulation (10 Jahre)
+st.markdown("---")
+st.subheader("Monte Carlo Pfadsimulation (10 Jahre)")
+
+mc_jahre = 10
+mc_tage = 252 * mc_jahre
+mc_pfade = 100 
+mc_startkapital = startkapital if startkapital > 0 else 10000 
+mu_daily = port_rendite.mean()
+sigma_daily = port_rendite.std()
+np.random.seed(42)
+rand_rets = np.random.normal(mu_daily, sigma_daily, (mc_tage, mc_pfade))
+mc_pfade_daten = mc_startkapital * (1 + rand_rets).cumprod(axis=0)
+
+fig_mc_path, ax_mc_path = plt.subplots(figsize=(12, 6))
+zeit_achse = np.linspace(0, mc_jahre, mc_tage)
+ax_mc_path.plot(zeit_achse, mc_pfade_daten, color='blue', alpha=0.05)
+median_pfad = np.percentile(mc_pfade_daten, 50, axis=1)
+top_pfad = np.percentile(mc_pfade_daten, 95, axis=1)
+bottom_pfad = np.percentile(mc_pfade_daten, 5, axis=1)
+
+ax_mc_path.plot(zeit_achse, median_pfad, color='black', linewidth=2, label='Median (50%)')
+ax_mc_path.plot(zeit_achse, top_pfad, color='green', linestyle='--', label='Optimistisch (95%)')
+ax_mc_path.plot(zeit_achse, bottom_pfad, color='red', linestyle='--', label='Pessimistisch (5%)')
+
+ax_mc_path.set_title(f"Simulation von {mc_pfade} möglichen Verläufen bei {mc_startkapital:,.0f}€ Startwert")
+ax_mc_path.set_xlabel("Jahre in der Zukunft")
+ax_mc_path.set_ylabel("Portfoliowert (€)")
+ax_mc_path.legend(loc='upper left')
+ax_mc_path.grid(True, alpha=0.2)
+
+st.pyplot(fig_mc_path)
+
+st.info(f"""
+**Ergebnis nach {mc_jahre} Jahren:**
+- Median-Szenario: **{median_pfad[-1]:,.2f} €**
+- Schlechtestes Szenario (5%): **{bottom_pfad[-1]:,.2f} €**
+- Bestes Szenario (95%): **{top_pfad[-1]:,.2f} €**
+""")
 
 st.caption(f"Datenzeitraum: {daten.index[0].strftime('%d.%m.%Y')} bis {daten.index[-1].strftime('%d.%m.%Y')}")
