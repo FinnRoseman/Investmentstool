@@ -274,7 +274,6 @@ best_w = weights_record[max_sharpe_idx]
 opt_ret = results[0, max_sharpe_idx]
 opt_vol = results[1, max_sharpe_idx]
 
-st.markdown("---")
 st.subheader("Mean-Variance-Optimization")
 
 opt_col1, opt_col2 = st.columns([2, 1], vertical_alignment="center")
