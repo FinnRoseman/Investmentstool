@@ -72,7 +72,7 @@ for t in ticker_liste:
             r_data = st.session_state.regionen_daten.get(t, {"NA": 0.0, "SA": 0.0, "EU": 0.0, "AP": 0.0, "AF": 0.0})
             c1, c2, c3 = st.columns(3)
             with c1: na = st.number_input("NAM", 0.0, 100.0, r_data["NA"], key=f"na_{t}")
-            with c2: sa = st.number_input("LATAM", 0.0, 100.0, r_data["SA"], key=f"sa_{t}")
+            with c2: sa = st.number_input("SAM", 0.0, 100.0, r_data["SA"], key=f"sa_{t}")
             with c3: eu = st.number_input("Europa", 0.0, 100.0, r_data["EU"], key=f"eu_{t}")
             c4, c5, _ = st.columns(3)
             with c4: ap = st.number_input("APAC", 0.0, 100.0, r_data["AP"], key=f"ap_{t}")
