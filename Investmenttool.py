@@ -206,6 +206,24 @@ beta = port_rendite.cov(bench_rendite) / bench_rendite.var()
 bench_cagr = ((1 + bench_rendite).prod())**(1/jahre) - 1
 alpha = cagr - (risk_free_rate + beta * (bench_cagr - risk_free_rate))
 
+port_current_yield = 0.0
+port_yoc = 0.0
+total_div_euro = 0.0
+for i, t in enumerate(verfuegbare):
+    ticker_obj = yf.Ticker(t)
+    gewicht = anteile[i]
+    div_history = ticker_obj.dividends
+    if not div_history.empty:
+        last_year_divs = div_history[div_history.index > (pd.Timestamp.now() - pd.Timedelta(days=365))].sum()
+        current_price = daten[t].iloc[-1]
+        start_price = daten[t].iloc[0]
+        ticker_yield = last_year_divs / current_price if current_price > 0 else 0
+        port_current_yield += ticker_yield * gewicht
+        ticker_yoc = last_year_divs / start_price if start_price > 0 else 0
+        port_yoc += ticker_yoc * gewicht
+        avg_value = (startkapital + endsumme) / 2
+        total_div_euro += (ticker_yield * avg_value) * jahre * gewicht
+
 # Risikokennzahlen
 var_95_para = 1.645 * vola
 var_95_hist = abs(port_rendite.quantile(0.05)) * np.sqrt(252)
@@ -237,30 +255,34 @@ st.markdown("---")
 endsumme = startkapital * (1 + total_ret)
 absoluter_gewinn = endsumme - startkapital
 st.subheader(f"Wertentwicklung bei {startkapital:,.0f} € Investment")
-e1, e2, e3 = st.columns([1.5, 1.2, 1])
+e1, e2, e3, e4 = st.columns([1.5, 1.2, 1, 1.2])
 e1.metric("Endwert Heute", f"{endsumme:,.2f} €")
 if startkapital > 0:
     e2.metric("Seit Kauf Absolut", f"{absoluter_gewinn:,.2f} €")
     e3.metric("Seit Kauf Relativ", f"{total_ret:.2%}")
+    e4.metric("Davon Ausschüttungen", f"{total_div_euro:,.2f} €", help="Geschätzte kumulierte Ausschüttungen über den Zeitraum (nicht reinvestiert)")
 else:
     e2.metric("Seit Kauf Absolut", "0.00€")
     e3.metric("Seit Kauf Relativ", "0.00%")
+    e4.metric("Davon Ausschüttungen", "0.00 €")
 
 # --- 4. ANZEIGEN ---
 
 # Kennzahlen-Kacheln
 st.subheader("Key Performance Indicators")
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3, col4, col5 = st.columns(5)
 col1.metric("Gesamtrendite", f"{total_ret:.2%}")
 col2.metric("Rendite p.a. (CAGR)", f"{cagr:.2%}")
 col3.metric("Alpha", f"{alpha:.2%}")
 col4.metric("Sharpe Ratio", f"{sharpe_ratio:.2f}")
+col5.metric("Div.-Rendite (akt.)", f"{port_current_yield:.2%}")
 
-col6, col7, col8, col9 = st.columns(4)
+col6, col7, col8, col9, col10 = st.columns(5)
 col6.metric("Max Drawdown", f"{max_drawdown:.2%}")
 col7.metric("Volatilität p.a.", f"{vola:.2%}")
 col8.metric("Beta", f"{beta:.2f}")
 col9.metric("Tracking Error", f"{tracking_error:.2%}")
+col10.metric("Yield on Cost", f"{port_yoc:.2%}", help="Rendite bezogen auf den Kaufpreis zum Startdatum")
 
 st.markdown("---")
 
