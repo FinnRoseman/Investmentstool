@@ -274,19 +274,27 @@ if (total_na + total_sa + total_eu + total_ap + total_af) > 0:
     labels_filtered = [l for l, v in zip(reg_labels, reg_values) if v > 0]
     values_filtered = [v for v in reg_values if v > 0]
     colors_filtered = [c for c, v in zip(reg_colors, reg_values) if v > 0]
-    fig_reg, ax_reg = plt.subplots(figsize=(3, 3))
-    ax_reg.pie(
+    fig_reg, ax_reg = plt.subplots(figsize=(3, 3), dpi=200)
+    fig_reg.patch.set_facecolor('white')
+    wedges, texts, autotexts = ax_reg.pie(
         values_filtered, 
-        labels=labels_filtered, 
+        labels=None, 
         autopct='%1.1f%%', 
         startangle=140, 
         colors=colors_filtered,
-        textprops={'color':"black", 'weight':'normal', 'fontsize': 3}, pctdistance=0.65
+        textprops={'color':"black", 'weight':'bold', 'fontsize': 5}, 
+        pctdistance=0.75
+    )
+    ax_reg.legend(
+        wedges, labels_filtered,
+        title="Regionen",
+        loc="center left",
+        bbox_to_anchor=(1, 0, 0.5, 1),
+        fontsize=5,
+        title_fontsize=6
     )
     ax_reg.axis('equal') 
-    fig_reg.patch.set_facecolor('white')
-    
-    st.pyplot(fig_reg)
+    st.pyplot(fig_reg, use_container_width=False)
 else:
     st.info("Trage in der Sidebar die regionalen Daten deiner Ticker ein.")
 
