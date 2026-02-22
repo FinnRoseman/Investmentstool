@@ -214,7 +214,8 @@ for i, t in enumerate(verfuegbare):
     gewicht = anteile[i]
     div_history = ticker_obj.dividends
     if not div_history.empty:
-        last_year_divs = div_history[div_history.index > (pd.Timestamp.now() - pd.Timedelta(days=365))].sum()
+        divs_clean = div_history.index.tz_localize(None)
+        last_year_divs = div_history[divs_clean > (pd.Timestamp.now() - pd.Timedelta(days=365))].sum()
         current_price = daten[t].iloc[-1]
         start_price = daten[t].iloc[0]
         ticker_yield = last_year_divs / current_price if current_price > 0 else 0
