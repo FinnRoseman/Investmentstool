@@ -313,29 +313,20 @@ with col_regionen:
         reg_labels = ['Nordamerika', 'Südamerika', 'Europa', 'Asien-Pazifik', 'Afrika']
         reg_values = [total_na, total_sa, total_eu, total_ap, total_af]
         reg_colors = ['#1f77b4', '#9467bd', '#ff7f0e', '#2ca02c', '#8c564b']
-        
         labels_filtered = [l for l, v in zip(reg_labels, reg_values) if v > 0]
         values_filtered = [v for v in reg_values if v > 0]
         colors_filtered = [c for c, v in zip(reg_colors, reg_values) if v > 0]
-
-        fig_reg, ax_reg = plt.subplots(figsize=(5, 5), constrained_layout=True) 
+        fig_reg, ax_reg = plt.subplots(figsize=(5, 5), dpi=200) 
         fig_reg.patch.set_facecolor('white')
-        
-        wedges, texts, autotexts = ax_reg.pie(
+        ax_reg.pie(
             values_filtered, 
+            labels=labels_filtered, 
             autopct='%1.1f%%', 
             startangle=140, 
             colors=colors_filtered,
-            textprops={'color':"black", 'weight':'bold', 'fontsize': 7}, 
-            pctdistance=0.75
-        )
-        ax_reg.legend(
-            wedges, labels_filtered,
-            title="Regionen",
-            loc="lower center",
-            bbox_to_anchor=(0.5, -0.1),
-            fontsize=7,
-            title_fontsize=8
+            textprops={'color':"black", 'weight':'bold', 'fontsize': 6.5}, 
+            pctdistance=0.7, 
+            labeldistance=1.1 
         )
         ax_reg.axis('equal') 
         st.pyplot(fig_reg)
