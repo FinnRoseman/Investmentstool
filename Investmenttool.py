@@ -268,21 +268,20 @@ with col_chart:
 with col_bars:
     st.subheader("Rendite-Check")
     yearly_ret = port_rendite.groupby(port_rendite.index.year).apply(lambda x: (1 + x).prod() - 1) * 100
-    periods = {"1M": 21, "3M": 63, "6M": 126, "1Y": 252, "3Y": 756}
+    periods = {"1Y": 252, "3Y": 756, "5Y": 1260, "10Y": 2520, "20Y": 5040}
     period_rets = {label: ((1 + port_rendite.iloc[-days:]).prod() - 1) * 100 
                    for label, days in periods.items() if len(port_rendite) >= days}
-    period_rets["MAX"] = total_ret * 100
     fig_balken, (ax1, ax2) = plt.subplots(2, 1, figsize=(5, 7.62), constrained_layout=True) 
     colors_y = ['#76b041' if x > 0 else '#e4572e' for x in yearly_ret]
     ax1.bar(yearly_ret.index.astype(str), yearly_ret.values, color=colors_y)
-    ax1.set_title("Nach Kalenderjahren (%)", fontsize=10, fontweight='bold')
+    ax1.set_title("Annualisiert (%)", fontsize=10, fontweight='bold')
     ax1.axhline(0, color='black', linewidth=0.5)
     ax1.tick_params(axis='both', labelsize=8)
     labels_p = list(period_rets.keys())
     values_p = list(period_rets.values())
     colors_p = ['#76b041' if x > 0 else '#e4572e' for x in values_p]
     ax2.bar(labels_p, values_p, color=colors_p)
-    ax2.set_title("Zeiträume / MAX (%)", fontsize=10, fontweight='bold')
+    ax2.set_title("Kumuliert (%)", fontsize=10, fontweight='bold')
     ax2.axhline(0, color='black', linewidth=0.5)
     ax2.tick_params(axis='both', labelsize=8)
 
