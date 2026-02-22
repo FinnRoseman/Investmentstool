@@ -272,7 +272,7 @@ with col_bars:
     period_rets = {label: ((1 + port_rendite.iloc[-days:]).prod() - 1) * 100 
                    for label, days in periods.items() if len(port_rendite) >= days}
     period_rets["MAX"] = total_ret * 100
-    fig_balken, (ax1, ax2) = plt.subplots(2, 1, figsize=(5, 7), constrained_layout=True) 
+    fig_balken, (ax1, ax2) = plt.subplots(2, 1, figsize=(5, 7.2), constrained_layout=True) 
     colors_y = ['#76b041' if x > 0 else '#e4572e' for x in yearly_ret]
     ax1.bar(yearly_ret.index.astype(str), yearly_ret.values, color=colors_y)
     ax1.set_title("Nach Kalenderjahren (%)", fontsize=10, fontweight='bold')
