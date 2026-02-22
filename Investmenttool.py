@@ -244,11 +244,11 @@ col9.metric("Tracking Error", f"{tracking_error:.2%}")
 st.markdown("---")
 
 # Grafiken
-col_chart, col_bars = st.columns([2, 1])
+col_chart, col_bars = st.columns([2.2, 1])
 
 with col_chart:
     st.subheader("Performance & Trends")
-    fig_perf, ax_perf = plt.subplots(figsize=(7, 7), constrained_layout=True)
+    fig_perf, ax_perf = plt.subplots(figsize=(10, 7), constrained_layout=True)
     
     port_kum = ((1 + port_rendite).cumprod() - 1) * 100
     bench_kum = ((1 + bench_rendite).cumprod() - 1) * 100
@@ -272,7 +272,7 @@ with col_bars:
     period_rets = {label: ((1 + port_rendite.iloc[-days:]).prod() - 1) * 100 
                    for label, days in periods.items() if len(port_rendite) >= days}
     period_rets["MAX"] = total_ret * 100
-    fig_balken, (ax1, ax2) = plt.subplots(2, 1, figsize=(7, 7), constrained_layout=True) 
+    fig_balken, (ax1, ax2) = plt.subplots(2, 1, figsize=(5, 7), constrained_layout=True) 
     colors_y = ['#76b041' if x > 0 else '#e4572e' for x in yearly_ret]
     ax1.bar(yearly_ret.index.astype(str), yearly_ret.values, color=colors_y)
     ax1.set_title("Nach Kalenderjahren (%)", fontsize=10, fontweight='bold')
