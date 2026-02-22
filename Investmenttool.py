@@ -281,7 +281,7 @@ if (total_na + total_sa + total_eu + total_ap + total_af) > 0:
         autopct='%1.1f%%', 
         startangle=140, 
         colors=colors_filtered,
-        textprops={'color':"white", 'weight':'bold'} if st.get_option("theme.base") == "dark" else {}
+        textprops={'color':"white", 'weight':'bold', 'fontsize': 4}, pctdistance=0.7
     )
     ax_reg.axis('equal') 
     fig_reg.patch.set_facecolor('white')
