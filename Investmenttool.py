@@ -286,7 +286,7 @@ st.markdown("---")
 col_rendite, col_regionen = st.columns([1, 1])
 
 with col_rendite:
-    st.subheader("Rendite-Check")
+    st.subheader("Rendite-Analyse")
     yearly_ret = port_rendite.groupby(port_rendite.index.year).apply(lambda x: (1 + x).prod() - 1) * 100
     periods = {"1Y": 252, "3Y": 756, "5Y": 1260, "10Y": 2520, "20Y": 5040}
     period_rets = {label: ((1 + port_rendite.iloc[-days:]).prod() - 1) * 100 
@@ -308,7 +308,7 @@ with col_rendite:
     st.pyplot(fig_balken)
 
 with col_regionen:
-    st.subheader("Globale Regionen")
+    st.subheader("Regionale Verteilung")
     if (total_na + total_sa + total_eu + total_ap + total_af) > 0:
         reg_labels = ['Nordamerika', 'Südamerika', 'Europa', 'Asien-Pazifik', 'Afrika']
         reg_values = [total_na, total_sa, total_eu, total_ap, total_af]
@@ -335,7 +335,7 @@ with col_regionen:
 
 st.markdown("---")
 
-# Rolling Returns & Attribution
+# Rolling Returns & Rendite Verteilung
 att_col1, att_col2 = st.columns(2)
 
 with att_col1:
@@ -353,7 +353,7 @@ with att_col1:
     st.pyplot(fig_roll)
 
 with att_col2:
-    st.subheader("Performance-Verteilung")
+    st.subheader("Rendite-Verteilung")
     beitraege = []
     for t in verfuegbare:
         einzel_ret = (1 + renditen[t]).prod() - 1
