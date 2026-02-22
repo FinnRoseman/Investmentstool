@@ -248,12 +248,15 @@ for i, t in enumerate(verfuegbare):
         last_year_divs = div_history[divs_clean > (pd.Timestamp.now() - pd.Timedelta(days=365))].sum()
         current_price = daten[t].iloc[-1]
         start_price = daten[t].iloc[0]
-        ticker_yield = last_year_divs / current_price if current_price > 0 else 0
-        port_current_yield += ticker_yield * gewicht
-        ticker_yoc = last_year_divs / start_price if start_price > 0 else 0
-        port_yoc += ticker_yoc * gewicht
-        avg_value = (startkapital + endsumme) / 2
-        total_div_euro += (ticker_yield * avg_value) * jahre * gewicht
+        if current_price > 0:
+            raw_yield = last_year_divs / current_price
+            ticker_yield = raw_yield if raw_yield < 1.0 else raw_yield / 100
+            port_current_yield += ticker_yield * gewicht
+            raw_yoc = last_year_divs / start_price
+            ticker_yoc = raw_yoc if raw_yoc < 1.0 else raw_yoc / 100
+            port_yoc += ticker_yoc * gewicht
+avg_capital = (startkapital + endsumme) / 2
+total_div_euro = port_current_yield * avg_capital * jahre
 st.subheader(f"Wertentwicklung bei {startkapital:,.0f} € Investment")
 e1, e2, e3, e4 = st.columns([1.5, 1.2, 1, 1.2])
 e1.metric("Endwert Heute", f"{endsumme:,.2f} €")
