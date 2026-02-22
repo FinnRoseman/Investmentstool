@@ -244,14 +244,11 @@ col9.metric("Tracking Error", f"{tracking_error:.2%}")
 st.markdown("---")
 
 # Grafiken
-# --- OPTIMIERTES LAYOUT: PERFORMANCE & RENDITE-CHECK ---
-# Wir nutzen ein Verhältnis von 3:1 für eine bessere Breitenverteilung
-col_chart, col_bars = st.columns([3, 1])
+col_chart, col_bars = st.columns(2)
 
 with col_chart:
     st.subheader("Performance & Trends")
-    # Die Höhe von 8 Einheiten ist der Anker für die rechte Seite
-    fig_perf, ax_perf = plt.subplots(figsize=(10, 8))
+    fig_perf, ax_perf = plt.subplots(figsize=(7, 7), constrained_layout=True)
     
     port_kum = ((1 + port_rendite).cumprod() - 1) * 100
     bench_kum = ((1 + bench_rendite).cumprod() - 1) * 100
@@ -270,25 +267,17 @@ with col_chart:
 
 with col_bars:
     st.subheader("Rendite-Check")
-    
-    # Daten für Jahre und Perioden berechnen (wie gehabt)
     yearly_ret = port_rendite.groupby(port_rendite.index.year).apply(lambda x: (1 + x).prod() - 1) * 100
     periods = {"1M": 21, "3M": 63, "6M": 126, "1Y": 252, "3Y": 756}
     period_rets = {label: ((1 + port_rendite.iloc[-days:]).prod() - 1) * 100 
                    for label, days in periods.items() if len(port_rendite) >= days}
     period_rets["MAX"] = total_ret * 100
-            
-    # Wir passen die figsize hier so an, dass sie die gleiche Gesamthöhe wie links erreicht
-    fig_balken, (ax1, ax2) = plt.subplots(2, 1, figsize=(5, 8.4)) 
-    
-    # Kalenderjahre
+    fig_balken, (ax1, ax2) = plt.subplots(2, 1, figsize=(7, 7), constrained_layout=True) 
     colors_y = ['#76b041' if x > 0 else '#e4572e' for x in yearly_ret]
     ax1.bar(yearly_ret.index.astype(str), yearly_ret.values, color=colors_y)
     ax1.set_title("Nach Kalenderjahren (%)", fontsize=10, fontweight='bold')
     ax1.axhline(0, color='black', linewidth=0.5)
     ax1.tick_params(axis='both', labelsize=8)
-
-    # Zeiträume / MAX
     labels_p = list(period_rets.keys())
     values_p = list(period_rets.values())
     colors_p = ['#76b041' if x > 0 else '#e4572e' for x in values_p]
