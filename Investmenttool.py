@@ -316,7 +316,7 @@ with col_regionen:
         labels_filtered = [l for l, v in zip(reg_labels, reg_values) if v > 0]
         values_filtered = [v for v in reg_values if v > 0]
         colors_filtered = [c for c, v in zip(reg_colors, reg_values) if v > 0]
-        fig_reg, ax_reg = plt.subplots(figsize=(5, 5), dpi=200) 
+        fig_reg, ax_reg = plt.subplots(figsize=(5, 5), constrained_layout=True) 
         fig_reg.patch.set_facecolor('white')
         ax_reg.pie(
             values_filtered, 
