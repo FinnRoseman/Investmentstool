@@ -69,17 +69,15 @@ for t in ticker_liste:
                 st.session_state[f"val_{t}"] = waehrung
                 fx_map[t] = f"{waehrung}EUR=X"
             st.markdown("**Regionale Verteilung (%)**")
-            r_data = st.session_state.regionen_daten.get(t, {"NA": 0.0, "EU": 0.0, "AP": 0.0})
-            col_na, col_eu, col_ap = st.columns(3)
-            with col_na:
-                na = st.number_input("N-AM", 0.0, 100.0, r_data["NA"], step=1.0, key=f"na_{t}")
-            with col_eu:
-                eu = st.number_input("EUR", 0.0, 100.0, r_data["EU"], step=1.0, key=f"eu_{t}")
-            with col_ap:
-                ap = st.number_input("ASIA", 0.0, 100.0, r_data["AP"], step=1.0, key=f"ap_{t}")
-            st.session_state.regionen_daten[t] = {"NA": na, "EU": eu, "AP": ap}
-            if (na + eu + ap) > 100.001:
-                st.error("Summe > 100%!")
+            r_data = st.session_state.regionen_daten.get(t, {"NA": 0.0, "SA": 0.0, "EU": 0.0, "AP": 0.0, "AF": 0.0})
+            c1, c2, c3 = st.columns(3)
+            with c1: na = st.number_input("N-AM", 0.0, 100.0, r_data["NA"], key=f"na_{t}")
+            with c2: sa = st.number_input("S-AM", 0.0, 100.0, r_data["SA"], key=f"sa_{t}")
+            with c3: eu = st.number_input("EUR", 0.0, 100.0, r_data["EU"], key=f"eu_{t}")
+            c4, c5, _ = st.columns(3)
+            with c4: ap = st.number_input("ASIA", 0.0, 100.0, r_data["AP"], key=f"ap_{t}")
+            with c5: af = st.number_input("AFRI", 0.0, 100.0, r_data["AF"], key=f"af_{t}")
+            st.session_state.regionen_daten[t] = {"NA": na, "SA": sa, "EU": eu, "AP": ap, "AF": af}
 
 st.sidebar.markdown("---")
 go_button = st.sidebar.button("Go", use_container_width=True)
@@ -186,13 +184,15 @@ anteile = [a/sum(anteile) for a in anteile]
 port_rendite = (renditen[verfuegbare] * anteile).sum(axis=1)
 bench_rendite = renditen.loc[port_rendite.index, benchmark]
 diff_rendite = port_rendite - bench_rendite
-total_na, total_eu, total_ap = 0.0, 0.0, 0.0
+total_na, total_sa, total_eu, total_ap, total_af = 0.0, 0.0, 0.0, 0.0, 0.0
 for i, t in enumerate(verfuegbare):
-    reg = st.session_state.regionen_daten.get(t, {"NA": 0.0, "EU": 0.0, "AP": 0.0})
+    reg = st.session_state.regionen_daten.get(t, {"NA": 0.0, "SA": 0.0, "EU": 0.0, "AP": 0.0, "AF": 0.0})
     gewicht = anteile[i]
     total_na += reg["NA"] * gewicht
+    total_sa += reg["SA"] * gewicht
     total_eu += reg["EU"] * gewicht
     total_ap += reg["AP"] * gewicht
+    total_af += reg["AF"] * gewicht
 
 jahre = (daten.index[-1] - daten.index[0]).days / 365.25
 total_ret = (1 + port_rendite).prod() - 1
@@ -269,9 +269,9 @@ st.subheader("Globale Regionen-Verteilung")
 
 if (total_na + total_eu + total_ap) > 0:
     fig_reg, ax_reg = plt.subplots(figsize=(10, 2))
-    reg_labels = ['Nordamerika', 'Europa', 'Asien-Pazifik']
-    reg_values = [total_na, total_eu, total_ap]
-    reg_colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
+    reg_labels = ['Nordamerika', 'Südamerika', 'Europa', 'Asien-Pazifik', 'Afrika']
+    reg_values = [total_na, total_sa, total_eu, total_ap, total_af]
+    reg_colors = ['#1f77b4', '#9467bd', '#ff7f0e', '#2ca02c', '#8c564b']
     
     ax_reg.barh(reg_labels, reg_values, color=reg_colors)
     ax_reg.set_xlim(0, 100)
