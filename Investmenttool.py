@@ -22,6 +22,8 @@ def clear_ticker_input():
     st.session_state.widget_eingabe = ""
 if 'meine_ticker' not in st.session_state:
     st.session_state.meine_ticker = []
+if 'regionen_daten' not in st.session_state:
+    st.session_state.regionen_daten = {}
 st.sidebar.text_input("Ticker-Symbol eingeben & Enter", key="widget_eingabe", on_change=clear_ticker_input)
 ticker_input = st.session_state.get('ticker_temp', None)
 if ticker_input:
@@ -66,6 +68,18 @@ for t in ticker_liste:
                 )
                 st.session_state[f"val_{t}"] = waehrung
                 fx_map[t] = f"{waehrung}EUR=X"
+            st.markdown("**Regionale Verteilung (%)**")
+            r_data = st.session_state.regionen_daten.get(t, {"NA": 0.0, "EU": 0.0, "AP": 0.0})
+            col_na, col_eu, col_ap = st.columns(3)
+            with col_na:
+                na = st.number_input("N-AM", 0.0, 100.0, r_data["NA"], step=1.0, key=f"na_{t}")
+            with col_eu:
+                eu = st.number_input("EUR", 0.0, 100.0, r_data["EU"], step=1.0, key=f"eu_{t}")
+            with col_ap:
+                ap = st.number_input("ASIA", 0.0, 100.0, r_data["AP"], step=1.0, key=f"ap_{t}")
+            st.session_state.regionen_daten[t] = {"NA": na, "EU": eu, "AP": ap}
+            if (na + eu + ap) > 100.001:
+                st.error("Summe > 100%!")
 
 st.sidebar.markdown("---")
 go_button = st.sidebar.button("Go", use_container_width=True)
@@ -172,6 +186,13 @@ anteile = [a/sum(anteile) for a in anteile]
 port_rendite = (renditen[verfuegbare] * anteile).sum(axis=1)
 bench_rendite = renditen.loc[port_rendite.index, benchmark]
 diff_rendite = port_rendite - bench_rendite
+total_na, total_eu, total_ap = 0.0, 0.0, 0.0
+for i, t in enumerate(verfuegbare):
+    reg = st.session_state.regionen_daten.get(t, {"NA": 0.0, "EU": 0.0, "AP": 0.0})
+    gewicht = anteile[i]
+    total_na += reg["NA"] * gewicht
+    total_eu += reg["EU"] * gewicht
+    total_ap += reg["AP"] * gewicht
 
 jahre = (daten.index[-1] - daten.index[0]).days / 365.25
 total_ret = (1 + port_rendite).prod() - 1
@@ -244,6 +265,28 @@ col9.metric("Tracking Error", f"{tracking_error:.2%}")
 st.markdown("---")
 
 # Grafiken
+st.subheader("Globale Regionen-Verteilung")
+
+if (total_na + total_eu + total_ap) > 0:
+    fig_reg, ax_reg = plt.subplots(figsize=(10, 2))
+    reg_labels = ['Nordamerika', 'Europa', 'Asien-Pazifik']
+    reg_values = [total_na, total_eu, total_ap]
+    reg_colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
+    
+    ax_reg.barh(reg_labels, reg_values, color=reg_colors)
+    ax_reg.set_xlim(0, 100)
+    ax_reg.set_xlabel("Anteil am Gesamtportfolio (%)")
+    
+
+    for i, v in enumerate(reg_values):
+        ax_reg.text(v + 1, i, f"{v:.1f}%", va='center', fontweight='bold')
+        
+    st.pyplot(fig_reg)
+else:
+    st.info("Trage in der Sidebar die regionalen Daten deiner Ticker ein, um die Verteilung zu sehen.")
+
+st.markdown("---")
+    
 col_chart, col_bars = st.columns([2.2, 1])
 
 with col_chart:
