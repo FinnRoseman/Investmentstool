@@ -264,29 +264,35 @@ col9.metric("Tracking Error", f"{tracking_error:.2%}")
 
 st.markdown("---")
 
-# Grafiken
+# Regionale Verteilung
 st.subheader("Globale Regionen-Verteilung")
 
-if (total_na + total_eu + total_ap) > 0:
-    fig_reg, ax_reg = plt.subplots(figsize=(10, 2))
+if (total_na + total_sa + total_eu + total_ap + total_af) > 0:
     reg_labels = ['Nordamerika', 'Südamerika', 'Europa', 'Asien-Pazifik', 'Afrika']
     reg_values = [total_na, total_sa, total_eu, total_ap, total_af]
     reg_colors = ['#1f77b4', '#9467bd', '#ff7f0e', '#2ca02c', '#8c564b']
+    labels_filtered = [l for l, v in zip(reg_labels, reg_values) if v > 0]
+    values_filtered = [v for v in reg_values if v > 0]
+    colors_filtered = [c for c, v in zip(reg_colors, reg_values) if v > 0]
+    fig_reg, ax_reg = plt.subplots(figsize=(6, 6)) 
+    ax_reg.pie(
+        values_filtered, 
+        labels=labels_filtered, 
+        autopct='%1.1f%%', 
+        startangle=140, 
+        colors=colors_filtered,
+        textprops={'color':"white", 'weight':'bold'} if st.get_option("theme.base") == "dark" else {}
+    )
+    ax_reg.axis('equal') 
+    fig_reg.patch.set_alpha(0)
     
-    ax_reg.barh(reg_labels, reg_values, color=reg_colors)
-    ax_reg.set_xlim(0, 100)
-    ax_reg.set_xlabel("Anteil am Gesamtportfolio (%)")
-    
-
-    for i, v in enumerate(reg_values):
-        ax_reg.text(v + 1, i, f"{v:.1f}%", va='center', fontweight='bold')
-        
     st.pyplot(fig_reg)
 else:
-    st.info("Trage in der Sidebar die regionalen Daten deiner Ticker ein, um die Verteilung zu sehen.")
+    st.info("Trage in der Sidebar die regionalen Daten deiner Ticker ein.")
 
 st.markdown("---")
-    
+
+# Performance und Rendite-Verteilung   
 col_chart, col_bars = st.columns([2.2, 1])
 
 with col_chart:
