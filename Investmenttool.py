@@ -244,7 +244,7 @@ col9.metric("Tracking Error", f"{tracking_error:.2%}")
 st.markdown("---")
 
 # Grafiken
-col_chart, col_bars = st.columns(2)
+col_chart, col_bars = st.columns([2, 1])
 
 with col_chart:
     st.subheader("Performance & Trends")
