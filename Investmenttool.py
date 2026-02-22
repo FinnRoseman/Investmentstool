@@ -264,76 +264,44 @@ col9.metric("Tracking Error", f"{tracking_error:.2%}")
 
 st.markdown("---")
 
-# Regionale Verteilung
-st.subheader("Globale Regionen-Verteilung")
+# 1. Performance-Chart (Full Width oben)
+st.subheader("Performance & Trends")
+fig_perf, ax_perf = plt.subplots(figsize=(10, 5), constrained_layout=True) # figsize angepasst für volle Breite
 
-if (total_na + total_sa + total_eu + total_ap + total_af) > 0:
-    reg_labels = ['Nordamerika', 'Südamerika', 'Europa', 'Asien-Pazifik', 'Afrika']
-    reg_values = [total_na, total_sa, total_eu, total_ap, total_af]
-    reg_colors = ['#1f77b4', '#9467bd', '#ff7f0e', '#2ca02c', '#8c564b']
-    labels_filtered = [l for l, v in zip(reg_labels, reg_values) if v > 0]
-    values_filtered = [v for v in reg_values if v > 0]
-    colors_filtered = [c for c, v in zip(reg_colors, reg_values) if v > 0]
-    fig_reg, ax_reg = plt.subplots(figsize=(8, 3), dpi=200)
-    fig_reg.patch.set_facecolor('white')
-    wedges, texts, autotexts = ax_reg.pie(
-        values_filtered, 
-        labels=None, 
-        autopct='%1.1f%%', 
-        startangle=140, 
-        colors=colors_filtered,
-        textprops={'color':"black", 'weight':'bold', 'fontsize': 5}, 
-        pctdistance=0.75
-    )
-    ax_reg.legend(
-        wedges, labels_filtered,
-        title="Regionen",
-        loc="center left",
-        bbox_to_anchor=(1.2, 0.5),
-        fontsize=5,
-        title_fontsize=6
-    )
-    ax_reg.axis('equal') 
-    st.pyplot(fig_reg, use_container_width=True)
-else:
-    st.info("Trage in der Sidebar die regionalen Daten deiner Ticker ein.")
+port_kum = ((1 + port_rendite).cumprod() - 1) * 100
+bench_kum = ((1 + bench_rendite).cumprod() - 1) * 100
+sma100 = port_kum.rolling(window=100).mean()
+sma200 = port_kum.rolling(window=200).mean()
+
+ax_perf.plot(port_kum, label='Portfolio', linewidth=2, color='blue')
+ax_perf.plot(bench_kum, label='Benchmark', linewidth=1.5, color='grey', linestyle='--', alpha=0.6)
+ax_perf.plot(sma100, label='100-Tage-Linie', color='orange', linewidth=1, alpha=0.8)
+ax_perf.plot(sma200, label='200-Tage-Linie', color='red', linewidth=1, alpha=0.8)
+
+ax_perf.set_ylabel('Entwicklung (%)')
+ax_perf.legend(loc='upper left', fontsize=9)
+ax_perf.grid(True, alpha=0.2)
+st.pyplot(fig_perf)
 
 st.markdown("---")
 
-# Performance und Rendite-Verteilung   
-col_chart, col_bars = st.columns([2.2, 1])
+# 2. Spalten für Rendite-Check und Regionen-Verteilung
+col_rendite, col_regionen = st.columns([1, 1])
 
-with col_chart:
-    st.subheader("Performance & Trends")
-    fig_perf, ax_perf = plt.subplots(figsize=(10, 7), constrained_layout=True)
-    
-    port_kum = ((1 + port_rendite).cumprod() - 1) * 100
-    bench_kum = ((1 + bench_rendite).cumprod() - 1) * 100
-    sma100 = port_kum.rolling(window=100).mean()
-    sma200 = port_kum.rolling(window=200).mean()
-
-    ax_perf.plot(port_kum, label='Portfolio', linewidth=2, color='blue')
-    ax_perf.plot(bench_kum, label='Benchmark', linewidth=1.5, color='grey', linestyle='--', alpha=0.6)
-    ax_perf.plot(sma100, label='100-Tage-Linie', color='orange', linewidth=1, alpha=0.8)
-    ax_perf.plot(sma200, label='200-Tage-Linie', color='red', linewidth=1, alpha=0.8)
-    
-    ax_perf.set_ylabel('Entwicklung (%)')
-    ax_perf.legend(loc='upper left', fontsize=9)
-    ax_perf.grid(True, alpha=0.2)
-    st.pyplot(fig_perf)
-
-with col_bars:
+with col_rendite:
     st.subheader("Rendite-Check")
     yearly_ret = port_rendite.groupby(port_rendite.index.year).apply(lambda x: (1 + x).prod() - 1) * 100
     periods = {"1Y": 252, "3Y": 756, "5Y": 1260, "10Y": 2520, "20Y": 5040}
     period_rets = {label: ((1 + port_rendite.iloc[-days:]).prod() - 1) * 100 
                    for label, days in periods.items() if len(port_rendite) >= days}
-    fig_balken, (ax1, ax2) = plt.subplots(2, 1, figsize=(5, 7.62), constrained_layout=True) 
+    
+    fig_balken, (ax1, ax2) = plt.subplots(2, 1, figsize=(5, 8), constrained_layout=True) 
     colors_y = ['#76b041' if x > 0 else '#e4572e' for x in yearly_ret]
     ax1.bar(yearly_ret.index.astype(str), yearly_ret.values, color=colors_y)
     ax1.set_title("Annualisiert (%)", fontsize=10, fontweight='bold')
     ax1.axhline(0, color='black', linewidth=0.5)
     ax1.tick_params(axis='both', labelsize=8)
+    
     labels_p = list(period_rets.keys())
     values_p = list(period_rets.values())
     colors_p = ['#76b041' if x > 0 else '#e4572e' for x in values_p]
@@ -341,9 +309,45 @@ with col_bars:
     ax2.set_title("Kumuliert (%)", fontsize=10, fontweight='bold')
     ax2.axhline(0, color='black', linewidth=0.5)
     ax2.tick_params(axis='both', labelsize=8)
-
-    plt.tight_layout(pad=2.0)
+    
     st.pyplot(fig_balken)
+
+with col_regionen:
+    st.subheader("Globale Regionen")
+    if (total_na + total_sa + total_eu + total_ap + total_af) > 0:
+        reg_labels = ['Nordamerika', 'Südamerika', 'Europa', 'Asien-Pazifik', 'Afrika']
+        reg_values = [total_na, total_sa, total_eu, total_ap, total_af]
+        reg_colors = ['#1f77b4', '#9467bd', '#ff7f0e', '#2ca02c', '#8c564b']
+        
+        labels_filtered = [l for l, v in zip(reg_labels, reg_values) if v > 0]
+        values_filtered = [v for v in reg_values if v > 0]
+        colors_filtered = [c for c, v in zip(reg_colors, reg_values) if v > 0]
+
+        # Hier wieder auf 5,5 oder ähnlich, da es jetzt in einer Spalte ist
+        fig_reg, ax_reg = plt.subplots(figsize=(5, 8), dpi=200) 
+        fig_reg.patch.set_facecolor('white')
+        
+        wedges, texts, autotexts = ax_reg.pie(
+            values_filtered, 
+            autopct='%1.1f%%', 
+            startangle=140, 
+            colors=colors_filtered,
+            textprops={'color':"black", 'weight':'bold', 'fontsize': 7}, 
+            pctdistance=0.75
+        )
+        
+        ax_reg.legend(
+            wedges, labels_filtered,
+            title="Regionen",
+            loc="lower center", # Legende unter den Kuchen, da Spalte schmal ist
+            bbox_to_anchor=(0.5, -0.1),
+            fontsize=7,
+            title_fontsize=8
+        )
+        ax_reg.axis('equal') 
+        st.pyplot(fig_reg)
+    else:
+        st.info("Daten in Sidebar eintragen.")
 
 st.markdown("---")
 
