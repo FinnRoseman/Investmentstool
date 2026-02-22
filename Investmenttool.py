@@ -263,7 +263,7 @@ e1.metric("Endwert Heute", f"{endsumme:,.2f} €")
 if startkapital > 0:
     e2.metric("Seit Kauf Absolut", f"{absoluter_gewinn:,.2f} €")
     e3.metric("Seit Kauf Relativ", f"{total_ret:.2%}")
-    e4.metric("Davon Ausschüttungen", f"{total_div_euro:,.2f} €", help="Geschätzte kumulierte Ausschüttungen über den Zeitraum (nicht reinvestiert)")
+    e4.metric("Davon Ausschüttungen", f"{total_div_euro:,.2f} €")
 else:
     e2.metric("Seit Kauf Absolut", "0.00€")
     e3.metric("Seit Kauf Relativ", "0.00%")
@@ -278,14 +278,14 @@ col1.metric("Gesamtrendite", f"{total_ret:.2%}")
 col2.metric("Rendite p.a. (CAGR)", f"{cagr:.2%}")
 col3.metric("Alpha", f"{alpha:.2%}")
 col4.metric("Sharpe Ratio", f"{sharpe_ratio:.2f}")
-col5.metric("Div.-Rendite (akt.)", f"{port_current_yield:.2%}")
+col5.metric("Dividendenrendite", f"{port_current_yield:.2%}")
 
 col6, col7, col8, col9, col10 = st.columns(5)
 col6.metric("Max Drawdown", f"{max_drawdown:.2%}")
 col7.metric("Volatilität p.a.", f"{vola:.2%}")
 col8.metric("Beta", f"{beta:.2f}")
 col9.metric("Tracking Error", f"{tracking_error:.2%}")
-col10.metric("Yield on Cost", f"{port_yoc:.2%}", help="Rendite bezogen auf den Kaufpreis zum Startdatum")
+col10.metric("Yield on Cost", f"{port_yoc:.2%}")
 
 st.markdown("---")
 
