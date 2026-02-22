@@ -71,12 +71,12 @@ for t in ticker_liste:
             st.markdown("**Regionale Verteilung (%)**")
             r_data = st.session_state.regionen_daten.get(t, {"NA": 0.0, "SA": 0.0, "EU": 0.0, "AP": 0.0, "AF": 0.0})
             c1, c2, c3 = st.columns(3)
-            with c1: na = st.number_input("N-AM", 0.0, 100.0, r_data["NA"], key=f"na_{t}")
-            with c2: sa = st.number_input("S-AM", 0.0, 100.0, r_data["SA"], key=f"sa_{t}")
-            with c3: eu = st.number_input("EUR", 0.0, 100.0, r_data["EU"], key=f"eu_{t}")
+            with c1: na = st.number_input("Nord Amerika", 0.0, 100.0, r_data["NA"], key=f"na_{t}")
+            with c2: sa = st.number_input("Süd Amerika", 0.0, 100.0, r_data["SA"], key=f"sa_{t}")
+            with c3: eu = st.number_input("Europa", 0.0, 100.0, r_data["EU"], key=f"eu_{t}")
             c4, c5, _ = st.columns(3)
-            with c4: ap = st.number_input("ASIA", 0.0, 100.0, r_data["AP"], key=f"ap_{t}")
-            with c5: af = st.number_input("AFRI", 0.0, 100.0, r_data["AF"], key=f"af_{t}")
+            with c4: ap = st.number_input("Asien-Pazifik", 0.0, 100.0, r_data["AP"], key=f"ap_{t}")
+            with c5: af = st.number_input("Afrika", 0.0, 100.0, r_data["AF"], key=f"af_{t}")
             st.session_state.regionen_daten[t] = {"NA": na, "SA": sa, "EU": eu, "AP": ap, "AF": af}
 
 st.sidebar.markdown("---")
