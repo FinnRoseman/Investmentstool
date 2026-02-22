@@ -206,25 +206,6 @@ beta = port_rendite.cov(bench_rendite) / bench_rendite.var()
 bench_cagr = ((1 + bench_rendite).prod())**(1/jahre) - 1
 alpha = cagr - (risk_free_rate + beta * (bench_cagr - risk_free_rate))
 
-port_current_yield = 0.0
-port_yoc = 0.0
-total_div_euro = 0.0
-for i, t in enumerate(verfuegbare):
-    ticker_obj = yf.Ticker(t)
-    gewicht = anteile[i]
-    div_history = ticker_obj.dividends
-    if not div_history.empty:
-        divs_clean = div_history.index.tz_localize(None)
-        last_year_divs = div_history[divs_clean > (pd.Timestamp.now() - pd.Timedelta(days=365))].sum()
-        current_price = daten[t].iloc[-1]
-        start_price = daten[t].iloc[0]
-        ticker_yield = last_year_divs / current_price if current_price > 0 else 0
-        port_current_yield += ticker_yield * gewicht
-        ticker_yoc = last_year_divs / start_price if start_price > 0 else 0
-        port_yoc += ticker_yoc * gewicht
-        avg_value = (startkapital + endsumme) / 2
-        total_div_euro += (ticker_yield * avg_value) * jahre * gewicht
-
 # Risikokennzahlen
 var_95_para = 1.645 * vola
 var_95_hist = abs(port_rendite.quantile(0.05)) * np.sqrt(252)
@@ -255,6 +236,24 @@ has_negative_risk = any(val < 0 for val in rel_risk_contrib)
 st.markdown("---")
 endsumme = startkapital * (1 + total_ret)
 absoluter_gewinn = endsumme - startkapital
+port_current_yield = 0.0
+port_yoc = 0.0
+total_div_euro = 0.0
+for i, t in enumerate(verfuegbare):
+    ticker_obj = yf.Ticker(t)
+    gewicht = anteile[i]
+    div_history = ticker_obj.dividends
+    if not div_history.empty:
+        divs_clean = div_history.index.tz_localize(None)
+        last_year_divs = div_history[divs_clean > (pd.Timestamp.now() - pd.Timedelta(days=365))].sum()
+        current_price = daten[t].iloc[-1]
+        start_price = daten[t].iloc[0]
+        ticker_yield = last_year_divs / current_price if current_price > 0 else 0
+        port_current_yield += ticker_yield * gewicht
+        ticker_yoc = last_year_divs / start_price if start_price > 0 else 0
+        port_yoc += ticker_yoc * gewicht
+        avg_value = (startkapital + endsumme) / 2
+        total_div_euro += (ticker_yield * avg_value) * jahre * gewicht
 st.subheader(f"Wertentwicklung bei {startkapital:,.0f} € Investment")
 e1, e2, e3, e4 = st.columns([1.5, 1.2, 1, 1.2])
 e1.metric("Endwert Heute", f"{endsumme:,.2f} €")
