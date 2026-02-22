@@ -274,7 +274,7 @@ if (total_na + total_sa + total_eu + total_ap + total_af) > 0:
     labels_filtered = [l for l, v in zip(reg_labels, reg_values) if v > 0]
     values_filtered = [v for v in reg_values if v > 0]
     colors_filtered = [c for c, v in zip(reg_colors, reg_values) if v > 0]
-    fig_reg, ax_reg = plt.subplots(figsize=(6, 6)) 
+    fig_reg, ax_reg = plt.subplots(figsize=(3, 3)) 
     ax_reg.pie(
         values_filtered, 
         labels=labels_filtered, 
@@ -284,7 +284,7 @@ if (total_na + total_sa + total_eu + total_ap + total_af) > 0:
         textprops={'color':"white", 'weight':'bold'} if st.get_option("theme.base") == "dark" else {}
     )
     ax_reg.axis('equal') 
-    fig_reg.patch.set_alpha(0)
+    fig_reg.patch.set_facecolor('white')
     
     st.pyplot(fig_reg)
 else:
