@@ -250,7 +250,13 @@ for i, t in enumerate(verfuegbare):
         anzahl_jahre = max(jahre, 1.0) 
         for date, amount in divs_in_period.items():
             stueckzahl = (startkapital * gewicht) / daten[t].iloc[0]
-            euro_zahlung = (amount * stueckzahl) / anzahl_jahre
+            try:
+                original_preis_fremd = ticker_obj.history(start=date, end=date + pd.Timedelta(days=1), progress=False)['Close'].iloc[0]
+                preis_in_eur = daten[t].loc[date] if date in daten.index else daten[t].iloc[0]
+                fx_faktor = preis_in_eur / original_preis_fremd
+            except:
+                fx_faktor = 1.0
+            euro_zahlung = (amount * fx_faktor * stueckzahl) / anzahl_jahre
             if euro_zahlung > 0:
                 cal_data.append({
                     "Monat": date.strftime("%B"),
