@@ -524,7 +524,7 @@ with col_div:
         df_cal['Monat'] = df_cal['Monat'].map(monate_de)
         df_pivot = df_cal.pivot_table(index='Monat_Nr', columns='Ticker', values='Ausschüttung', aggfunc='sum').fillna(0)
         df_pivot = df_pivot.reindex(range(1, 13), fill_value=0)
-        fig_div, ax_div = plt.subplots(figsize=(7, 4.5))
+        fig_div, ax_div = plt.subplots(figsize=(7, 3.8))
         df_pivot.plot(kind='bar', stacked=True, ax=ax_div, color=plt.cm.Paired.colors, width=0.7)
         monats_namen = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
         ax_div.set_xticklabels(monats_namen, rotation=0, fontsize=9)
