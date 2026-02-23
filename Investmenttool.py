@@ -538,8 +538,6 @@ risiko_data = {
 }
 st.table(pd.DataFrame(risiko_data).set_index('Methode'))
 
-st.markdown("---")
-
 # Monte Carlo Pfadsimulation (10 Jahre)
 st.markdown("---")
 st.subheader("Monte Carlo Pfadsimulation (10 Jahre)")
