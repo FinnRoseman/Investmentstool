@@ -514,7 +514,6 @@ with col_risk:
 with col_div:
     st.subheader("📅 Dividenden-Kalender")
     if cal_data:
-        import plotly.express as px
         df_cal = pd.DataFrame(cal_data)
         monate_de = {
             "January": "Jan", "February": "Feb", "March": "Mär", "April": "Apr",
@@ -522,26 +521,23 @@ with col_div:
             "September": "Sep", "October": "Okt", "November": "Nov", "December": "Dez"
         }
         df_cal['Monat'] = df_cal['Monat'].map(monate_de)
-        df_grouped = df_cal.groupby(['Monat', 'Ticker', 'Monat_Nr']).sum().reset_index()
-        fig_div = px.bar(
-            df_grouped, 
-            x="Monat", 
-            y="Ausschüttung", 
-            color="Ticker",
-            labels={"Ausschüttung": "Betrag in €", "Monat": ""},
-            barmode="stack",
-            height=300,
-            template="plotly_white",
-            color_discrete_sequence=px.colors.qualitative.Safe
-        )
-        monate_sortiert = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
-        fig_div.update_layout(
-            xaxis={'categoryorder':'array', 'categoryarray': monate_sortiert},
-            margin=dict(l=20, r=20, t=20, b=20),
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-        )
-        
-        st.plotly_chart(fig_div, use_container_width=True)
+        df_pivot = df_cal.pivot_table(
+            index='Monat_Nr', 
+            columns='Ticker', 
+            values='Ausschüttung', 
+            aggfunc='sum'
+        ).fillna(0)
+        monats_namen = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
+        df_pivot = df_pivot.reindex(range(1, 13), fill_value=0)
+        fig_div, ax_div = plt.subplots(figsize=(8, 5))
+        df_pivot.plot(kind='bar', stacked=True, ax=ax_div, color=plt.cm.Paired.colors)
+        ax_div.set_xticklabels(monats_namen, rotation=0, fontsize=9)
+        ax_div.set_ylabel("Betrag in €", fontsize=9)
+        ax_div.set_xlabel("")
+        ax_div.legend(title="Ticker", fontsize=8, loc='upper left', bbox_to_anchor=(1, 1))
+        ax_div.grid(axis='y', linestyle='--', alpha=0.3)
+        plt.tight_layout()
+        st.pyplot(fig_div)
     else:
         st.info("Keine Dividenden-Daten vorhanden.")
 
