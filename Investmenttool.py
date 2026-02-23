@@ -233,68 +233,47 @@ rel_risk_contrib = abs_risk_contrib / port_vola
 has_negative_risk = any(val < 0 for val in rel_risk_contrib)
 
 # Euro Rechner
-# --- KORRIGIERTER EURO RECHNER (FIX FÜR WÄHRUNGEN) ---
 st.markdown("---")
 endsumme = startkapital * (1 + total_ret)
 absoluter_gewinn = endsumme - startkapital
 port_current_yield = 0.0
 port_yoc = 0.0
 cal_data = []
-
 for i, t in enumerate(verfuegbare):
     ticker_obj = yf.Ticker(t)
     gewicht = anteile[i]
     div_history = ticker_obj.dividends
-    
     if not div_history.empty:
         divs_clean = div_history.index.tz_localize(None)
-        # Nur Dividenden im gewählten Zeitraum
         divs_in_period = div_history[divs_clean.isin(daten.index)]
         anzahl_jahre = max(jahre, 1.0)
-        
-        # --- DER FX-FIX: Wir berechnen den Umrechnungsfaktor ---
-        # Wir nehmen den letzten verfügbaren Tag, um zu sehen, wie das Verhältnis 
-        # zwischen Yahoo-Originalpreis (z.B. Yen) und deinem EUR-Preis in 'daten' ist.
         try:
             last_date = daten.index[-1]
-            # Hol den echten Preis von Yahoo in Originalwährung (JPY/USD...)
             price_raw = ticker_obj.history(start=last_date - pd.Timedelta(days=5), end=last_date + pd.Timedelta(days=1))['Close'].iloc[-1]
-            # Dein bereits umgerechneter Preis in EUR
             price_eur = daten[t].iloc[-1]
             fx_faktor = price_eur / price_raw
         except:
             fx_faktor = 1.0
-
-        # 1. Kalender-Daten berechnen
         for date, amount in divs_in_period.items():
-            # Stückzahl = (Investiertes Kapital in EUR) / (Kaufpreis in EUR)
             stueckzahl = (startkapital * gewicht) / daten[t].iloc[0]
-            # Umrechnung: (Dividende in Fremdwährung * FX-Faktor) * Stückzahl
             euro_zahlung = (amount * fx_faktor * stueckzahl) / anzahl_jahre
-
             if euro_zahlung > 0:
                 cal_data.append({
-                    "Monat": date.strftime("%B"),
-                    "Monat_Nr": date.month,
-                    "Ticker": t,
-                    "Ausschüttung": euro_zahlung
+                    "Monat": date.strftime("%B"), "Monat_Nr": date.month,
+                    "Ticker": t, "Ausschüttung": euro_zahlung
                 })
-
-        # 2. Rendite-Kacheln berechnen (letzte 12 Monate)
         last_year_divs_raw = div_history[divs_clean > (pd.Timestamp.now() - pd.Timedelta(days=365))].sum()
-        # WICHTIG: Auch hier die Dividende in Euro umrechnen!
         last_year_divs_eur = last_year_divs_raw * fx_faktor
-        
+        stueckzahl_aktuell = (startkapital * gewicht) / daten[t].iloc[0]
+        total_div_euro += (last_year_divs_eur * stueckzahl_aktuell)
         current_price_eur = daten[t].iloc[-1]
         start_price_eur = daten[t].iloc[0]
-        
         if current_price_eur > 0:
             ticker_yield = last_year_divs_eur / current_price_eur
             port_current_yield += ticker_yield * gewicht
             ticker_yoc = last_year_divs_eur / start_price_eur
             port_yoc += ticker_yoc * gewicht
 avg_capital = (startkapital + endsumme) / 2
-total_div_euro = port_current_yield * avg_capital * jahre
 st.subheader(f"Wertentwicklung bei {startkapital:,.0f} € Investment")
 e1, e2, e3, e4 = st.columns([1.5, 1.2, 1, 1.2])
 e1.metric("Endwert Heute", f"{endsumme:,.2f} €")
