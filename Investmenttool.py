@@ -504,7 +504,7 @@ with g_col2:
 st.markdown("---")
 
 # Risiko-Tabelle
-col_risk, col_div = st.columns([1.5, 4.5])
+col_risk, col_div = st.columns([1.2, 2])
 
 with col_risk:
     st.subheader("Risiko-Analyse (12 Monate)")
