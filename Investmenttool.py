@@ -256,23 +256,20 @@ for i, t in enumerate(verfuegbare):
         except:
             fx_faktor = 1.0
         for date, amount in divs_in_period.items():
-            stueckzahl = (startkapital * gewicht) / daten[t].iloc[0]
-            euro_zahlung = (amount * fx_faktor * stueckzahl) / anzahl_jahre
-            if euro_zahlung > 0:
+            stueckzahl_start = (startkapital * gewicht) / daten[t].iloc[0]
+            euro_zahlung_avg = (amount * fx_faktor * stueckzahl_start) / anzahl_jahre
+            if euro_zahlung_avg > 0:
                 cal_data.append({
                     "Monat": date.strftime("%B"), "Monat_Nr": date.month,
-                    "Ticker": t, "Ausschüttung": euro_zahlung
+                    "Ticker": t, "Ausschüttung": euro_zahlung_avg
                 })
-        last_year_divs_raw = div_history[divs_clean > (pd.Timestamp.now() - pd.Timedelta(days=365))].sum()
-        last_year_divs_eur = last_year_divs_raw * fx_faktor
-        stueckzahl_aktuell = (startkapital * gewicht) / daten[t].iloc[0]
-        total_div_euro += (last_year_divs_eur * stueckzahl_aktuell)
-        current_price_eur = daten[t].iloc[-1]
-        start_price_eur = daten[t].iloc[0]
-        if current_price_eur > 0:
-            ticker_yield = last_year_divs_eur / current_price_eur
+        last_year_divs_eur = div_history[divs_clean > (pd.Timestamp.now() - pd.Timedelta(days=365))].sum() * fx_faktor
+        stueckzahl_heute = (startkapital * gewicht) / daten[t].iloc[0]
+        total_div_euro += (last_year_divs_eur * stueckzahl_heute)
+        if daten[t].iloc[-1] > 0:
+            ticker_yield = last_year_divs_eur / daten[t].iloc[-1]
             port_current_yield += ticker_yield * gewicht
-            ticker_yoc = last_year_divs_eur / start_price_eur
+            ticker_yoc = last_year_divs_eur / daten[t].iloc[0]
             port_yoc += ticker_yoc * gewicht
 avg_capital = (startkapital + endsumme) / 2
 st.subheader(f"Wertentwicklung bei {startkapital:,.0f} € Investment")
