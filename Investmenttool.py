@@ -249,7 +249,7 @@ for i, t in enumerate(verfuegbare):
         divs_in_period = div_history[divs_clean.isin(daten.index)]
         for date, amount in divs_in_period.items():
             stueckzahl = (startkapital * gewicht) / daten[t].iloc[0]
-            euro_zahlung = amount * stueckzahl
+            euro_zahlung = (amount * stueckzahl) / jahre 
             if euro_zahlung > 0:
                 cal_data.append({
                     "Monat": date.strftime("%B"),
