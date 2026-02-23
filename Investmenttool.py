@@ -238,6 +238,7 @@ endsumme = startkapital * (1 + total_ret)
 absoluter_gewinn = endsumme - startkapital
 port_current_yield = 0.0
 port_yoc = 0.0
+total_div_euro = 0.0
 cal_data = []
 for i, t in enumerate(verfuegbare):
     ticker_obj = yf.Ticker(t)
