@@ -282,7 +282,7 @@ if startkapital > 0:
 else:
     e2.metric("Seit Kauf Absolut", "0.00€")
     e3.metric("Seit Kauf Relativ", "0.00%")
-    e4.metric("Davon Ausschüttungen", "0.00 €")
+    e4.metric("Davon Ausschüttungen (LTM)", "0.00 €")
 
 # --- 4. ANZEIGEN ---
 
@@ -489,7 +489,7 @@ with g_col2:
     bars = ax_bar.barh(y_pos, rel_risk_contrib * 100, color=colors)
     ax_bar.set_yticks(y_pos)
     ax_bar.set_yticklabels(verfuegbare, fontweight='bold')
-    ax_bar.invert_yaxis()  # Zeigt den ersten Ticker ganz oben an
+    ax_bar.invert_yaxis() 
     ax_bar.axvline(0, color='black', linewidth=1, alpha=0.5)
     ax_bar.set_xlabel('Beitrag zur Volatilität (%)', fontweight='bold')
     ax_bar.grid(axis='x', linestyle='--', alpha=0.7)
@@ -507,7 +507,7 @@ st.markdown("---")
 col_risk, col_div = st.columns([1.3, 2])
 
 with col_risk:
-    st.subheader("Risiko-Analyse (12 Monate)")
+    st.subheader("Risiko-Analyse (NTM)")
     risiko_data = {
         "Methode": ["Parametrisch", "Historisch", "Monte-Carlo"],
         "Value at Risk 95%": [f"{var_95_para:.2%}", f"{var_95_hist:.2%}", f"{mc_var_95_jahr:.2%}"],
