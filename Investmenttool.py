@@ -247,9 +247,10 @@ for i, t in enumerate(verfuegbare):
     if not div_history.empty:
         divs_clean = div_history.index.tz_localize(None)
         divs_in_period = div_history[divs_clean.isin(daten.index)]
+        anzahl_jahre = max(jahre, 1.0) 
         for date, amount in divs_in_period.items():
             stueckzahl = (startkapital * gewicht) / daten[t].iloc[0]
-            euro_zahlung = (amount * stueckzahl) / jahre 
+            euro_zahlung = (amount * stueckzahl) / anzahl_jahre
             if euro_zahlung > 0:
                 cal_data.append({
                     "Monat": date.strftime("%B"),
@@ -512,7 +513,7 @@ with col_risk:
     }
     st.table(pd.DataFrame(risiko_data).set_index('Methode'))
 with col_div:
-    st.subheader("📅 Dividenden-Kalender")
+    st.subheader("📅 Erwarteter Cashflow (ø p.a.)")
     if cal_data:
         df_cal = pd.DataFrame(cal_data)
         monate_de = {"January": "Jan", "February": "Feb", "March": "Mär", "April": "Apr",
@@ -521,16 +522,19 @@ with col_div:
         df_cal['Monat'] = df_cal['Monat'].map(monate_de)
         df_pivot = df_cal.pivot_table(index='Monat_Nr', columns='Ticker', values='Ausschüttung', aggfunc='sum').fillna(0)
         df_pivot = df_pivot.reindex(range(1, 13), fill_value=0)
-        fig_div, ax_div = plt.subplots(figsize=(7, 4))
-        df_pivot.plot(kind='bar', stacked=True, ax=ax_div, color=plt.cm.tab20c.colors, width=0.8)
-        ax_div.set_xticklabels(["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"], rotation=0)
-        ax_div.set_title("Durchschnittliche Ausschüttung pro Monat in €")
+        fig_div, ax_div = plt.subplots(figsize=(7, 4.5))
+        df_pivot.plot(kind='bar', stacked=True, ax=ax_div, color=plt.cm.Paired.colors, width=0.7)
+        monats_namen = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
+        ax_div.set_xticklabels(monats_namen, rotation=0, fontsize=9)
+        ax_div.set_title("Durchschnittlicher Betrag pro Monat (€)", fontsize=10, pad=10)
+        ax_div.set_ylabel("Euro (€)", fontsize=9)
+        ax_div.set_xlabel("")
         ax_div.grid(axis='y', linestyle='--', alpha=0.3)
-        ax_div.legend(fontsize=7, loc='upper left', bbox_to_anchor=(1, 1))
+        ax_div.legend(title="Ticker", fontsize=8, loc='upper left', bbox_to_anchor=(1, 1))
         plt.tight_layout()
         st.pyplot(fig_div)
     else:
-        st.info("Keine Dividenden-Daten vorhanden.")
+        st.info("Keine historischen Dividenden im gewählten Zeitraum gefunden.")
 
 # Monte Carlo Pfadsimulation (10 Jahre)
 st.markdown("---")
