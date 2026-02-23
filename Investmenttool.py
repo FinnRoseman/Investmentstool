@@ -412,6 +412,32 @@ with att_col2:
 
 st.markdown("---")
 
+# Dividendenkalender
+st.subheader("📅 Dividenden-Kalender")
+if cal_data:
+    df_cal = pd.DataFrame(cal_data)
+    monate_de = {"January": "Jan", "February": "Feb", "March": "Mär", "April": "Apr",
+                 "May": "Mai", "June": "Jun", "July": "Jul", "August": "Aug",
+                 "September": "Sep", "October": "Okt", "November": "Nov", "December": "Dez"}
+    df_cal['Monat'] = df_cal['Monat'].map(monate_de)
+    df_pivot = df_cal.pivot_table(index='Monat_Nr', columns='Ticker', values='Ausschüttung', aggfunc='sum').fillna(0)
+    df_pivot = df_pivot.reindex(range(1, 13), fill_value=0)
+    fig_div, ax_div = plt.subplots(figsize=(12, 4)) 
+    df_pivot.plot(kind='bar', stacked=True, ax=ax_div, color=plt.cm.Paired.colors, width=0.7)
+    monats_namen = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
+    ax_div.set_xticklabels(monats_namen, rotation=0, fontsize=9)
+    ax_div.set_title("Durchschnittlicher Betrag pro Monat (€)", fontsize=10, pad=10)
+    ax_div.set_ylabel("Euro (€)", fontsize=9)
+    ax_div.set_xlabel("")
+    ax_div.grid(axis='y', linestyle='--', alpha=0.3)
+    ax_div.legend(title="Ticker", fontsize=8, loc='upper left', bbox_to_anchor=(1, 1))
+    plt.tight_layout()
+    st.pyplot(fig_div)
+else:
+    st.info("Keine historischen Dividenden im gewählten Zeitraum gefunden.")
+
+st.markdown("---")
+
 # Mean-Variance-Optimization
 np.random.seed(42)
 opt_simulations = 10000
@@ -504,39 +530,15 @@ with g_col2:
 st.markdown("---")
 
 # Risiko-Tabelle
-col_risk, col_div = st.columns([1.3, 2])
+st.subheader("Risiko-Analyse (NTM)")
+risiko_data = {
+    "Methode": ["Parametrisch", "Historisch", "Monte-Carlo"],
+    "Value at Risk 95%": [f"{var_95_para:.2%}", f"{var_95_hist:.2%}", f"{mc_var_95_jahr:.2%}"],
+    "Expected Shortfall": [f"{es_95_para:.2%}", f"{es_95_hist:.2%}", f"{mc_es_95_jahr:.2%}"]
+}
+st.table(pd.DataFrame(risiko_data).set_index('Methode'))
 
-with col_risk:
-    st.subheader("Risiko-Analyse (NTM)")
-    risiko_data = {
-        "Methode": ["Parametrisch", "Historisch", "Monte-Carlo"],
-        "Value at Risk 95%": [f"{var_95_para:.2%}", f"{var_95_hist:.2%}", f"{mc_var_95_jahr:.2%}"],
-        "Expected Shortfall": [f"{es_95_para:.2%}", f"{es_95_hist:.2%}", f"{mc_es_95_jahr:.2%}"]
-    }
-    st.table(pd.DataFrame(risiko_data).set_index('Methode'))
-with col_div:
-    st.subheader("📅 Dividenden-Kalender")
-    if cal_data:
-        df_cal = pd.DataFrame(cal_data)
-        monate_de = {"January": "Jan", "February": "Feb", "March": "Mär", "April": "Apr",
-                     "May": "Mai", "June": "Jun", "July": "Jul", "August": "Aug",
-                     "September": "Sep", "October": "Okt", "November": "Nov", "December": "Dez"}
-        df_cal['Monat'] = df_cal['Monat'].map(monate_de)
-        df_pivot = df_cal.pivot_table(index='Monat_Nr', columns='Ticker', values='Ausschüttung', aggfunc='sum').fillna(0)
-        df_pivot = df_pivot.reindex(range(1, 13), fill_value=0)
-        fig_div, ax_div = plt.subplots(figsize=(7, 3.8))
-        df_pivot.plot(kind='bar', stacked=True, ax=ax_div, color=plt.cm.Paired.colors, width=0.7)
-        monats_namen = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
-        ax_div.set_xticklabels(monats_namen, rotation=0, fontsize=9)
-        ax_div.set_title("Durchschnittlicher Betrag pro Monat (€)", fontsize=10, pad=10)
-        ax_div.set_ylabel("Euro (€)", fontsize=9)
-        ax_div.set_xlabel("")
-        ax_div.grid(axis='y', linestyle='--', alpha=0.3)
-        ax_div.legend(title="Ticker", fontsize=8, loc='upper left', bbox_to_anchor=(1, 1))
-        plt.tight_layout()
-        st.pyplot(fig_div)
-    else:
-        st.info("Keine historischen Dividenden im gewählten Zeitraum gefunden.")
+st.markdown("---")
 
 # Monte Carlo Pfadsimulation (10 Jahre)
 st.markdown("---")
