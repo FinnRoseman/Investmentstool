@@ -515,7 +515,7 @@ with col_risk:
     }
     st.table(pd.DataFrame(risiko_data).set_index('Methode'))
 with col_div:
-    st.subheader("📅 Erwarteter Cashflow (ø p.a.)")
+    st.subheader("📅 Dividenden-Kalender")
     if cal_data:
         df_cal = pd.DataFrame(cal_data)
         monate_de = {"January": "Jan", "February": "Feb", "March": "Mär", "April": "Apr",
