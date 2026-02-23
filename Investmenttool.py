@@ -257,6 +257,7 @@ for i, t in enumerate(verfuegbare):
             except:
                 fx_faktor = 1.0
             euro_zahlung = (amount * fx_faktor * stueckzahl) / anzahl_jahre
+
             if euro_zahlung > 0:
                 cal_data.append({
                     "Monat": date.strftime("%B"),
