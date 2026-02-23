@@ -504,21 +504,6 @@ with g_col2:
 st.markdown("---")
 
 # Risiko-Tabelle
-st.markdown("""
-    <style>
-    /* Zielt direkt auf die Zellen der Risiko-Tabelle ab */
-    [data-testid="stTable"] td {
-        padding-top: 22px !important;
-        padding-bottom: 22px !important;
-        line-height: 1.5 !important;
-    }
-    /* Macht den Header der Tabelle auch etwas präsenter */
-    [data-testid="stTable"] th {
-        padding-top: 15px !important;
-        padding-bottom: 15px !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
 col_risk, col_div = st.columns([1.2, 2])
 
 with col_risk:
