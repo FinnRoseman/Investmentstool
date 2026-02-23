@@ -239,12 +239,24 @@ absoluter_gewinn = endsumme - startkapital
 port_current_yield = 0.0
 port_yoc = 0.0
 total_div_euro = 0.0
+cal_data = []
 for i, t in enumerate(verfuegbare):
     ticker_obj = yf.Ticker(t)
     gewicht = anteile[i]
     div_history = ticker_obj.dividends
     if not div_history.empty:
         divs_clean = div_history.index.tz_localize(None)
+        divs_in_period = div_history[divs_clean.isin(daten.index)]
+        for date, amount in divs_in_period.items():
+            stueckzahl = (startkapital * gewicht) / daten[t].iloc[0]
+            euro_zahlung = amount * stueckzahl
+            if euro_zahlung > 0:
+                cal_data.append({
+                    "Monat": date.strftime("%B"),
+                    "Monat_Nr": date.month,
+                    "Ticker": t,
+                    "Ausschüttung": euro_zahlung
+                })
         last_year_divs = div_history[divs_clean > (pd.Timestamp.now() - pd.Timedelta(days=365))].sum()
         current_price = daten[t].iloc[-1]
         start_price = daten[t].iloc[0]
@@ -489,13 +501,49 @@ with g_col2:
 st.markdown("---")
 
 # Risiko-Tabelle
-st.subheader("Risiko-Analyse (12 Monate)")
-risiko_data = {
-    "Methode": ["Parametrisch", "Historisch", "Monte-Carlo"],
-    "Value at Risk 95%": [f"{var_95_para:.2%}", f"{var_95_hist:.2%}", f"{mc_var_95_jahr:.2%}"],
-    "Expected Shortfall": [f"{es_95_para:.2%}", f"{es_95_hist:.2%}", f"{mc_es_95_jahr:.2%}"]
-}
-st.table(pd.DataFrame(risiko_data).set_index('Methode'))
+col_risk, col_div = st.columns([1.2, 2])
+
+with col_risk:
+    st.subheader("Risiko-Analyse (12 Monate)")
+    risiko_data = {
+        "Methode": ["Parametrisch", "Historisch", "Monte-Carlo"],
+        "Value at Risk 95%": [f"{var_95_para:.2%}", f"{var_95_hist:.2%}", f"{mc_var_95_jahr:.2%}"],
+        "Expected Shortfall": [f"{es_95_para:.2%}", f"{es_95_hist:.2%}", f"{mc_es_95_jahr:.2%}"]
+    }
+    st.table(pd.DataFrame(risiko_data).set_index('Methode'))
+with col_div:
+    st.subheader("📅 Dividenden-Kalender")
+    if cal_data:
+        import plotly.express as px
+        df_cal = pd.DataFrame(cal_data)
+        monate_de = {
+            "January": "Jan", "February": "Feb", "March": "Mär", "April": "Apr",
+            "May": "Mai", "June": "Jun", "July": "Jul", "August": "Aug",
+            "September": "Sep", "October": "Okt", "November": "Nov", "December": "Dez"
+        }
+        df_cal['Monat'] = df_cal['Monat'].map(monate_de)
+        df_grouped = df_cal.groupby(['Monat', 'Ticker', 'Monat_Nr']).sum().reset_index()
+        fig_div = px.bar(
+            df_grouped, 
+            x="Monat", 
+            y="Ausschüttung", 
+            color="Ticker",
+            labels={"Ausschüttung": "Betrag in €", "Monat": ""},
+            barmode="stack",
+            height=300,
+            template="plotly_white",
+            color_discrete_sequence=px.colors.qualitative.Safe
+        )
+        monate_sortiert = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
+        fig_div.update_layout(
+            xaxis={'categoryorder':'array', 'categoryarray': monate_sortiert},
+            margin=dict(l=20, r=20, t=20, b=20),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        
+        st.plotly_chart(fig_div, use_container_width=True)
+    else:
+        st.info("Keine Dividenden-Daten vorhanden.")
 
 # Monte Carlo Pfadsimulation (10 Jahre)
 st.markdown("---")
