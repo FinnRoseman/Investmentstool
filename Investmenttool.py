@@ -278,11 +278,11 @@ e1.metric("Endwert Heute", f"{endsumme:,.2f} €")
 if startkapital > 0:
     e2.metric("Seit Kauf Absolut", f"{absoluter_gewinn:,.2f} €")
     e3.metric("Seit Kauf Relativ", f"{total_ret:.2%}")
-    e4.metric("Davon Ausschüttungen (LTM)", f"{total_div_euro:,.2f} €")
+    e4.metric("Ausschüttungen (LTM)", f"{total_div_euro:,.2f} €")
 else:
     e2.metric("Seit Kauf Absolut", "0.00€")
     e3.metric("Seit Kauf Relativ", "0.00%")
-    e4.metric("Davon Ausschüttungen (LTM)", "0.00 €")
+    e4.metric("Ausschüttungen (LTM)", "0.00 €")
 
 # --- 4. ANZEIGEN ---
 
