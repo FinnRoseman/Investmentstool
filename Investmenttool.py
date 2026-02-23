@@ -515,27 +515,18 @@ with col_div:
     st.subheader("📅 Dividenden-Kalender")
     if cal_data:
         df_cal = pd.DataFrame(cal_data)
-        monate_de = {
-            "January": "Jan", "February": "Feb", "March": "Mär", "April": "Apr",
-            "May": "Mai", "June": "Jun", "July": "Jul", "August": "Aug",
-            "September": "Sep", "October": "Okt", "November": "Nov", "December": "Dez"
-        }
+        monate_de = {"January": "Jan", "February": "Feb", "March": "Mär", "April": "Apr",
+                     "May": "Mai", "June": "Jun", "July": "Jul", "August": "Aug",
+                     "September": "Sep", "October": "Okt", "November": "Nov", "December": "Dez"}
         df_cal['Monat'] = df_cal['Monat'].map(monate_de)
-        df_pivot = df_cal.pivot_table(
-            index='Monat_Nr', 
-            columns='Ticker', 
-            values='Ausschüttung', 
-            aggfunc='sum'
-        ).fillna(0)
-        monats_namen = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
+        df_pivot = df_cal.pivot_table(index='Monat_Nr', columns='Ticker', values='Ausschüttung', aggfunc='sum').fillna(0)
         df_pivot = df_pivot.reindex(range(1, 13), fill_value=0)
-        fig_div, ax_div = plt.subplots(figsize=(8, 5))
-        df_pivot.plot(kind='bar', stacked=True, ax=ax_div, color=plt.cm.Paired.colors)
-        ax_div.set_xticklabels(monats_namen, rotation=0, fontsize=9)
-        ax_div.set_ylabel("Betrag in €", fontsize=9)
-        ax_div.set_xlabel("")
-        ax_div.legend(title="Ticker", fontsize=8, loc='upper left', bbox_to_anchor=(1, 1))
+        fig_div, ax_div = plt.subplots(figsize=(7, 4))
+        df_pivot.plot(kind='bar', stacked=True, ax=ax_div, color=plt.cm.tab20c.colors, width=0.8)
+        ax_div.set_xticklabels(["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"], rotation=0)
+        ax_div.set_title("Durchschnittliche Ausschüttung pro Monat in €")
         ax_div.grid(axis='y', linestyle='--', alpha=0.3)
+        ax_div.legend(fontsize=7, loc='upper left', bbox_to_anchor=(1, 1))
         plt.tight_layout()
         st.pyplot(fig_div)
     else:
