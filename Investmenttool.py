@@ -269,7 +269,8 @@ for i, t in enumerate(verfuegbare):
         if daten[t].iloc[-1] > 0:
             ticker_yield = last_year_divs_eur / daten[t].iloc[-1]
             port_current_yield += ticker_yield * gewicht
-            ticker_yoc = last_year_divs_eur / daten[t].iloc[0]
+            price_orig_start = raw_data[t].iloc[0] 
+            ticker_yoc = (last_year_divs_eur / fx_faktor) / price_orig_start
             port_yoc += ticker_yoc * gewicht
 avg_capital = (startkapital + endsumme) / 2
 st.subheader(f"Wertentwicklung bei {startkapital:,.0f} € Investment")
