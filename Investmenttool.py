@@ -446,63 +446,63 @@ else:
 st.markdown("---")
 
 # Mean-Variance-Optimization
-np.random.seed(42)
-opt_simulations = 10000
-mu = renditen[verfuegbare].mean() * 252  
-cov = renditen[verfuegbare].cov() * 252  
-results = np.zeros((3, opt_simulations))
-weights_record = []
-
-for i in range(opt_simulations):
-    w = np.random.random(len(verfuegbare))
-    w /= np.sum(w)
-    weights_record.append(w)
-    p_ret = np.sum(mu * w)
-    p_std = np.sqrt(np.dot(w.T, np.dot(cov, w)))
-    
-    results[0,i] = p_ret
-    results[1,i] = p_std
-    results[2,i] = (p_ret - risk_free_rate) / p_std
-
-max_sharpe_idx = np.argmax(results[2])
-best_w = weights_record[max_sharpe_idx]
-opt_ret = results[0, max_sharpe_idx]
-opt_vol = results[1, max_sharpe_idx]
-
 st.subheader("Mean-Variance-Optimization")
 
-opt_col1, opt_col2 = st.columns([2, 1], vertical_alignment="center")
+if len(verfuegbare) > 1:
+    np.random.seed(42)
+    opt_simulations = 10000
+    mu = renditen[verfuegbare].mean() * 252  
+    cov = renditen[verfuegbare].cov() * 252  
+    results = np.zeros((3, opt_simulations))
+    weights_record = []
 
-with opt_col1:
-    dynamische_hoehe = 4.1 + (len(verfuegbare) * 0.3)
-    fig_ef, ax_ef = plt.subplots(figsize=(10, dynamische_hoehe))
-    scatter = ax_ef.scatter(results[1,:], results[0,:], c=results[2,:], cmap='viridis', marker='o', alpha=0.3)
-    ax_ef.scatter(vola, cagr, color='red', marker='o', s=200, label='Aktuelles Portfolio')
-    ax_ef.scatter(opt_vol, opt_ret, color='orange', marker='o', s=200, label='Optimiertes Portfolio')
-    ax_ef.set_xticklabels([f'{x*100:.0f}%' for x in ax_ef.get_xticks()])
-    ax_ef.set_yticklabels([f'{y*100:.0f}%' for y in ax_ef.get_yticks()])
-    
-    ax_ef.set_xlabel('Volatilität p.a.')
-    ax_ef.set_ylabel('Rendite p.a.')
-    ax_ef.legend()
-    plt.colorbar(scatter, label='Sharpe Ratio')
-    fig_ef.tight_layout()
-    fig_ef.subplots_adjust(left=0.1, right=0.95, top=0.95, bottom=0.15)
-    st.pyplot(fig_ef) 
+    for i in range(opt_simulations):
+        w = np.random.random(len(verfuegbare))
+        w /= np.sum(w)
+        weights_record.append(w)
+        p_ret = np.sum(mu * w)
+        p_std = np.sqrt(np.dot(w.T, np.dot(cov, w)))
+        
+        results[0,i] = p_ret
+        results[1,i] = p_std
+        results[2,i] = (p_ret - risk_free_rate) / p_std
+        
+    max_sharpe_idx = np.argmax(results[2])
+    best_w = weights_record[max_sharpe_idx]
+    opt_ret = results[0, max_sharpe_idx]
+    opt_vol = results[1, max_sharpe_idx]
 
-with opt_col2:
-    opt_weights_df = pd.DataFrame({
-        "Ticker": verfuegbare,
-        "Aktuell": [f"{a*100:.1f}%" for a in anteile],
-        "Optimiert": [f"{w*100:.1f}%" for w in best_w]
-    })
-    st.table(opt_weights_df.set_index('Ticker'))
-    
-    st.info(f"""
-    - Optimierte Rendite: {opt_ret:.2%}
-    - Optimierte Volatilität: {opt_vol:.2%}
-    - Optimiertes Sharpe Ratio: {results[2, max_sharpe_idx]:.2f}
-    """)
+    opt_col1, opt_col2 = st.columns([2, 1], vertical_alignment="center")
+
+    with opt_col1:
+        dynamische_hoehe = 4.1 + (len(verfuegbare) * 0.3)
+        fig_ef, ax_ef = plt.subplots(figsize=(10, dynamische_hoehe))
+        scatter = ax_ef.scatter(results[1,:], results[0,:], c=results[2,:], cmap='viridis', marker='o', alpha=0.3)
+        ax_ef.scatter(vola, cagr, color='red', marker='o', s=200, label='Aktuelles Portfolio')
+        ax_ef.scatter(opt_vol, opt_ret, color='orange', marker='o', s=200, label='Optimiertes Portfolio')
+        ax_ef.set_xticklabels([f'{x*100:.0f}%' for x in ax_ef.get_xticks()])
+        ax_ef.set_yticklabels([f'{y*100:.0f}%' for y in ax_ef.get_yticks()])
+        ax_ef.set_xlabel('Volatilität p.a.')
+        ax_ef.set_ylabel('Rendite p.a.')
+        ax_ef.legend()
+        plt.colorbar(scatter, label='Sharpe Ratio')
+        fig_ef.tight_layout()
+        fig_ef.subplots_adjust(left=0.1, right=0.95, top=0.95, bottom=0.15)
+        st.pyplot(fig_ef) 
+    with opt_col2:
+        opt_weights_df = pd.DataFrame({
+            "Ticker": verfuegbare,
+            "Aktuell": [f"{a*100:.1f}%" for a in anteile],
+            "Optimiert": [f"{w*100:.1f}%" for w in best_w]
+        })
+        st.table(opt_weights_df.set_index('Ticker'))
+        st.info(f"""
+        - Optimierte Rendite: {opt_ret:.2%}
+        - Optimierte Volatilität: {opt_vol:.2%}
+        - Optimiertes Sharpe Ratio: {results[2, max_sharpe_idx]:.2f}
+        """)
+else: 
+    st.info("Die Portfolio-Optimierung (Markowitz-Modell) ist erst ab mindestens zwei Tickersymbolen sinnvoll und verfügbar.")
 
 st.markdown("---")
 
