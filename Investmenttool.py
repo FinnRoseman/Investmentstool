@@ -502,7 +502,7 @@ if len(verfuegbare) > 1:
         - Optimiertes Sharpe Ratio: {results[2, max_sharpe_idx]:.2f}
         """)
 else: 
-    st.info("Die Portfolio-Optimierung (Markowitz-Modell) ist erst ab mindestens zwei Tickersymbolen sinnvoll und verfügbar.")
+    st.info("Die Portfolio-Optimierung steht erst ab zwei Positionen zur Verfügung.")
 
 st.markdown("---")
 
