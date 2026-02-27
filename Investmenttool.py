@@ -566,6 +566,9 @@ ax_mc_path.plot(zeit_achse, mc_pfade_daten, color='blue', alpha=0.05)
 median_pfad = np.percentile(mc_pfade_daten, 50, axis=1)
 top_pfad = np.percentile(mc_pfade_daten, 95, axis=1)
 bottom_pfad = np.percentile(mc_pfade_daten, 5, axis=1)
+mc_cagr_median = (median_pfad[-1] / mc_startkapital)**(1/mc_jahre) - 1
+mc_cagr_pessimist = (bottom_pfad[-1] / mc_startkapital)**(1/mc_jahre) - 1
+mc_cagr_optimist = (top_pfad[-1] / mc_startkapital)**(1/mc_jahre) - 1
 
 ax_mc_path.plot(zeit_achse, median_pfad, color='black', linewidth=2, label='Median (50%)')
 ax_mc_path.plot(zeit_achse, top_pfad, color='green', linestyle='--', label='Optimistisch (95%)')
@@ -580,10 +583,10 @@ ax_mc_path.grid(True, alpha=0.2)
 st.pyplot(fig_mc_path)
 
 st.info(f"""
-**Ergebnis nach {mc_jahre} Jahren:**
-- Mittleres Szenario: **{median_pfad[-1]:,.2f} €**
-- Pessimistisches Szenario: **{bottom_pfad[-1]:,.2f} €**
-- Optimistisches Szenario: **{top_pfad[-1]:,.2f} €**
+**Ergebnis nach {mc_jahre} Jahren (Projektion):**
+- Mittleres Szenario (Median): **{median_pfad[-1]:,.2f} €** (entspricht **{mc_cagr_median:.2%}/Jahr**)
+- Pessimistisches Szenario (5%): **{bottom_pfad[-1]:,.2f} €** (entspricht **{mc_cagr_pessimist:.2%}/Jahr**)
+- Optimistisches Szenario (95%): **{top_pfad[-1]:,.2f} €** (entspricht **{mc_cagr_optimist:.2%}/Jahr**)
 """)
 
 st.caption(f"Datenzeitraum: {daten.index[0].strftime('%d.%m.%Y')} bis {daten.index[-1].strftime('%d.%m.%Y')}")
