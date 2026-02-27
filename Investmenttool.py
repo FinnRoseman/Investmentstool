@@ -205,6 +205,7 @@ sharpe_ratio = (cagr - risk_free_rate) / vola
 beta = port_rendite.cov(bench_rendite) / bench_rendite.var()
 bench_cagr = ((1 + bench_rendite).prod())**(1/jahre) - 1
 alpha = cagr - (risk_free_rate + beta * (bench_cagr - risk_free_rate))
+capm_erwartung_pa = risk_free_rate + beta * (bench_cagr - risk_free_rate)
 
 # Risikokennzahlen
 var_95_para = 1.645 * vola
@@ -296,7 +297,7 @@ else:
 # Kennzahlen-Kacheln
 st.subheader("Key Performance Indicators")
 col1, col2, col3, col4, col5 = st.columns(5)
-col1.metric("Gesamtrendite", f"{total_ret:.2%}")
+col1.metric("CAPM Erwartung p.a.", f"{capm_erwartung_pa:.2%}")
 col2.metric("Rendite p.a. (CAGR)", f"{cagr:.2%}")
 col3.metric("Alpha", f"{alpha:.2%}")
 col4.metric("Sharpe Ratio", f"{sharpe_ratio:.2f}")
