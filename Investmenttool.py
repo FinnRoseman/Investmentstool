@@ -297,7 +297,7 @@ else:
 # Kennzahlen-Kacheln
 st.subheader("Key Performance Indicators")
 col1, col2, col3, col4, col5 = st.columns(5)
-col1.metric("CAPM Erwartung p.a.", f"{capm_erwartung_pa:.2%}")
+col1.metric("Erwartete Rendite p.a. (CAPM)", f"{capm_erwartung_pa:.2%}")
 col2.metric("Rendite p.a. (CAGR)", f"{cagr:.2%}")
 col3.metric("Alpha", f"{alpha:.2%}")
 col4.metric("Sharpe Ratio", f"{sharpe_ratio:.2f}")
