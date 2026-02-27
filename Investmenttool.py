@@ -585,7 +585,7 @@ st.pyplot(fig_mc_path)
 
 st.info(f"""
 **Ergebnis nach {mc_jahre} Jahren (Projektion):**
-- Mittleres Szenario (Median): **{median_pfad[-1]:,.2f} €** (entspricht **{mc_cagr_median:.2%}/Jahr**)
+- Mittleres Szenario (Median): **{median_pfad[-1]:,.2f} €** (**{mc_cagr_median:.2%} p.a.**)
 - Pessimistisches Szenario (5%): **{bottom_pfad[-1]:,.2f} €** (entspricht **{mc_cagr_pessimist:.2%}/Jahr**)
 - Optimistisches Szenario (95%): **{top_pfad[-1]:,.2f} €** (entspricht **{mc_cagr_optimist:.2%}/Jahr**)
 """)
