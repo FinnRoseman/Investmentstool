@@ -489,7 +489,7 @@ if len(verfuegbare) > 1:
         ax_ef.set_xticklabels([f'{x*100:.0f}%' for x in ax_ef.get_xticks()])
         ax_ef.set_yticklabels([f'{y*100:.0f}%' for y in ax_ef.get_yticks()])
         ax_ef.set_xlabel('Volatilität p.a.')
-        ax_ef.set_ylabel('Rendite p.a.')
+        ax_ef.set_ylabel('Erwartete Rendite p.a.')
         ax_ef.legend()
         plt.colorbar(scatter, label='Sharpe Ratio')
         fig_ef.tight_layout()
