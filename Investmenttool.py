@@ -452,7 +452,12 @@ st.subheader("Mean-Variance-Optimization")
 if len(verfuegbare) > 1:
     np.random.seed(42)
     opt_simulations = 10000
-    mu = renditen[verfuegbare].mean() * 252  
+    mu_list = []
+    for t in verfuegbare:
+        asset_beta = renditen[t].cov(bench_rendite) / bench_rendite.var()
+        expected_ret = risk_free_rate + asset_beta * (bench_cagr - risk_free_rate)
+        mu_list.append(expected_ret)
+    mu = np.array(mu_list)
     cov = renditen[verfuegbare].cov() * 252  
     results = np.zeros((3, opt_simulations))
     weights_record = []
@@ -479,7 +484,7 @@ if len(verfuegbare) > 1:
         dynamische_hoehe = 4.1 + (len(verfuegbare) * 0.3)
         fig_ef, ax_ef = plt.subplots(figsize=(10, dynamische_hoehe))
         scatter = ax_ef.scatter(results[1,:], results[0,:], c=results[2,:], cmap='viridis', marker='o', alpha=0.3)
-        ax_ef.scatter(vola, cagr, color='red', marker='o', s=200, label='Aktuelles Portfolio')
+        ax_ef.scatter(vola, capm_erwartung_pa, color='red', marker='o', s=200, label='Aktuelles Portfolio')
         ax_ef.scatter(opt_vol, opt_ret, color='orange', marker='o', s=200, label='Optimiertes Portfolio')
         ax_ef.set_xticklabels([f'{x*100:.0f}%' for x in ax_ef.get_xticks()])
         ax_ef.set_yticklabels([f'{y*100:.0f}%' for y in ax_ef.get_yticks()])
@@ -498,7 +503,7 @@ if len(verfuegbare) > 1:
         })
         st.table(opt_weights_df.set_index('Ticker'))
         st.info(f"""
-        - Optimierte Rendite: {opt_ret:.2%}
+        - Optimierte Erwartete Rendite: {opt_ret:.2%}
         - Optimierte Volatilität: {opt_vol:.2%}
         - Optimiertes Sharpe Ratio: {results[2, max_sharpe_idx]:.2f}
         """)
