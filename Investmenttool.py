@@ -410,7 +410,7 @@ with att_col2:
     
     fig_att, ax_att = plt.subplots(figsize=(10, 6), constrained_layout=True)
     y_pos_att = np.arange(len(verfuegbare))
-    ax_att.barh(y_pos_att, np.array(beitraege) * 100, color='skyblue')
+    ax_att.barh(y_pos_att, np.array(beitraege) * 100, color='blue')
     ax_att.set_yticks(y_pos_att)
     ax_att.set_yticklabels(verfuegbare)
     ax_att.invert_yaxis()
@@ -523,7 +523,7 @@ with g_col1:
 with g_col2:
     st.subheader("Risiko-Verteilung", help="Gibt an, welche Position wie stark zur Gesamtvolatilität beiträgt")
     fig_bar, ax_bar = plt.subplots(figsize=(10, 8), constrained_layout=True)
-    colors = ['#440154' if x > 0 else '#22a884' for x in rel_risk_contrib]
+    colors = ['#9B51E0' if x > 0 else '#22a884' for x in rel_risk_contrib]
     y_pos = np.arange(len(verfuegbare))
     bars = ax_bar.barh(y_pos, rel_risk_contrib * 100, color=colors)
     ax_bar.set_yticks(y_pos)
