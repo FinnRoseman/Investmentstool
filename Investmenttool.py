@@ -347,7 +347,7 @@ with col_rendite:
     ax1.tick_params(axis='both', labelsize=8)
     labels_p = list(period_rets.keys())
     values_p = list(period_rets.values())
-    colors_p = ['#76b041' if x > 0 else '#e4572e' for x in values_p]
+    colors_p = ['#27AE60' if x > 0 else '#EB5757' for x in values_p]
     ax2.bar(labels_p, values_p, color=colors_p)
     ax2.set_title("Kumuliert (%)", fontsize=10, fontweight='bold')
     ax2.axhline(0, color='black', linewidth=0.5)
