@@ -407,10 +407,15 @@ with att_col2:
         einzel_ret = (1 + renditen[t]).prod() - 1
         gewicht = anteile[verfuegbare.index(t)]
         beitraege.append(einzel_ret * gewicht)
-    
     fig_att, ax_att = plt.subplots(figsize=(10, 6), constrained_layout=True)
     y_pos_att = np.arange(len(verfuegbare))
-    ax_att.barh(y_pos_att, np.array(beitraege) * 100, color='blue')
+    bars_att = ax_att.barh(y_pos_att, np.array(beitraege) * 100, color='blue')
+    for bar in bars_att:
+        width = bar.get_width()
+        ax_att.text(width, bar.get_y() + bar.get_height()/2, 
+                    f' {width:.1f}%', 
+                    va='center', fontweight='bold', fontsize=11)
+
     ax_att.set_yticks(y_pos_att)
     ax_att.set_yticklabels(verfuegbare)
     ax_att.invert_yaxis()
