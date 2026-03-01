@@ -340,7 +340,7 @@ with col_rendite:
     period_rets = {label: ((1 + port_rendite.iloc[-days:]).prod() - 1) * 100 
                    for label, days in periods.items() if len(port_rendite) >= days}
     fig_balken, (ax1, ax2) = plt.subplots(2, 1, figsize=(5, 5), constrained_layout=True) 
-    colors_y = ['#76b041' if x > 0 else '#e4572e' for x in yearly_ret]
+    colors_y = ['#27AE60' if x > 0 else '#EB5757' for x in yearly_ret]
     ax1.bar(yearly_ret.index.astype(str), yearly_ret.values, color=colors_y)
     ax1.set_title("Annualisiert (%)", fontsize=10, fontweight='bold')
     ax1.axhline(0, color='black', linewidth=0.5)
