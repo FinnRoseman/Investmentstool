@@ -421,7 +421,7 @@ with att_col2:
 st.markdown("---")
 
 # Dividendenkalender
-st.subheader("📅 Dividenden-Kalender", help="Zeigt, wann wie viel Ausschüttungen zu erwarten sind")
+st.subheader("📅 Dividenden-Kalender", help="Zeigt, wann wie viele Ausschüttungen zu erwarten sind")
 if cal_data:
     df_cal = pd.DataFrame(cal_data)
     monate_de = {"January": "Jan", "February": "Feb", "March": "Mär", "April": "Apr",
