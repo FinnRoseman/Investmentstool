@@ -307,7 +307,7 @@ col6, col7, col8, col9, col10 = st.columns(5)
 col6.metric("Max Drawdown", f"{max_drawdown:.2%}", help="Der maximale Wertverlust vom Höchststand bis zum tiefsten Punkt im betrachteten Zeitraum.")
 col7.metric("Volatilität p.a.", f"{vola:.2%}", help="Die Schwankungsbreite der Renditen. Ein Maß für das Gesamtrisiko.")
 col8.metric("Beta", f"{beta:.2f}", help="Gibt an, wie stark das Portfolio im Vergleich zum Gesamtmarkt schwankt (Marktrisiko).")
-col9.metric("Tracking Error", f"{tracking_error:.2%}", help="Gibt an, wie stark die Abweichung der Portfolio-Rendite von der Benchmark-Rendite ist.")
+col9.metric("Tracking Error", f"{tracking_error:.2%}", help="Misst die Volatilität der Renditedifferenz zwischen dem Portfolio und der Benchmark.")
 col10.metric("Yield on Cost", f"{port_yoc:.2%}", help="Die persönliche Dividendenrendite bezogen auf den ursprünglichen Kaufpreis (Einstandskurs).")
 
 st.markdown("---")
