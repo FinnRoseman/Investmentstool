@@ -360,7 +360,7 @@ with col_regionen:
     if (total_na + total_sa + total_eu + total_ap + total_af) > 0:
         reg_labels = ['Nordamerika', 'Südamerika', 'Europa', 'Asien-Pazifik', 'Afrika']
         reg_values = [total_na, total_sa, total_eu, total_ap, total_af]
-        reg_colors = ['#1f77b4', '#9467bd', '#ff7f0e', '#2ca02c', '#8c564b']
+        reg_colors = ['#A1C6EA', '#C9B1E6', '#FFC8A2', '#A1EAC0', '#EAB8A1']
         labels_filtered = [l for l, v in zip(reg_labels, reg_values) if v > 0]
         values_filtered = [v for v in reg_values if v > 0]
         colors_filtered = [c for c, v in zip(reg_colors, reg_values) if v > 0]
