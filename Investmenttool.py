@@ -297,23 +297,23 @@ else:
 # Kennzahlen-Kacheln
 st.subheader("Key Performance Indicators")
 col1, col2, col3, col4, col5 = st.columns(5)
-col1.metric("Erwartete Rendite p.a. (CAPM)", f"{capm_erwartung_pa:.2%}")
-col2.metric("Rendite p.a. (CAGR)", f"{cagr:.2%}")
-col3.metric("Alpha", f"{alpha:.2%}")
-col4.metric("Sharpe Ratio", f"{sharpe_ratio:.2f}")
-col5.metric("Dividendenrendite", f"{port_current_yield:.2%}")
+col1.metric("Erwartete Rendite p.a. (CAPM)", f"{capm_erwartung_pa:.2%}", help="Theoretische Renditeerwartung basierend auf dem Marktrisiko (Beta).")
+col2.metric("Rendite p.a. (CAGR)", f"{cagr:.2%}", help="Die tatsächlich erzielte durchschnittliche jährliche Wachstumsrate unter Berücksichtigung des Zinseszinseffektes.")
+col3.metric("Alpha", f"{alpha:.2%}", help="Die erzielte Überrendite im Vergleich zur beim eingegangenen Risiko (Beta) erwartete Rendite.")
+col4.metric("Sharpe Ratio", f"{sharpe_ratio:.2f}", help="Misst die erzielte Überrendite pro Risikoeinheit. 0,5 - 1 ist gut, über 1 ist sehr gut.")
+col5.metric("Dividendenrendite", f"{port_current_yield:.2%}", help="Die aktuelle jährliche Ausschüttung im Verhältnis zum Portfoliowert.")
 
 col6, col7, col8, col9, col10 = st.columns(5)
-col6.metric("Max Drawdown", f"{max_drawdown:.2%}")
-col7.metric("Volatilität p.a.", f"{vola:.2%}")
-col8.metric("Beta", f"{beta:.2f}")
-col9.metric("Tracking Error", f"{tracking_error:.2%}")
-col10.metric("Yield on Cost", f"{port_yoc:.2%}")
+col6.metric("Max Drawdown", f"{max_drawdown:.2%}", help="Der maximale Wertverlust vom Höchststand bis zum tiefsten Punkt im betrachteten Zeitraum.")
+col7.metric("Volatilität p.a.", f"{vola:.2%}", help="Die Schwankungsbreite der Renditen. Ein Maß für das Gesamtrisiko.")
+col8.metric("Beta", f"{beta:.2f}", help="Gibt an, wie stark das Portfolio im Vergleich zum Gesamtmarkt schwankt (Marktrisiko).")
+col9.metric("Tracking Error", f"{tracking_error:.2%}", help="Gibt an, wie stark die Abweichung der Portfolio-Rendite von der Benchmark-Rendite ist.")
+col10.metric("Yield on Cost", f"{port_yoc:.2%}", help="Die persönliche Dividendenrendite bezogen auf den ursprünglichen Kaufpreis (Einstandskurs).")
 
 st.markdown("---")
 
 # 1. Performance-Chart (Full Width oben)
-st.subheader("Performance & Trends")
+st.subheader("Performance & Trends", help="Vergleich der Portfolio-Performance gegen die Benchmark inklusive gleitender Durchschnitte (100/200 Tage).")
 fig_perf, ax_perf = plt.subplots(figsize=(10, 5), constrained_layout=True)
 port_kum = ((1 + port_rendite).cumprod() - 1) * 100
 bench_kum = ((1 + bench_rendite).cumprod() - 1) * 100
@@ -334,7 +334,7 @@ st.markdown("---")
 col_rendite, col_regionen = st.columns([1, 1])
 
 with col_rendite:
-    st.subheader("Rendite-Analyse")
+    st.subheader("Rendite-Analyse", help="Jährliche Renditen und die kumulierte Rendite über feste Zeiträume.")
     yearly_ret = port_rendite.groupby(port_rendite.index.year).apply(lambda x: (1 + x).prod() - 1) * 100
     periods = {"1Y": 252, "3Y": 756, "5Y": 1260, "10Y": 2520, "20Y": 5040}
     period_rets = {label: ((1 + port_rendite.iloc[-days:]).prod() - 1) * 100 
@@ -356,7 +356,7 @@ with col_rendite:
     st.pyplot(fig_balken)
 
 with col_regionen:
-    st.subheader("Regionale Verteilung")
+    st.subheader("Regionale Verteilung", help="Geografische Gewichtung des Portfolios.")
     if (total_na + total_sa + total_eu + total_ap + total_af) > 0:
         reg_labels = ['Nordamerika', 'Südamerika', 'Europa', 'Asien-Pazifik', 'Afrika']
         reg_values = [total_na, total_sa, total_eu, total_ap, total_af]
@@ -387,7 +387,7 @@ st.markdown("---")
 att_col1, att_col2 = st.columns(2)
 
 with att_col1:
-    st.subheader("Rolling Returns (12 Monate)")
+    st.subheader("Rolling Returns (12 Monate)", help="Zeigt die Rendite eines Zeitpunktes im Vergleich zu dem gleichen Zeitpunkt vor einem Jahr.")
     rolling_1y = port_rendite.rolling(window=252).apply(lambda x: (1 + x).prod() - 1)
     
     fig_roll, ax_roll = plt.subplots(figsize=(10, 6), constrained_layout=True)
@@ -401,7 +401,7 @@ with att_col1:
     st.pyplot(fig_roll)
 
 with att_col2:
-    st.subheader("Rendite-Verteilung")
+    st.subheader("Rendite-Verteilung", help="Gibt an, welche Position wie viel zur Gesamtrendite beiträgt")
     beitraege = []
     for t in verfuegbare:
         einzel_ret = (1 + renditen[t]).prod() - 1
@@ -421,7 +421,7 @@ with att_col2:
 st.markdown("---")
 
 # Dividendenkalender
-st.subheader("📅 Dividenden-Kalender")
+st.subheader("📅 Dividenden-Kalender", help="Zeigt, wann wie viel Ausschüttungen zu erwarten sind")
 if cal_data:
     df_cal = pd.DataFrame(cal_data)
     monate_de = {"January": "Jan", "February": "Feb", "March": "Mär", "April": "Apr",
@@ -447,7 +447,7 @@ else:
 st.markdown("---")
 
 # Mean-Variance-Optimization
-st.subheader("Mean-Variance-Optimization")
+st.subheader("Mean-Variance-Optimization", help="10.000 Simulationen des Portfolios zur optimalen Gewichtung für das maximale Sharpe Ratio auf Basis der erwarteten Rendite.")
 
 if len(verfuegbare) > 1:
     np.random.seed(42)
@@ -515,13 +515,13 @@ st.markdown("---")
 g_col1, g_col2 = st.columns(2)
 
 with g_col1:
-    st.subheader("Korrelationsmatrix")
+    st.subheader("Korrelationsmatrix", help="Zeigt, wie stark sich Assets gemeinsam bewegen. 1.0 = Gleichlaufend, 0 = kein Zusammenhang, -1.0 = Gegenlaufend.")
     fig_corr, ax_corr = plt.subplots(figsize=(10, 8), constrained_layout=True)
     sns.heatmap(renditen[verfuegbare].corr(), annot=True, cmap='RdYlGn_r', center=0.3, fmt=".2f", linewidths=0.5, ax=ax_corr)
     st.pyplot(fig_corr)
 
 with g_col2:
-    st.subheader("Risiko-Verteilung")
+    st.subheader("Risiko-Verteilung", help="Gibt an, welche Position wie stark zur Gesamtvolatilität beiträgt")
     fig_bar, ax_bar = plt.subplots(figsize=(10, 8), constrained_layout=True)
     colors = ['#440154' if x > 0 else '#22a884' for x in rel_risk_contrib]
     y_pos = np.arange(len(verfuegbare))
@@ -543,7 +543,7 @@ with g_col2:
 st.markdown("---")
 
 # Risiko-Tabelle
-st.subheader("Risiko-Analyse (NTM)")
+st.subheader("Risiko-Analyse (NTM)", help="Value at Risk (VaR) gibt den Verlust an, der mit 95% Wahrscheinlichkeit nicht überschritten wird. Expected Shortfall ist der Schnitt der schlimmsten 5% der Fälle.")
 risiko_data = {
     "Methode": ["Parametrisch", "Historisch", "Monte-Carlo"],
     "Value at Risk 95%": [f"{var_95_para:.2%}", f"{var_95_hist:.2%}", f"{mc_var_95_jahr:.2%}"],
@@ -553,7 +553,7 @@ st.table(pd.DataFrame(risiko_data).set_index('Methode'))
 
 # Monte Carlo Pfadsimulation (10 Jahre)
 st.markdown("---")
-st.subheader("Monte Carlo Pfadsimulation (10 Jahre)")
+st.subheader("Monte Carlo Pfadsimulation (10 Jahre)", help="Simuliert 100 mögliche Zukunftsszenarien basierend auf der historischen Volatilität und Rendite.")
 
 mc_jahre = 10
 aktuelles_jahr = pd.Timestamp.now().year
