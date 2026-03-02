@@ -409,7 +409,7 @@ with att_col2:
         beitraege.append(einzel_ret * gewicht)
     fig_att, ax_att = plt.subplots(figsize=(10, 6), constrained_layout=True)
     y_pos_att = np.arange(len(verfuegbare))
-    bars_att = ax_att.barh(y_pos_att, np.array(beitraege) * 100, color='lightblue')
+    bars_att = ax_att.barh(y_pos_att, np.array(beitraege) * 100, color='turquoiseblue')
     for bar in bars_att:
         width = bar.get_width()
         ax_att.text(width, bar.get_y() + bar.get_height()/2, 
