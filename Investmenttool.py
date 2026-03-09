@@ -12,7 +12,21 @@ from datetime import datetime, timedelta
 def get_cached_data(ticker_tuple, period):
     df = yf.download(list(ticker_tuple), period=period, progress=False)
     return df
+# --- DATEN FUNKTIONEN ---
+
+def get_isin_name(isin):
+    """Holt den Namen des Wertpapiers von der Börse Frankfurt."""
+    url = f"https://api.boerse-frankfurt.de/v1/data/master_data?isin={isin}"
+    headers = {"User-Agent": "Mozilla/5.0"}
+    try:
+        res = requests.get(url, headers=headers, timeout=5)
+        if res.status_code == 200:
+            return res.json().get('instrumentName', isin)
+    except:
+        return isin
+    return isin
 def get_isin_data_frankfurt(isin, period):
+    """Holt historische Kurse von der Börse Frankfurt (MIC: XFRA)."""
     period_map = {"1y": 365, "3y": 1095, "5y": 1825, "10y": 3650, "20y": 7300}
     days = period_map.get(period, 1825)
     start_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
@@ -22,8 +36,7 @@ def get_isin_data_frankfurt(isin, period):
     try:
         res = requests.get(url, params=params, headers=headers, timeout=10)
         if res.status_code == 200:
-            json_res = res.json()
-            json_data = json_res.get('data', [])
+            json_data = res.json().get('data', [])
             if not json_data:
                 return pd.Series(dtype='float64')
             df_isin = pd.DataFrame(json_data)
@@ -32,7 +45,7 @@ def get_isin_data_frankfurt(isin, period):
             df_isin.set_index('date', inplace=True)
             col = 'close' if 'close' in df_isin.columns else df_isin.columns[0]
             return df_isin[col].astype(float).rename(isin)
-    except Exception as e:
+    except:
         return pd.Series(dtype='float64')
     
     return pd.Series(dtype='float64')
