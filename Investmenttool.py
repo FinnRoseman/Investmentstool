@@ -12,55 +12,44 @@ from datetime import datetime, timedelta
 def get_cached_data(ticker_tuple, period):
     df = yf.download(list(ticker_tuple), period=period, progress=False)
     return df
-# --- DATEN FUNKTIONEN ---
-
-# --- DATEN FUNKTIONEN ---
-
 def get_isin_name(isin):
-    """Holt den offiziellen Namen des Fonds von der Börse Frankfurt."""
-    url = f"https://api.boerse-frankfurt.de/v1/data/master_data?isin={isin}"
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+    """Holt den Namen über die Ariva/Finanztreff-Suche."""
+    url = f"https://www.ariva.de/search/search.m?search_term={isin}"
+    headers = {"User-Agent": "Mozilla/5.0"}
     try:
-        res = requests.get(url, headers=headers, timeout=10)
+        res = requests.get(url, headers=headers, timeout=5)
         if res.status_code == 200:
-            name = res.json().get('instrumentName')
+            title = res.text.split('<title>')[1].split('</title>')[0]
+            name = title.split('Kurs')[0].strip()
             return name if name else isin
     except:
         return isin
     return isin
-
-def get_isin_data_frankfurt(isin, period):
-    """Holt historische Kurse mit verbessertem Fehler-Handling."""
+def get_isin_data_ariva(isin, period):
+    """Holt historische Daten von Ariva (Alternative zu Frankfurt)."""
     period_map = {"1y": 365, "3y": 1095, "5y": 1825, "10y": 3650, "20y": 7300}
     days = period_map.get(period, 1825)
-    start_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
-    
-    url = "https://api.boerse-frankfurt.de/v1/data/price_history"
-    # XFRA ist für diesen Fonds der stabilste Marktplatz in der API
-    params = {"isin": isin, "mic": "XFRA", "minDate": start_date, "limit": 5000}
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-
+    url = "https://www.ariva.de/quote/historical/data.csv"
+    params = {
+        "isin": isin,
+        "boerse_id": 1,
+        "month": "",
+        "currency": "EUR",
+        "clean_split": 1,
+        "clean_payout": 0,
+        "clean_bezug": 1
+    }
+    headers = {"User-Agent": "Mozilla/5.0"}
     try:
-        res = requests.get(url, params=params, headers=headers, timeout=15)
-        if res.status_code == 200:
-            json_data = res.json().get('data', [])
-            if not json_data:
-                return pd.Series(dtype='float64')
-            
-            df_isin = pd.DataFrame(json_data)
-            df_isin['date'] = pd.to_datetime(df_isin['date'])
-            df_isin = df_isin.sort_values('date').drop_duplicates('date')
-            df_isin.set_index('date', inplace=True)
-            
-            # Wir prüfen, ob 'close' oder 'lastPrc' vorhanden ist
-            if 'close' in df_isin.columns:
-                return df_isin['close'].astype(float).rename(isin)
-            elif 'lastPrc' in df_isin.columns:
-                return df_isin['lastPrc'].astype(float).rename(isin)
-            else:
-                return df_isin.iloc[:, 0].astype(float).rename(isin)
+        res = requests.get(url, params=params, headers=headers, timeout=10)
+        if res.status_code == 200 and len(res.text) > 100:
+            from io import StringIO
+            df = pd.read_csv(StringIO(res.text), sep=';', skiprows=4)
+            df['Datum'] = pd.to_datetime(df['Datum'])
+            df.set_index('Datum', inplace=True)
+            return df['Schlusskurs'].str.replace(',', '.').astype(float).sort_index().rename(isin)
     except:
-        return pd.Series(dtype='float64')
+        pass
     
     return pd.Series(dtype='float64')
 
@@ -172,7 +161,6 @@ ticker_namen = {}
 for t in ticker_liste:
     is_isin = len(t) == 12 and t[:2].isalpha()
     if is_isin:
-        # Hier muss der Name der Funktion exakt mit der Definition oben übereinstimmen
         ticker_namen[t] = get_isin_name(t)
     else:
         try:
@@ -213,7 +201,7 @@ raw_data = {}
 for t in alle_ticker:
     is_isin = len(t) == 12 and t[:2].isalpha()
     if is_isin:
-        price = get_isin_data_frankfurt(t, period_yf)
+        price = get_isin_data_ariva(t, period_yf)
     else:
         if isinstance(data_full.columns, pd.MultiIndex):
             price = data_full['Close'][t].copy()
