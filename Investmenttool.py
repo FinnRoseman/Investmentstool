@@ -31,6 +31,16 @@ def get_isin_data_frankfurt(isin, period):
     except:
         return pd.Series()
     return pd.Series()
+def get_isin_name(isin):
+    url = f"https://api.boerse-frankfurt.de/v1/data/master_data?isin={isin}"
+    headers = {"User-Agent": "Mozilla/5.0"}
+    try:
+        res = requests.get(url, headers=headers, timeout=5)
+        if res.status_code == 200:
+            return res.json().get('instrumentName', isin)
+    except:
+        return isin
+    return isin
 
 # --- STREAMLIT PAGE CONFIGURATION ---
 st.set_page_config(page_title="Portfolio Analyzer", layout="wide")
@@ -140,7 +150,7 @@ ticker_namen = {}
 for t in ticker_liste:
     is_isin = len(t) == 12 and t[:2].isalpha()
     if is_isin:
-        ticker_namen[t] = f"Fonds ({t})"
+        ticker_namen[t] = get_isin_name(t)
     else:
         try:
             ticker_namen[t] = yf.Ticker(t).info.get('longName', t)
