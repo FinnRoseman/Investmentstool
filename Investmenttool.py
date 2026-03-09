@@ -14,37 +14,51 @@ def get_cached_data(ticker_tuple, period):
     return df
 # --- DATEN FUNKTIONEN ---
 
+# --- DATEN FUNKTIONEN ---
+
 def get_isin_name(isin):
-    """Holt den Namen des Wertpapiers von der Börse Frankfurt."""
+    """Holt den offiziellen Namen des Fonds von der Börse Frankfurt."""
     url = f"https://api.boerse-frankfurt.de/v1/data/master_data?isin={isin}"
-    headers = {"User-Agent": "Mozilla/5.0"}
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
     try:
-        res = requests.get(url, headers=headers, timeout=5)
+        res = requests.get(url, headers=headers, timeout=10)
         if res.status_code == 200:
-            return res.json().get('instrumentName', isin)
+            name = res.json().get('instrumentName')
+            return name if name else isin
     except:
         return isin
     return isin
+
 def get_isin_data_frankfurt(isin, period):
-    """Holt historische Kurse von der Börse Frankfurt (MIC: XFRA)."""
+    """Holt historische Kurse mit verbessertem Fehler-Handling."""
     period_map = {"1y": 365, "3y": 1095, "5y": 1825, "10y": 3650, "20y": 7300}
     days = period_map.get(period, 1825)
     start_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+    
     url = "https://api.boerse-frankfurt.de/v1/data/price_history"
+    # XFRA ist für diesen Fonds der stabilste Marktplatz in der API
     params = {"isin": isin, "mic": "XFRA", "minDate": start_date, "limit": 5000}
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+
     try:
-        res = requests.get(url, params=params, headers=headers, timeout=10)
+        res = requests.get(url, params=params, headers=headers, timeout=15)
         if res.status_code == 200:
             json_data = res.json().get('data', [])
             if not json_data:
                 return pd.Series(dtype='float64')
+            
             df_isin = pd.DataFrame(json_data)
             df_isin['date'] = pd.to_datetime(df_isin['date'])
             df_isin = df_isin.sort_values('date').drop_duplicates('date')
             df_isin.set_index('date', inplace=True)
-            col = 'close' if 'close' in df_isin.columns else df_isin.columns[0]
-            return df_isin[col].astype(float).rename(isin)
+            
+            # Wir prüfen, ob 'close' oder 'lastPrc' vorhanden ist
+            if 'close' in df_isin.columns:
+                return df_isin['close'].astype(float).rename(isin)
+            elif 'lastPrc' in df_isin.columns:
+                return df_isin['lastPrc'].astype(float).rename(isin)
+            else:
+                return df_isin.iloc[:, 0].astype(float).rename(isin)
     except:
         return pd.Series(dtype='float64')
     
