@@ -4,13 +4,10 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import streamlit as st
-import io
 
 # --- CACHING FUNKTION ---
 @st.cache_data(show_spinner="Marktdaten werden geladen...")
 def get_cached_data(ticker_tuple, period):
-    if not ticker_tuple:
-        return pd.DataFrame()
     df = yf.download(list(ticker_tuple), period=period, progress=False)
     return df
 
@@ -27,7 +24,6 @@ if 'meine_ticker' not in st.session_state:
     st.session_state.meine_ticker = []
 if 'regionen_daten' not in st.session_state:
     st.session_state.regionen_daten = {}
-
 st.sidebar.text_input("Ticker-Symbol eingeben & Enter", key="widget_eingabe", on_change=clear_ticker_input)
 ticker_input = st.session_state.get('ticker_temp', None)
 if ticker_input:
@@ -37,40 +33,6 @@ if ticker_input:
         st.session_state.run_analysis = False 
     st.session_state.ticker_temp = None
     st.rerun()
-
-# --- NEU: CSV UPLOADER LOGIK ---
-st.sidebar.markdown("---")
-st.sidebar.subheader("Eigene Daten (CSV)")
-uploaded_files = st.sidebar.file_uploader(
-    "CSVs hochladen (Dateiname = Ticker)", 
-    type=["csv"], 
-    accept_multiple_files=True
-)
-
-csv_data_map = {}
-if uploaded_files:
-    for file in uploaded_files:
-        try:
-            content = file.getvalue().decode('utf-8')
-            sample = content.splitlines()[1] if len(content.splitlines()) > 1 else content
-            dec_sep = ',' if sample.count(',') > sample.count('.') else '.'
-            df_temp = pd.read_csv(io.StringIO(content), sep=None, decimal=dec_sep, engine='python')
-            
-            date_col = [c for c in df_temp.columns if 'dat' in c.lower() or 'date' in c.lower()][0]
-            df_temp[date_col] = pd.to_datetime(df_temp[date_col], dayfirst=True)
-            df_temp.set_index(date_col, inplace=True)
-            
-            price_col = [c for c in df_temp.columns if any(x in c.lower() for x in ['schluss', 'close', 'last', 'kurs'])][0]
-            series = pd.to_numeric(df_temp[price_col].astype(str).str.replace(',', '.'), errors='coerce')
-            
-            ticker_name = file.name.replace(".csv", "").upper()
-            csv_data_map[ticker_name] = series
-            
-            if ticker_name not in st.session_state.meine_ticker:
-                st.session_state.meine_ticker.append(ticker_name)
-        except Exception as e:
-            st.sidebar.error(f"Fehler bei {file.name}: {e}")
-
 ticker_liste = st.sidebar.multiselect(
     "Aktive Auswahl:",
     options=st.session_state.meine_ticker,
@@ -93,23 +55,19 @@ for t in ticker_liste:
                 format="%.2f", key=f"w_in_{t}"
             )
             anteile_orig.append(gewicht / 100)
-            
-            # FX nur für Nicht-CSV Ticker anzeigen
-            if t not in csv_data_map:
-                fremd_check = st.checkbox(f"In EUR umrechnen?", key=f"check_{t}")
-                if fremd_check:
-                    w_options = ["USD", "JPY", "GBP", "CHF", "SEK", "CAD"]
-                    if f"val_{t}" not in st.session_state:
-                        st.session_state[f"val_{t}"] = "USD"
-                    waehrung = st.selectbox(
-                        f"Ursprüngliche Währung von {t}",
-                        options=w_options,
-                        index=w_options.index(st.session_state[f"val_{t}"]),
-                        key=f"curr_{t}"
-                    )
-                    st.session_state[f"val_{t}"] = waehrung
-                    fx_map[t] = f"{waehrung}EUR=X"
-            
+            fremd_check = st.checkbox(f"In EUR umrechnen?", key=f"check_{t}")
+            if fremd_check:
+                w_options = ["USD", "JPY", "GBP", "CHF", "SEK", "CAD"]
+                if f"val_{t}" not in st.session_state:
+                    st.session_state[f"val_{t}"] = "USD"
+                waehrung = st.selectbox(
+                    f"Ursprüngliche Währung von {t}",
+                    options=w_options,
+                    index=w_options.index(st.session_state[f"val_{t}"]),
+                    key=f"curr_{t}"
+                )
+                st.session_state[f"val_{t}"] = waehrung
+                fx_map[t] = f"{waehrung}EUR=X"
             st.markdown("**Regionale Verteilung (%)**")
             r_data = st.session_state.regionen_daten.get(t, {"NA": 0.0, "SA": 0.0, "EU": 0.0, "AP": 0.0, "AF": 0.0})
             c1, c2, c3 = st.columns(3)
@@ -159,13 +117,10 @@ zuordnung = dict(zip(ticker_liste, anteile_orig))
 
 ticker_namen = {}
 for t in ticker_liste:
-    if t in csv_data_map:
+    try:
+        ticker_namen[t] = yf.Ticker(t).info.get('longName', t)
+    except:
         ticker_namen[t] = t
-    else:
-        try:
-            ticker_namen[t] = yf.Ticker(t).info.get('longName', t)
-        except:
-            ticker_namen[t] = t
 
 st.title("📈 Portfolio Backtest Dashboard")
 with st.expander("📋 Portfolio-Zusammensetzung (Name & Gewichtung)"):
@@ -181,7 +136,6 @@ with st.expander("📋 Portfolio-Zusammensetzung (Name & Gewichtung)"):
         st.warning(f"⚠️ Die Summe der Anteile liegt bei {summe_anteile*100:.1f}%.")
     else:
         st.success("✅ Die Anteile ergeben 100%.")
-
 if not ticker_liste:
     st.info("Das Portfolio ist gerade noch leer. Starte mit der Zusammenstellung.")
     st.stop()
@@ -194,40 +148,27 @@ if not st.session_state.run_analysis:
         st.info("Bitte füge Ticker in der Sidebar hinzu.")
     st.stop()
 
-# --- DATENLADEN ANPASSUNG ---
-yahoo_ticker = [t for t in ticker_liste if t not in csv_data_map]
-if benchmark not in csv_data_map:
-    yahoo_ticker.append(benchmark)
-
-data_full = get_cached_data(tuple(yahoo_ticker), period_yf)
+alle_ticker = tuple(ticker_liste + [benchmark])
+data_full = get_cached_data(alle_ticker, period_yf)
 
 raw_data = {}
-# 1. Yahoo Ticker verarbeiten
-for t in yahoo_ticker:
-    try:
-        if isinstance(data_full.columns, pd.MultiIndex):
-            price = data_full['Close'][t].copy()
-        else:
-            price = data_full['Close'].copy() if len(yahoo_ticker) == 1 else data_full[t].copy()
-        
-        if price.dropna().empty: continue
-        
-        if t in fx_map:
-            fx_df = yf.download(fx_map[t], period=period_yf, progress=False)
-            if not fx_df.empty:
-                fx = fx_df['Close'].iloc[:, 0] if isinstance(fx_df.columns, pd.MultiIndex) else fx_df['Close']
-                comb = pd.concat([price, fx], axis=1).ffill().dropna()
-                price = comb.iloc[:, 0] * comb.iloc[:, 1]
-        raw_data[t] = price
-    except:
-        continue
+for t in alle_ticker:
+    if isinstance(data_full.columns, pd.MultiIndex):
+        price = data_full['Close'][t].copy()
+    else:
+        price = data_full['Close'].copy()
+    if price.dropna().empty:
+        st.error(f"⚠️ Keine Daten für {t}")
+        st.stop()
+    if t in fx_map:
+        fx_df = yf.download(fx_map[t], period=period_yf, progress=False)
+        if not fx_df.empty:
+            fx = fx_df['Close'].iloc[:, 0] if isinstance(fx_df.columns, pd.MultiIndex) else fx_df['Close']
+            comb = pd.concat([price, fx], axis=1).ffill().dropna()
+            price = comb.iloc[:, 0] * comb.iloc[:, 1]
+            
+    raw_data[t] = price
 
-# 2. CSV Ticker hinzufügen
-for t, prices in csv_data_map.items():
-    if t in ticker_liste or t == benchmark:
-        raw_data[t] = prices
-
-# 3. Synchronisieren (kürzeste Historie gewinnt)
 daten = pd.concat(raw_data, axis=1).ffill().dropna()
 renditen = daten.pct_change().dropna()
 
@@ -301,7 +242,6 @@ port_yoc = 0.0
 total_div_euro = 0.0
 cal_data = []
 for i, t in enumerate(verfuegbare):
-    if t in csv_data_map: continue # Dividenden für CSV nicht unterstützt
     ticker_obj = yf.Ticker(t)
     gewicht = anteile[i]
     div_history = ticker_obj.dividends
@@ -339,7 +279,6 @@ for i, t in enumerate(verfuegbare):
             div_orig_ltm = last_year_divs_eur / fx_faktor if fx_faktor > 0 else last_year_divs_eur
             ticker_yoc = div_orig_ltm / price_orig_start if price_orig_start > 0 else 0
             port_yoc += ticker_yoc * gewicht
-
 avg_capital = (startkapital + endsumme) / 2
 st.subheader(f"Wertentwicklung bei {startkapital:,.0f} € Investment")
 e1, e2, e3, e4 = st.columns([1.5, 1.2, 1, 1.2])
@@ -354,23 +293,27 @@ else:
     e4.metric("Ausschüttungen (LTM)", "0.00 €")
 
 # --- 4. ANZEIGEN ---
+
+# Kennzahlen-Kacheln
 st.subheader("Key Performance Indicators")
 col1, col2, col3, col4, col5 = st.columns(5)
-col1.metric("Erwartete Rendite p.a. (CAPM)", f"{capm_erwartung_pa:.2%}")
-col2.metric("Rendite p.a. (CAGR)", f"{cagr:.2%}")
-col3.metric("Alpha", f"{alpha:.2%}")
-col4.metric("Sharpe Ratio", f"{sharpe_ratio:.2f}")
-col5.metric("Dividendenrendite", f"{port_current_yield:.2%}")
+col1.metric("Erwartete Rendite p.a. (CAPM)", f"{capm_erwartung_pa:.2%}", help="Theoretische Renditeerwartung basierend auf dem Marktrisiko (Beta).")
+col2.metric("Rendite p.a. (CAGR)", f"{cagr:.2%}", help="Die tatsächlich erzielte durchschnittliche jährliche Wachstumsrate unter Berücksichtigung des Zinseszinseffektes.")
+col3.metric("Alpha", f"{alpha:.2%}", help="Die erzielte Überrendite im Vergleich zur beim eingegangenen Risiko (Beta) erwartete Rendite.")
+col4.metric("Sharpe Ratio", f"{sharpe_ratio:.2f}", help="Misst die erzielte Überrendite pro Risikoeinheit. 0,5 - 1 ist gut, über 1 ist sehr gut.")
+col5.metric("Dividendenrendite", f"{port_current_yield:.2%}", help="Die aktuelle jährliche Ausschüttung im Verhältnis zum Portfoliowert.")
 
 col6, col7, col8, col9, col10 = st.columns(5)
-col6.metric("Max Drawdown", f"{max_drawdown:.2%}")
-col7.metric("Volatilität p.a.", f"{vola:.2%}")
-col8.metric("Beta", f"{beta:.2f}")
-col9.metric("Tracking Error", f"{tracking_error:.2%}")
-col10.metric("Yield on Cost", f"{port_yoc:.2%}")
+col6.metric("Max Drawdown", f"{max_drawdown:.2%}", help="Der maximale Wertverlust vom Höchststand bis zum tiefsten Punkt im betrachteten Zeitraum.")
+col7.metric("Volatilität p.a.", f"{vola:.2%}", help="Die Schwankungsbreite der Renditen. Ein Maß für das Gesamtrisiko.")
+col8.metric("Beta", f"{beta:.2f}", help="Gibt an, wie stark das Portfolio im Vergleich zum Gesamtmarkt schwankt (Marktrisiko).")
+col9.metric("Tracking Error", f"{tracking_error:.2%}", help="Misst die Volatilität der Renditedifferenz zwischen dem Portfolio und der Benchmark.")
+col10.metric("Yield on Cost", f"{port_yoc:.2%}", help="Die persönliche Dividendenrendite bezogen auf den ursprünglichen Kaufpreis (Einstandskurs).")
 
 st.markdown("---")
-st.subheader("Performance & Trends")
+
+# 1. Performance-Chart (Full Width oben)
+st.subheader("Performance & Trends", help="Vergleich der Portfolio-Performance gegen die Benchmark inklusive gleitender Durchschnitte (100/200 Tage).")
 fig_perf, ax_perf = plt.subplots(figsize=(10, 5), constrained_layout=True)
 port_kum = ((1 + port_rendite).cumprod() - 1) * 100
 bench_kum = ((1 + bench_rendite).cumprod() - 1) * 100
@@ -386,113 +329,226 @@ ax_perf.grid(True, alpha=0.2)
 st.pyplot(fig_perf)
 
 st.markdown("---")
+
+# 2. Spalten für Rendite-Check und Regionen-Verteilung
 col_rendite, col_regionen = st.columns([1, 1])
+
 with col_rendite:
-    st.subheader("Rendite-Analyse")
+    st.subheader("Rendite-Analyse", help="Jährliche Renditen und die kumulierte Rendite über feste Zeiträume.")
     yearly_ret = port_rendite.groupby(port_rendite.index.year).apply(lambda x: (1 + x).prod() - 1) * 100
     periods = {"1Y": 252, "3Y": 756, "5Y": 1260, "10Y": 2520, "20Y": 5040}
-    period_rets = {label: ((1 + port_rendite.iloc[-days:]).prod() - 1) * 100 for label, days in periods.items() if len(port_rendite) >= days}
+    period_rets = {label: ((1 + port_rendite.iloc[-days:]).prod() - 1) * 100 
+                   for label, days in periods.items() if len(port_rendite) >= days}
     fig_balken, (ax1, ax2) = plt.subplots(2, 1, figsize=(5, 5), constrained_layout=True) 
     colors_y = ['#27AE60' if x > 0 else '#EB5757' for x in yearly_ret]
     ax1.bar(yearly_ret.index.astype(str), yearly_ret.values, color=colors_y)
     ax1.set_title("Annualisiert (%)", fontsize=10, fontweight='bold')
-    ax2.bar(list(period_rets.keys()), list(period_rets.values()), color=['#27AE60' if x > 0 else '#EB5757' for x in period_rets.values()])
+    ax1.axhline(0, color='black', linewidth=0.5)
+    ax1.tick_params(axis='both', labelsize=8)
+    labels_p = list(period_rets.keys())
+    values_p = list(period_rets.values())
+    colors_p = ['#27AE60' if x > 0 else '#EB5757' for x in values_p]
+    ax2.bar(labels_p, values_p, color=colors_p)
     ax2.set_title("Kumuliert (%)", fontsize=10, fontweight='bold')
+    ax2.axhline(0, color='black', linewidth=0.5)
+    ax2.tick_params(axis='both', labelsize=8)
+    
     st.pyplot(fig_balken)
 
 with col_regionen:
-    st.subheader("Regionale Verteilung")
+    st.subheader("Regionale Verteilung", help="Geografische Gewichtung des Portfolios.")
     if (total_na + total_sa + total_eu + total_ap + total_af) > 0:
         reg_labels = ['Nordamerika', 'Südamerika', 'Europa', 'Asien-Pazifik', 'Afrika']
         reg_values = [total_na, total_sa, total_eu, total_ap, total_af]
-        labels_f = [l for l, v in zip(reg_labels, reg_values) if v > 0]
-        values_f = [v for v in reg_values if v > 0]
-        fig_reg, ax_reg = plt.subplots(figsize=(5, 5))
-        ax_reg.pie(values_f, labels=labels_f, autopct='%1.1f%%', startangle=140, textprops={'fontsize': 8})
+        reg_colors = ['#4A90E2', '#9B51E0', '#F2994A', '#27AE60', '#EB5757']
+        labels_filtered = [l for l, v in zip(reg_labels, reg_values) if v > 0]
+        values_filtered = [v for v in reg_values if v > 0]
+        colors_filtered = [c for c, v in zip(reg_colors, reg_values) if v > 0]
+        fig_reg, ax_reg = plt.subplots(figsize=(5, 5), constrained_layout=True) 
+        fig_reg.patch.set_facecolor('white')
+        ax_reg.pie(
+            values_filtered, 
+            labels=labels_filtered, 
+            autopct='%1.1f%%', 
+            startangle=140, 
+            colors=colors_filtered,
+            textprops={'color':"black", 'weight':'bold', 'fontsize': 6.5}, 
+            pctdistance=0.7, 
+            labeldistance=1.1 
+        )
+        ax_reg.axis('equal') 
         st.pyplot(fig_reg)
     else:
         st.info("Daten in Sidebar eintragen.")
 
 st.markdown("---")
+
+# Rolling Returns & Rendite Verteilung
 att_col1, att_col2 = st.columns(2)
+
 with att_col1:
-    st.subheader("Rolling Returns (12 Monate)")
+    st.subheader("Rolling Returns (12 Monate)", help="Zeigt die Rendite eines Zeitpunktes im Vergleich zu dem gleichen Zeitpunkt vor einem Jahr.")
     rolling_1y = port_rendite.rolling(window=252).apply(lambda x: (1 + x).prod() - 1)
-    fig_roll, ax_roll = plt.subplots(figsize=(10, 6))
-    ax_roll.plot(rolling_1y * 100, color='blue')
+    
+    fig_roll, ax_roll = plt.subplots(figsize=(10, 6), constrained_layout=True)
+    ax_roll.plot(rolling_1y * 100, color='blue', alpha=0.8)
+    ax_roll.axhline(rolling_1y.mean() * 100, color='red', linestyle='--', label='Schnitt')
     ax_roll.axhline(0, color='black', linewidth=1)
+    ax_roll.set_ylabel('Rendite p.a. (%)')
+    ax_roll.fill_between(rolling_1y.index, rolling_1y * 100, 0, where=(rolling_1y > 0), facecolor='green', alpha=0.1)
+    ax_roll.fill_between(rolling_1y.index, rolling_1y * 100, 0, where=(rolling_1y < 0), facecolor='red', alpha=0.1)
+    ax_roll.grid(True, alpha=0.3)
     st.pyplot(fig_roll)
 
 with att_col2:
-    st.subheader("Rendite-Verteilung")
-    beitraege = [( (1 + renditen[t]).prod() - 1 ) * anteile[verfuegbare.index(t)] for t in verfuegbare]
-    fig_att, ax_att = plt.subplots(figsize=(10, 6))
-    ax_att.barh(verfuegbare, np.array(beitraege) * 100, color='skyblue')
+    st.subheader("Rendite-Verteilung", help="Gibt an, welche Position wie viel zur Gesamtrendite beiträgt")
+    beitraege = []
+    for t in verfuegbare:
+        einzel_ret = (1 + renditen[t]).prod() - 1
+        gewicht = anteile[verfuegbare.index(t)]
+        beitraege.append(einzel_ret * gewicht)
+    fig_att, ax_att = plt.subplots(figsize=(10, 6), constrained_layout=True)
+    y_pos_att = np.arange(len(verfuegbare))
+    bars_att = ax_att.barh(y_pos_att, np.array(beitraege) * 100, color='skyblue')
+    for bar in bars_att:
+        width = bar.get_width()
+        ax_att.text(width, bar.get_y() + bar.get_height()/2, 
+                    f' {width:.1f}%', 
+                    va='center', fontweight='bold', fontsize=11)
+
+    ax_att.set_yticks(y_pos_att)
+    ax_att.set_yticklabels(verfuegbare)
     ax_att.invert_yaxis()
+    ax_att.set_xlabel('Beitrag zur Gesamtrendite (%)')
+    ax_att.grid(axis='x', linestyle='--', alpha=0.7)
     st.pyplot(fig_att)
 
 st.markdown("---")
-st.subheader("📅 Dividenden-Kalender")
+
+# Dividendenkalender
+st.subheader("📅 Dividenden-Kalender", help="Zeigt, wann wie viele Ausschüttungen zu erwarten sind")
 if cal_data:
     df_cal = pd.DataFrame(cal_data)
-    monate_de = {"January": "Jan", "February": "Feb", "March": "Mär", "April": "Apr", "May": "Mai", "June": "Jun", "July": "Jul", "August": "Aug", "September": "Sep", "October": "Okt", "November": "Nov", "December": "Dez"}
+    monate_de = {"January": "Jan", "February": "Feb", "March": "Mär", "April": "Apr",
+                 "May": "Mai", "June": "Jun", "July": "Jul", "August": "Aug",
+                 "September": "Sep", "October": "Okt", "November": "Nov", "December": "Dez"}
     df_cal['Monat'] = df_cal['Monat'].map(monate_de)
-    df_pivot = df_cal.pivot_table(index='Monat_Nr', columns='Ticker', values='Ausschüttung', aggfunc='sum').fillna(0).reindex(range(1, 13), fill_value=0)
+    df_pivot = df_cal.pivot_table(index='Monat_Nr', columns='Ticker', values='Ausschüttung', aggfunc='sum').fillna(0)
+    df_pivot = df_pivot.reindex(range(1, 13), fill_value=0)
     fig_div, ax_div = plt.subplots(figsize=(12, 4)) 
-    df_pivot.plot(kind='bar', stacked=True, ax=ax_div, width=0.7)
-    ax_div.set_xticklabels(["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"], rotation=0)
+    df_pivot.plot(kind='bar', stacked=True, ax=ax_div, color=plt.cm.Paired.colors, width=0.7)
+    monats_namen = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
+    ax_div.set_xticklabels(monats_namen, rotation=0, fontsize=9)
+    ax_div.set_title("Durchschnittlicher Betrag pro Monat (€)", fontsize=10, pad=10)
+    ax_div.set_ylabel("Euro (€)", fontsize=9)
+    ax_div.set_xlabel("")
+    ax_div.grid(axis='y', linestyle='--', alpha=0.3)
+    ax_div.legend(title="Ticker", fontsize=8, loc='upper left', bbox_to_anchor=(1, 1))
+    plt.tight_layout()
     st.pyplot(fig_div)
 else:
-    st.info("Keine historischen Dividenden (oder nur CSV-Daten) gefunden.")
+    st.info("Keine historischen Dividenden im gewählten Zeitraum gefunden.")
 
 st.markdown("---")
-st.subheader("Mean-Variance-Optimization")
+
+# Mean-Variance-Optimization
+st.subheader("Mean-Variance-Optimization", help="10.000 Simulationen des Portfolios zur optimalen Gewichtung für das maximale Sharpe Ratio auf Basis der erwarteten Rendite.")
+
 if len(verfuegbare) > 1:
     np.random.seed(42)
-    opt_sim = 10000
-    mu = np.array([risk_free_rate + (renditen[t].cov(bench_rendite) / bench_rendite.var()) * (bench_cagr - risk_free_rate) for t in verfuegbare])
+    opt_simulations = 10000
+    mu_list = []
+    for t in verfuegbare:
+        asset_beta = renditen[t].cov(bench_rendite) / bench_rendite.var()
+        expected_ret = risk_free_rate + asset_beta * (bench_cagr - risk_free_rate)
+        mu_list.append(expected_ret)
+    mu = np.array(mu_list)
     cov = renditen[verfuegbare].cov() * 252  
-    results = np.zeros((3, opt_sim))
+    results = np.zeros((3, opt_simulations))
     weights_record = []
-    for i in range(opt_sim):
+
+    for i in range(opt_simulations):
         w = np.random.random(len(verfuegbare))
         w /= np.sum(w)
         weights_record.append(w)
         p_ret = np.sum(mu * w)
         p_std = np.sqrt(np.dot(w.T, np.dot(cov, w)))
-        results[0,i], results[1,i], results[2,i] = p_ret, p_std, (p_ret - risk_free_rate) / p_std
-    
-    max_s_idx = np.argmax(results[2])
-    best_w = weights_record[max_s_idx]
-    opt_col1, opt_col2 = st.columns([2, 1])
+        
+        results[0,i] = p_ret
+        results[1,i] = p_std
+        results[2,i] = (p_ret - risk_free_rate) / p_std
+        
+    max_sharpe_idx = np.argmax(results[2])
+    best_w = weights_record[max_sharpe_idx]
+    opt_ret = results[0, max_sharpe_idx]
+    opt_vol = results[1, max_sharpe_idx]
+
+    opt_col1, opt_col2 = st.columns([2, 1], vertical_alignment="center")
+
     with opt_col1:
-        fig_ef, ax_ef = plt.subplots()
-        ax_ef.scatter(results[1,:], results[0,:], c=results[2,:], cmap='viridis', alpha=0.3)
-        ax_ef.scatter(vola, capm_erwartung_pa, color='red', s=100, label='Aktuell')
-        ax_ef.scatter(results[1, max_s_idx], results[0, max_s_idx], color='orange', s=100, label='Optimiert')
+        dynamische_hoehe = 4.1 + (len(verfuegbare) * 0.3)
+        fig_ef, ax_ef = plt.subplots(figsize=(10, dynamische_hoehe))
+        scatter = ax_ef.scatter(results[1,:], results[0,:], c=results[2,:], cmap='viridis', marker='o', alpha=0.3)
+        ax_ef.scatter(vola, capm_erwartung_pa, color='red', marker='o', s=200, label='Aktuelles Portfolio')
+        ax_ef.scatter(opt_vol, opt_ret, color='orange', marker='o', s=200, label='Optimiertes Portfolio')
+        ax_ef.set_xticklabels([f'{x*100:.0f}%' for x in ax_ef.get_xticks()])
+        ax_ef.set_yticklabels([f'{y*100:.0f}%' for y in ax_ef.get_yticks()])
+        ax_ef.set_xlabel('Volatilität p.a.')
+        ax_ef.set_ylabel('Erwartete Rendite p.a.')
         ax_ef.legend()
-        st.pyplot(fig_ef)
+        plt.colorbar(scatter, label='Sharpe Ratio')
+        fig_ef.tight_layout()
+        fig_ef.subplots_adjust(left=0.1, right=0.95, top=0.95, bottom=0.15)
+        st.pyplot(fig_ef) 
     with opt_col2:
-        st.table(pd.DataFrame({"Ticker": verfuegbare, "Aktuell": [f"{a*100:.1f}%" for a in anteile], "Optimiert": [f"{w*100:.1f}%" for w in best_w]}).set_index('Ticker'))
+        opt_weights_df = pd.DataFrame({
+            "Ticker": verfuegbare,
+            "Aktuell": [f"{a*100:.1f}%" for a in anteile],
+            "Optimiert": [f"{w*100:.1f}%" for w in best_w]
+        })
+        st.table(opt_weights_df.set_index('Ticker'))
+        st.info(f"""
+        - Optimierte Erwartete Rendite: {opt_ret:.2%}
+        - Optimierte Volatilität: {opt_vol:.2%}
+        - Optimiertes Sharpe Ratio: {results[2, max_sharpe_idx]:.2f}
+        """)
 else: 
-    st.info("Optimierung erst ab zwei Positionen.")
+    st.info("Die Portfolio-Optimierung steht erst ab zwei Positionen zur Verfügung.")
 
 st.markdown("---")
+
 g_col1, g_col2 = st.columns(2)
+
 with g_col1:
-    st.subheader("Korrelationsmatrix")
-    fig_corr, ax_corr = plt.subplots(figsize=(10, 8))
-    sns.heatmap(renditen[verfuegbare].corr(), annot=True, cmap='RdYlGn_r', ax=ax_corr)
+    st.subheader("Korrelationsmatrix", help="Zeigt, wie stark sich Assets gemeinsam bewegen. 1.0 = Gleichlaufend, 0 = kein Zusammenhang, -1.0 = Gegenlaufend.")
+    fig_corr, ax_corr = plt.subplots(figsize=(10, 8), constrained_layout=True)
+    sns.heatmap(renditen[verfuegbare].corr(), annot=True, cmap='RdYlGn_r', center=0.3, fmt=".2f", linewidths=0.5, ax=ax_corr)
     st.pyplot(fig_corr)
+
 with g_col2:
-    st.subheader("Risiko-Verteilung")
-    fig_bar, ax_bar = plt.subplots(figsize=(10, 8))
-    ax_bar.barh(verfuegbare, rel_risk_contrib * 100, color='purple')
-    ax_bar.invert_yaxis()
+    st.subheader("Risiko-Verteilung", help="Gibt an, welche Position wie stark zur Gesamtvolatilität beiträgt")
+    fig_bar, ax_bar = plt.subplots(figsize=(10, 8), constrained_layout=True)
+    colors = ['#9B51E0' if x > 0 else '#22a884' for x in rel_risk_contrib]
+    y_pos = np.arange(len(verfuegbare))
+    bars = ax_bar.barh(y_pos, rel_risk_contrib * 100, color=colors)
+    ax_bar.set_yticks(y_pos)
+    ax_bar.set_yticklabels(verfuegbare, fontweight='bold')
+    ax_bar.invert_yaxis() 
+    ax_bar.axvline(0, color='black', linewidth=1, alpha=0.5)
+    ax_bar.set_xlabel('Beitrag zur Volatilität (%)', fontweight='bold')
+    ax_bar.grid(axis='x', linestyle='--', alpha=0.7)
+    for bar in bars:
+        width = bar.get_width()
+        ax_bar.text(width, bar.get_y() + bar.get_height()/2, 
+                    f' {width:.1f}%', 
+                    va='center', fontweight='bold', fontsize=11)
+    
     st.pyplot(fig_bar)
 
 st.markdown("---")
-st.subheader("Risiko-Analyse (NTM)")
+
+# Risiko-Tabelle
+st.subheader("Risiko-Analyse (NTM)", help="Value at Risk (VaR) gibt den Verlust an, der mit 95% Wahrscheinlichkeit nicht überschritten wird. Expected Shortfall ist der Schnitt der schlimmsten 5% der Fälle.")
 risiko_data = {
     "Methode": ["Parametrisch", "Historisch", "Monte-Carlo"],
     "Value at Risk 95%": [f"{var_95_para:.2%}", f"{var_95_hist:.2%}", f"{mc_var_95_jahr:.2%}"],
@@ -500,16 +556,48 @@ risiko_data = {
 }
 st.table(pd.DataFrame(risiko_data).set_index('Methode'))
 
+# Monte Carlo Pfadsimulation (10 Jahre)
 st.markdown("---")
-st.subheader("Monte Carlo Pfadsimulation (10 Jahre)")
-mc_jahre, mc_pfade = 10, 100
-mc_start = startkapital if startkapital > 0 else 10000
-rand_rets = np.random.normal(port_rendite.mean(), port_rendite.std(), (252 * mc_jahre, mc_pfade))
-mc_pfade_daten = mc_start * (1 + rand_rets).cumprod(axis=0)
-fig_mc, ax_mc = plt.subplots(figsize=(12, 6))
-ax_mc.plot(mc_pfade_daten, color='blue', alpha=0.05)
-ax_mc.plot(np.percentile(mc_pfade_daten, 50, axis=1), color='black', linewidth=2, label='Median')
-ax_mc.legend()
-st.pyplot(fig_mc)
+st.subheader("Monte Carlo Pfadsimulation (10 Jahre)", help="Simuliert 100 mögliche Zukunftsszenarien basierend auf der historischen Volatilität und Rendite.")
+
+mc_jahre = 10
+aktuelles_jahr = pd.Timestamp.now().year
+mc_tage = 252 * mc_jahre
+mc_pfade = 100 
+mc_startkapital = startkapital if startkapital > 0 else 10000 
+mu_daily = port_rendite.mean()
+sigma_daily = port_rendite.std()
+np.random.seed(42)
+rand_rets = np.random.normal(mu_daily, sigma_daily, (mc_tage, mc_pfade))
+mc_pfade_daten = mc_startkapital * (1 + rand_rets).cumprod(axis=0)
+
+fig_mc_path, ax_mc_path = plt.subplots(figsize=(12, 6))
+zeit_achse = np.linspace(aktuelles_jahr, aktuelles_jahr + mc_jahre, mc_tage)
+ax_mc_path.plot(zeit_achse, mc_pfade_daten, color='blue', alpha=0.05)
+median_pfad = np.percentile(mc_pfade_daten, 50, axis=1)
+top_pfad = np.percentile(mc_pfade_daten, 95, axis=1)
+bottom_pfad = np.percentile(mc_pfade_daten, 5, axis=1)
+mc_cagr_median = (median_pfad[-1] / mc_startkapital)**(1/mc_jahre) - 1
+mc_cagr_pessimist = (bottom_pfad[-1] / mc_startkapital)**(1/mc_jahre) - 1
+mc_cagr_optimist = (top_pfad[-1] / mc_startkapital)**(1/mc_jahre) - 1
+
+ax_mc_path.plot(zeit_achse, median_pfad, color='black', linewidth=2, label='Median (50%)')
+ax_mc_path.plot(zeit_achse, top_pfad, color='green', linestyle='--', label='Optimistisch (95%)')
+ax_mc_path.plot(zeit_achse, bottom_pfad, color='red', linestyle='--', label='Pessimistisch (5%)')
+
+ax_mc_path.set_title(f"Simulation von {mc_pfade} möglichen Verläufen bei {mc_startkapital:,.0f}€ Startwert")
+ax_mc_path.set_xlabel("Jahr")
+ax_mc_path.set_ylabel("Portfoliowert (€)")
+ax_mc_path.legend(loc='upper left')
+ax_mc_path.grid(True, alpha=0.2)
+
+st.pyplot(fig_mc_path)
+
+st.info(f"""
+**Ergebnis nach {mc_jahre} Jahren (Projektion):**
+- Mittleres Szenario (Median): **{median_pfad[-1]:,.2f} €** (**{mc_cagr_median:.2%} p.a.**)
+- Pessimistisches Szenario (5%): **{bottom_pfad[-1]:,.2f} €** (**{mc_cagr_pessimist:.2%} p.a.**)
+- Optimistisches Szenario (95%): **{top_pfad[-1]:,.2f} €** (**{mc_cagr_optimist:.2%} p.a.**)
+""")
 
 st.caption(f"Datenzeitraum: {daten.index[0].strftime('%d.%m.%Y')} bis {daten.index[-1].strftime('%d.%m.%Y')}")
