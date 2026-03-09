@@ -17,30 +17,25 @@ def get_isin_data_frankfurt(isin, period):
     days = period_map.get(period, 1825)
     start_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
     url = "https://api.boerse-frankfurt.de/v1/data/price_history"
-    params = {"isin": isin, "mic": "XETR", "minDate": start_date, "limit": 5000}
-    headers = {"User-Agent": "Mozilla/5.0"}
+    params = {"isin": isin, "mic": "XFRA", "minDate": start_date, "limit": 5000}
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
     try:
-        res = requests.get(url, params=params, headers=headers)
+        res = requests.get(url, params=params, headers=headers, timeout=10)
         if res.status_code == 200:
-            json_data = res.json().get('data', [])
-            if not json_data: return pd.Series(dtype='float64')
+            json_res = res.json()
+            json_data = json_res.get('data', [])
+            if not json_data:
+                return pd.Series(dtype='float64')
             df_isin = pd.DataFrame(json_data)
             df_isin['date'] = pd.to_datetime(df_isin['date'])
+            df_isin = df_isin.sort_values('date').drop_duplicates('date')
             df_isin.set_index('date', inplace=True)
-            return df_isin['close'].astype(float).rename(isin)
-    except:
-        return pd.Series()
-    return pd.Series()
-def get_isin_name(isin):
-    url = f"https://api.boerse-frankfurt.de/v1/data/master_data?isin={isin}"
-    headers = {"User-Agent": "Mozilla/5.0"}
-    try:
-        res = requests.get(url, headers=headers, timeout=5)
-        if res.status_code == 200:
-            return res.json().get('instrumentName', isin)
-    except:
-        return isin
-    return isin
+            col = 'close' if 'close' in df_isin.columns else df_isin.columns[0]
+            return df_isin[col].astype(float).rename(isin)
+    except Exception as e:
+        return pd.Series(dtype='float64')
+    
+    return pd.Series(dtype='float64')
 
 # --- STREAMLIT PAGE CONFIGURATION ---
 st.set_page_config(page_title="Portfolio Analyzer", layout="wide")
