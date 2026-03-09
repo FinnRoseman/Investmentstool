@@ -23,7 +23,7 @@ def get_isin_data_frankfurt(isin, period):
         res = requests.get(url, params=params, headers=headers)
         if res.status_code == 200:
             json_data = res.json().get('data', [])
-            if not json_data: return pd.Series()
+            if not json_data: return pd.Series(dtype='float64')
             df_isin = pd.DataFrame(json_data)
             df_isin['date'] = pd.to_datetime(df_isin['date'])
             df_isin.set_index('date', inplace=True)
