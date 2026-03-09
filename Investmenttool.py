@@ -13,43 +13,70 @@ def get_cached_data(ticker_tuple, period):
     df = yf.download(list(ticker_tuple), period=period, progress=False)
     return df
 def get_isin_name(isin):
-    """Holt den Namen über die Ariva/Finanztreff-Suche."""
+    """Holt den Namen über Ariva mit verbessertem Parsing."""
     url = f"https://www.ariva.de/search/search.m?search_term={isin}"
-    headers = {"User-Agent": "Mozilla/5.0"}
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
     try:
         res = requests.get(url, headers=headers, timeout=5)
         if res.status_code == 200:
-            title = res.text.split('<title>')[1].split('</title>')[0]
-            name = title.split('Kurs')[0].strip()
-            return name if name else isin
+            # Wir suchen im HTML nach dem Namen, falls der Titel-Split fehlschlägt
+            import re
+            title_search = re.search('<title>(.*?)<\/title>', res.text)
+            if title_search:
+                title = title_search.group(1)
+                name = title.split('Kurs')[0].replace('Suche -', '').strip()
+                return name if len(name) > 2 else isin
     except:
         return isin
     return isin
+
 def get_isin_data_ariva(isin, period):
-    """Holt historische Daten von Ariva (Alternative zu Frankfurt)."""
+    """Holt historische Daten von Ariva via CSV-Export."""
     period_map = {"1y": 365, "3y": 1095, "5y": 1825, "10y": 3650, "20y": 7300}
     days = period_map.get(period, 1825)
+    start_date = (datetime.now() - timedelta(days=days)).strftime("%d.%m.%Y")
+    end_date = datetime.now().strftime("%d.%m.%Y")
+    
+    # Die stabilste URL für den direkten CSV-Export
     url = "https://www.ariva.de/quote/historical/data.csv"
     params = {
         "isin": isin,
-        "boerse_id": 1,
-        "month": "",
-        "currency": "EUR",
+        "boerse_id": 131, # 131 ist oft besser für Fonds (KAG-Kurse) als 1 (Börse)
         "clean_split": 1,
         "clean_payout": 0,
-        "clean_bezug": 1
+        "currency": "EUR",
+        "min_time": start_date,
+        "max_time": end_date,
+        "sep": "comma" # Wir erzwingen ein Komma als Trenner für einfacheren Import
     }
     headers = {"User-Agent": "Mozilla/5.0"}
+    
     try:
-        res = requests.get(url, params=params, headers=headers, timeout=10)
-        if res.status_code == 200 and len(res.text) > 100:
+        res = requests.get(url, params=params, headers=headers, timeout=15)
+        if res.status_code == 200 and len(res.text) > 200:
             from io import StringIO
-            df = pd.read_csv(StringIO(res.text), sep=';', skiprows=4)
-            df['Datum'] = pd.to_datetime(df['Datum'])
-            df.set_index('Datum', inplace=True)
-            return df['Schlusskurs'].str.replace(',', '.').astype(float).sort_index().rename(isin)
-    except:
-        pass
+            # Ariva liefert bei 'sep=comma' oft trotzdem Semikolon-CSV mit Kopfzeilen
+            # Wir lesen die Datei ein und suchen die Spalte 'Schlusskurs' oder 'Close'
+            df = pd.read_csv(StringIO(res.text), sep=None, engine='python', skiprows=0)
+            
+            # Spaltennamen bereinigen (Ariva hat oft Leerzeichen oder komische Header)
+            df.columns = [c.strip() for c in df.columns]
+            
+            # Datum finden und konvertieren
+            date_col = 'Datum' if 'Datum' in df.columns else df.columns[0]
+            df[date_col] = pd.to_datetime(df[date_col])
+            df.set_index(date_col, inplace=True)
+            
+            # Kurs-Spalte finden (kann 'Schlusskurs' oder 'Close' sein)
+            price_col = 'Schlusskurs' if 'Schlusskurs' in df.columns else 'Close'
+            
+            # Falls die Zahlen als String mit Komma kommen ("123,45"), konvertieren:
+            if df[price_col].dtype == object:
+                df[price_col] = df[price_col].str.replace('.', '').str.replace(',', '.').astype(float)
+            
+            return df[price_col].sort_index().rename(isin)
+    except Exception as e:
+        print(f"Ariva-Fehler für {isin}: {e}")
     
     return pd.Series(dtype='float64')
 
