@@ -117,15 +117,18 @@ zuordnung = dict(zip(ticker_liste, anteile_orig))
 
 ticker_namen = {}
 for t in ticker_liste:
+    name = t 
     try:
         tk = yf.Ticker(t)
-        info = tk.basic_info
-        name = tk.info.get('longName') 
+        name = tk.info.get('longName') or tk.info.get('shortName')
         if not name or name == t:
-            name = tk.info.get('shortName', t)  
-        ticker_namen[t] = name
+            test_data = yf.download(t, period="1d", progress=False, multi_level_data=False)
+            name = tk.info.get('longName') or tk.info.get('shortName')
+        if not name or name == t:
+             name = tk.fast_info.get('commonName', t)
     except:
-        ticker_namen[t] = t
+        pass
+    ticker_namen[t] = name if name else t
 
 st.title("📈 Portfolio Backtest Dashboard")
 with st.expander("📋 Portfolio-Zusammensetzung (Name & Gewichtung)"):
