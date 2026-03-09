@@ -118,7 +118,12 @@ zuordnung = dict(zip(ticker_liste, anteile_orig))
 ticker_namen = {}
 for t in ticker_liste:
     try:
-        ticker_namen[t] = yf.Ticker(t).info.get('longName', t)
+        tk = yf.Ticker(t)
+        info = tk.basic_info
+        name = tk.info.get('longName') 
+        if not name or name == t:
+            name = tk.info.get('shortName', t)  
+        ticker_namen[t] = name
     except:
         ticker_namen[t] = t
 
