@@ -172,6 +172,7 @@ ticker_namen = {}
 for t in ticker_liste:
     is_isin = len(t) == 12 and t[:2].isalpha()
     if is_isin:
+        # Hier muss der Name der Funktion exakt mit der Definition oben übereinstimmen
         ticker_namen[t] = get_isin_name(t)
     else:
         try:
