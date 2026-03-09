@@ -17,7 +17,7 @@ def get_isin_data_frankfurt(isin, period):
     days = period_map.get(period, 1825)
     start_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
     url = "https://api.boerse-frankfurt.de/v1/data/price_history"
-    params = {"isin": isin, "mic": "XFRA", "minDate": start_date, "limit": 5000}
+    params = {"isin": isin, "mic": "XETR", "minDate": start_date, "limit": 5000}
     headers = {"User-Agent": "Mozilla/5.0"}
     try:
         res = requests.get(url, params=params, headers=headers)
