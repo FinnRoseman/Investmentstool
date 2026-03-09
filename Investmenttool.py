@@ -4,12 +4,33 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import streamlit as st
+import requests
+from datetime import datetime, timedelta
 
 # --- CACHING FUNKTION ---
 @st.cache_data(show_spinner="Marktdaten werden geladen...")
 def get_cached_data(ticker_tuple, period):
     df = yf.download(list(ticker_tuple), period=period, progress=False)
     return df
+def get_isin_data_frankfurt(isin, period):
+    period_map = {"1y": 365, "3y": 1095, "5y": 1825, "10y": 3650, "20y": 7300}
+    days = period_map.get(period, 1825)
+    start_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+    url = "https://api.boerse-frankfurt.de/v1/data/price_history"
+    params = {"isin": isin, "mic": "XFRA", "minDate": start_date, "limit": 5000}
+    headers = {"User-Agent": "Mozilla/5.0"}
+    try:
+        res = requests.get(url, params=params, headers=headers)
+        if res.status_code == 200:
+            json_data = res.json().get('data', [])
+            if not json_data: return pd.Series()
+            df_isin = pd.DataFrame(json_data)
+            df_isin['date'] = pd.to_datetime(df_isin['date'])
+            df_isin.set_index('date', inplace=True)
+            return df_isin['close'].astype(float).rename(isin)
+    except:
+        return pd.Series()
+    return pd.Series()
 
 # --- STREAMLIT PAGE CONFIGURATION ---
 st.set_page_config(page_title="Portfolio Analyzer", layout="wide")
@@ -24,7 +45,7 @@ if 'meine_ticker' not in st.session_state:
     st.session_state.meine_ticker = []
 if 'regionen_daten' not in st.session_state:
     st.session_state.regionen_daten = {}
-st.sidebar.text_input("Ticker-Symbol eingeben & Enter", key="widget_eingabe", on_change=clear_ticker_input)
+st.sidebar.text_input("Ticker-Symbol oder ISIN eingeben & Enter", key="widget_eingabe", on_change=clear_ticker_input)
 ticker_input = st.session_state.get('ticker_temp', None)
 if ticker_input:
     neuer_t = ticker_input.strip().upper()
@@ -117,10 +138,14 @@ zuordnung = dict(zip(ticker_liste, anteile_orig))
 
 ticker_namen = {}
 for t in ticker_liste:
-    try:
-        ticker_namen[t] = yf.Ticker(t).info.get('longName', t)
-    except:
-        ticker_namen[t] = t
+    is_isin = len(t) == 12 and t[:2].isalpha()
+    if is_isin:
+        ticker_namen[t] = f"Fonds ({t})"
+    else:
+        try:
+            ticker_namen[t] = yf.Ticker(t).info.get('longName', t)
+        except:
+            ticker_namen[t] = t
 
 st.title("📈 Portfolio Backtest Dashboard")
 with st.expander("📋 Portfolio-Zusammensetzung (Name & Gewichtung)"):
@@ -153,10 +178,14 @@ data_full = get_cached_data(alle_ticker, period_yf)
 
 raw_data = {}
 for t in alle_ticker:
-    if isinstance(data_full.columns, pd.MultiIndex):
-        price = data_full['Close'][t].copy()
+    is_isin = len(t) == 12 and t[:2].isalpha()
+    if is_isin:
+        price = get_isin_data_frankfurt(t, period_yf)
     else:
-        price = data_full['Close'].copy()
+        if isinstance(data_full.columns, pd.MultiIndex):
+            price = data_full['Close'][t].copy()
+        else:
+            price = data_full['Close'].copy()
     if price.dropna().empty:
         st.error(f"⚠️ Keine Daten für {t}")
         st.stop()
