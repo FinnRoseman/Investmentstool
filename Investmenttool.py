@@ -320,12 +320,11 @@ st.markdown("""
     .header-value { color: white; font-size: 28px; font-weight: bold; margin: 5px 0 0 0; }
 </style>
 """, unsafe_allow_html=True)
-
 farbe_perf = "#27AE60" if absoluter_gewinn >= 0 else "#EB5757"
-
+div_wert = 0.00 if np.isnan(total_div_euro) else total_div_euro
 abs_anzeige = f"{absoluter_gewinn:,.2f} €" if startkapital > 0 else "0.00 €"
 rel_anzeige = f"{total_ret:.2%}" if startkapital > 0 else "0.00%"
-div_anzeige = f"{total_div_euro:,.2f} €" if startkapital > 0 else "0.00 €"
+div_anzeige = f"{div_wert:,.2f} €" if startkapital > 0 else "0.00 €"
 
 st.markdown(f"""
 <div class="header-grid">
@@ -338,10 +337,12 @@ st.markdown(f"""
         <p class="header-label">Seit Kauf Absolut</p>
         <p class="header-value" style="color: {farbe_perf};">{abs_anzeige}</p>
     </div>
+    
     <div class="header-card" style="border-left-color: {farbe_perf};">
         <p class="header-label">Seit Kauf Relativ</p>
         <p class="header-value" style="color: {farbe_perf};">{rel_anzeige}</p>
     </div>
+    
     <div class="header-card">
         <p class="header-label">Ausschüttungen (LTM)</p>
         <p class="header-value">{div_anzeige}</p>
