@@ -667,13 +667,9 @@ st.markdown("---")
 
 # Risiko-Tabelle
 st.subheader("🔎 Risiko-Analyse (NTM)")
-
-# 1. Daten vorbereiten
 r_labels = ["Parametrisch", "Historisch", "Monte-Carlo"]
 r_vars = [var_95_para, var_95_hist, mc_var_95_jahr]
 r_ess = [es_95_para, es_95_hist, mc_es_95_jahr]
-
-# 2. CSS (neutraler Look)
 st.markdown("""
 <style>
 .r-grid { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
@@ -691,16 +687,12 @@ st.markdown("""
 .r-val { color: white; font-size: 18px; font-weight: bold; }
 </style>
 """, unsafe_allow_html=True)
-
-# 3. HTML-String zusammenbauen (WICHTIG: Keine Einrückung im f-string!)
 cards_html = ""
 for m, v, e in zip(r_labels, r_vars, r_ess):
     cards_html += f'<div class="r-card"><div class="r-title">{m}</div>'
     cards_html += f'<div class="r-row"><span class="r-lbl">VaR 95%</span><span class="r-val">{v:.2%}</span></div>'
     cards_html += f'<div class="r-row"><span class="r-lbl">Exp. Shortfall</span><span class="r-val">{e:.2%}</span></div></div>'
-
 st.markdown(f'<div class="r-grid">{cards_html}</div>', unsafe_allow_html=True)
-st.markdown("---")
 
 # Monte Carlo Pfadsimulation (10 Jahre)
 st.markdown("---")
