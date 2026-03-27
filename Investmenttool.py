@@ -663,18 +663,33 @@ if len(verfuegbare) > 1:
         fig_ef.tight_layout()
         fig_ef.subplots_adjust(left=0.1, right=0.95, top=0.95, bottom=0.15)
         st.pyplot(fig_ef) 
-    with opt_col2:
-        opt_weights_df = pd.DataFrame({
-            "Ticker": verfuegbare,
-            "Aktuell": [f"{a*100:.1f}%" for a in anteile],
-            "Optimiert": [f"{w*100:.1f}%" for w in best_w]
-        })
-        st.table(opt_weights_df.set_index('Ticker'))
-        st.info(f"""
-        - Optimierte Erwartete Rendite: {opt_ret:.2%}
-        - Optimierte Volatilität: {opt_vol:.2%}
-        - Optimiertes Sharpe Ratio: {results[2, max_sharpe_idx]:.2f}
-        """)
+   with opt_col2:
+        st.markdown("""
+        <style>
+            .opt-container { background: rgba(100,100,100,0.05); border-radius: 12px; padding: 12px; margin-bottom: 15px; }
+            .opt-row { margin-bottom: 15px; position: relative; }
+            .opt-ticker-label { color: #4A90E2; font-family: monospace; font-weight: bold; font-size: 13px; margin-bottom: 4px; }
+            .bar-label { display: flex; justify-content: space-between; font-size: 11px; color: #9CA3AF; margin-bottom: 2px; }
+            .bar-bg { background: rgba(255,255,255,0.05); height: 6px; border-radius: 3px; width: 100%; margin-bottom: 8px; overflow: hidden; }
+            .bar-fill-act { background: #6B7280; height: 100%; border-radius: 3px; } /* Grau für Aktuell */
+            .bar-fill-opt { background: #4A90E2; height: 100%; border-radius: 3px; } /* Blau für Optimiert */
+            .opt-stats { background: rgba(74, 144, 226, 0.1); border-radius: 8px; padding: 10px; border-left: 4px solid #4A90E2; }
+            .stat-item { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
+            .stat-val { font-weight: bold; color: white; }
+        </style>
+        """, unsafe_allow_html=True)
+        opt_html = '<div class="opt-container">'
+        for t, a, w in zip(verfuegbare, anteile, best_w):
+            opt_html += f"""
+            <div class="opt-row">
+                <div class="opt-ticker-label">{t}</div>
+                <div class="bar-label"><span>Aktuell</span><span>{a:.1%}</span></div>
+                <div class="bar-bg"><div class="bar-fill-act" style="width: {a*100}%;"></div></div>
+                <div class="bar-label"><span>Optimiert</span><span>{w:.1%}</span></div>
+                <div class="bar-bg"><div class="bar-fill-opt" style="width: {w*100}%;"></div></div>
+            </div>"""
+        opt_html += "</div>"
+        st.markdown(opt_html, unsafe_allow_html=True)
 else: 
     st.info("Die Portfolio-Optimierung steht erst ab zwei Positionen zur Verfügung.")
 
