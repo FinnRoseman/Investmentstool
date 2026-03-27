@@ -617,7 +617,7 @@ st.info(f"""
 """)
 
 st.markdown("---")
-st.subheader("Faktorenanalyse (Portfolio-DNA)", help="Diese Analyse zeigt, welche wissenschaftlichen Faktoren (Betas) dein Portfolio antreiben.")
+st.subheader("Faktorenanalyse", help="Diese Analyse zeigt, welche wissenschaftlichen Faktoren (Betas) dein Portfolio antreiben.")
 
 try:
     with st.spinner("Berechne Faktor-Exposures..."):
@@ -633,7 +633,7 @@ try:
         ]
         factors.plot(kind='barh', color=colors_fac, ax=ax_fac)
         ax_fac.axvline(0, color='black', linewidth=0.8, linestyle='--')
-        ax_fac.set_title("Faktor-Ladungen (Beta-Werte)", fontsize=14)
+        ax_fac.set_title("Faktorladungen", fontsize=14)
         ax_fac.set_xlabel("Beta-Wert", fontsize=10)
         ax_fac.grid(axis='x', alpha=0.3)
         plt.tight_layout()
