@@ -617,35 +617,29 @@ st.info(f"""
 """)
 
 st.markdown("---")
-st.subheader("Faktorenanalyse", help="Zeigt, welche Faktoren im Portfolio wie stark/schwach ausgeprägt sind.")
+st.subheader("Faktorenanalyse (Portfolio-DNA)", help="Diese Analyse zeigt, welche wissenschaftlichen Faktoren (Betas) dein Portfolio antreiben.")
 
 try:
     with st.spinner("Berechne Faktor-Exposures..."):
         factors = get_factor_loadings(port_rendite)
-        f_col1, f_col2 = st.columns([1, 1])
-        with f_col1:
-            fig_fac, ax_fac = plt.subplots(figsize=(10, 6))
-            colors_fac = ['#4A90E2', '#27AE60', '#F2994A', '#9B51E0', '#EB5757']
-            factors.index = ['Market', 'Size', 'Value', 'Profitability (Quality)', 'Investmentbehavior (Quality)']
-            factors.plot(kind='barh', color=colors_fac, ax=ax_fac)
-            ax_fac.axvline(0, color='black', linewidth=0.8)
-            ax_fac.set_title("Faktor-Ladungen (Betas)")
-            ax_fac.grid(axis='x', alpha=0.3)
-            st.pyplot(fig_fac)
-
-        with f_col2:
-            st.write("**Was bedeuten diese Werte?**")
-            st.info("""
-            - **Market**: Sensitivität zum breiten Markt (ähnlich deinem klassischen Beta).
-            - **Size**: Positive Werte = Fokus auf kleine Firmen (Small Caps).
-            - **Value**: Positive Werte = Fokus auf günstige Aktien (Substanzwerte).
-            - **Profitability (Quality)**: Hohe Werte = Fokus auf Firmen mit hohen operativen Margen (Quality).
-            - **Investmentbehavior (Quality)**: Hohe Werte = Fokus auf Firmen, die konservativ investieren (Quality-Merkmal).
-            """)
-            highest_factor = factors.idxmax()
-            st.success(f"Dein Portfolio wird am stärksten durch den Faktor **{highest_factor}** beeinflusst.")
+        fig_fac, ax_fac = plt.subplots(figsize=(12, 6))
+        colors_fac = ['#4A90E2', '#27AE60', '#F2994A', '#9B51E0', '#D488FF']
+        factors.index = [
+            'Market', 
+            'Size', 
+            'Value', 
+            'Quality I: Profitability', 
+            'Quality II: Investmentbehavior'
+        ]
+        factors.plot(kind='barh', color=colors_fac, ax=ax_fac)
+        ax_fac.axvline(0, color='black', linewidth=0.8, linestyle='--')
+        ax_fac.set_title("Faktor-Ladungen (Beta-Werte)", fontsize=14)
+        ax_fac.set_xlabel("Beta-Wert", fontsize=10)
+        ax_fac.grid(axis='x', alpha=0.3)
+        plt.tight_layout()
+        st.pyplot(fig_fac)
 
 except Exception as e:
-    st.error(f"Faktor-Analyse konnte nicht geladen werden. Grund: {e}")
+    st.error(f"Faktoranalyse konnte nicht geladen werden: {e}")
 
 st.caption(f"Datenzeitraum: {daten.index[0].strftime('%d.%m.%Y')} bis {daten.index[-1].strftime('%d.%m.%Y')}")
