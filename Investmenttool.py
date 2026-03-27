@@ -662,7 +662,7 @@ with sim_col1:
     auswahl = st.selectbox(
         "Wähle ein Szenario:", 
         list(szenarien.keys()), 
-        help="Simuliert komplexe Krisen unter Berücksichtigung aller 5 Fama-French Faktoren."
+        help="Simuliert verschiedene Szenarien unter Berücksichtigung aller 5 Fama-French Faktoren."
     )
     schocks = szenarien[auswahl]
     verlust_pro_faktor = factors.values * schocks
@@ -676,15 +676,6 @@ with sim_col1:
             <p style="margin:0; font-weight:bold;">{verlust_sz_euro:,.2f} €</p>
         </div>
     """, unsafe_allow_html=True)
-    with st.expander("Faktor-Details (Fama-French)"):
-        st.write("Wie dein Portfolio-Stil auf dieses Szenario reagiert:")
-        details_df = pd.DataFrame({
-            "Faktor": factors.index,
-            "Dein Beta": factors.values.round(2),
-            "Faktor-Schock": [f"{s*100:.1f}%" for s in schocks],
-            "Beitrag": [f"{(f*s)*100:.2f}%" for f, s in zip(factors.values, schocks)]
-        })
-        st.table(details_df.set_index('Faktor'))
 with sim_col2:
     st.markdown("### 🕹️ Benchmark-Sensitivität")
     eigener_schock = st.slider(
