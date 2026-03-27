@@ -145,13 +145,60 @@ for t in ticker_liste:
 
 st.title("Portfolio Backtest Dashboard")
 with st.expander("Portfolio-Zusammensetzung (Name & Gewichtung)"):
-    legende_df = pd.DataFrame({
-        "Ticker": ticker_liste,
-        "Name": [ticker_namen.get(t, t) for t in ticker_liste],
-        "Anteil": [f"{zuordnung.get(t, 0)*100:.1f}%" for t in ticker_liste]
-    })
-    legende_df.index = range(1, len(legende_df) + 1)
-    st.table(legende_df)
+    st.markdown("""
+    <style>
+        .port-container {
+            background-color: rgba(100,100,100,0.05);
+            border-radius: 12px;
+            padding: 5px;
+            margin-bottom: 15px;
+        }
+        .port-row {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+        .port-row:last-child { border-bottom: none; }
+        .port-bar {
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            background-color: rgba(74, 144, 226, 0.15);
+            z-index: 0;
+        }
+        .port-ticker {
+            background-color: rgba(0,0,0,0.3);
+            color: #4A90E2;
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            margin-right: 15px;
+            z-index: 1;
+            min-width: 80px;
+            text-align: center;
+        }
+        .port-name { flex: 1; color: white; font-size: 14px; z-index: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .port-weight { font-weight: bold; color: white; margin-left: 10px; z-index: 1; min-width: 60px; text-align: right; }
+    </style>
+    """, unsafe_allow_html=True)
+    list_html = '<div class="port-container">'
+    for t in ticker_liste:
+        name = ticker_namen.get(t, t)
+        anteil_val = zuordnung.get(t, 0)
+        anteil_str = f"{anteil_val*100:.1f}%"
+        list_html += f"""
+        <div class="port-row">
+            <div class="port-bar" style="width: {anteil_val*100}%;"></div>
+            <div class="port-ticker">{t}</div>
+            <div class="port-name">{name}</div>
+            <div class="port-weight">{anteil_str}</div>
+        </div>
+        """
+    list_html += '</div>'
+    st.markdown(list_html, unsafe_allow_html=True)
     summe_anteile = sum(anteile_orig)
     if abs(summe_anteile - 1.0) > 0.001:
         st.warning(f"⚠️ Die Summe der Anteile liegt bei {summe_anteile*100:.1f}%.")
