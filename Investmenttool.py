@@ -667,31 +667,18 @@ if len(verfuegbare) > 1:
         st.markdown("""
         <style>
             .opt-container { background: rgba(100,100,100,0.05); border-radius: 12px; padding: 10px; margin-bottom: 12px; }
-            .opt-row { margin-bottom: 10px; position: relative; } /* Weniger Abstand */
+            .opt-row { margin-bottom: 10px; position: relative; }
             .opt-ticker-label { color: #4A90E2; font-family: monospace; font-weight: bold; font-size: 13px; margin-bottom: 3px; }
-            /* Der neue geteilte Balken (Stacked) */
+            .opt-name-label { color: #9CA3AF; font-size: 11px; margin-bottom: 4px; display: block; } /* Neu: Für den Namen */
             .bar-bg-stacked { 
-                background: rgba(255,255,255,0.05); /* Der leere Teil ist transparent-weiß */
-                height: 10px; /* Etwas dicker für bessere Sichtbarkeit */
-                border-radius: 5px; 
-                width: 100%; 
-                display: flex; /* Flexbox für die Aufteilung */
-                overflow: hidden;
-                margin-bottom: 4px;
+                background: rgba(255,255,255,0.05); height: 10px; border-radius: 5px; 
+                width: 100%; display: flex; overflow: hidden; margin-bottom: 4px;
             }
-            .bar-segment-act { background: #6B7280; } /* Grau für Aktuell */
-            .bar-segment-opt { background: #4A90E2; } /* Blau für Optimiert */
-            
-            /* Kompakte Werte-Zeile */
-            .values-row {
-                display: flex;
-                justify-content: space-between;
-                font-size: 11px;
-                color: #9CA3AF;
-            }
+            .bar-segment-act { background: #6B7280; }
+            .bar-segment-opt { background: #4A90E2; }
+            .values-row { display: flex; justify-content: space-between; font-size: 11px; color: #9CA3AF; }
             .val-act { color: #D1D5DB; }
             .val-opt { color: #4A90E2; font-weight: bold; }
-            /* Stats-Box (neutraleres Blau) */
             .opt-stats-box { background: rgba(100,100,100,0.08); border-radius: 8px; padding: 10px; }
             .stat-line { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 3px; color: #9CA3AF; }
             .stat-val-bold { font-weight: bold; color: white; }
@@ -699,14 +686,14 @@ if len(verfuegbare) > 1:
         """, unsafe_allow_html=True)
         opt_html = '<div class="opt-container">'
         for t, a, w in zip(verfuegbare, anteile, best_w):
-            a_pct = a * 100
-            w_pct = w * 100
+            full_name = ticker_namen.get(t, t) 
             opt_html += f"""
             <div class="opt-row">
                 <div class="opt-ticker-label">{t}</div>
+                <div class="opt-name-label">{full_name}</div>
                 <div class="bar-bg-stacked">
-                    <div class="bar-segment-act" style="width: {a_pct}%;"></div>
-                    <div class="bar-segment-opt" style="width: {w_pct}%;"></div>
+                    <div class="bar-segment-act" style="width: {a*100}%;"></div>
+                    <div class="bar-segment-opt" style="width: {w*100}%;"></div>
                 </div>
                 <div class="values-row">
                     <span>Aktuell <span class="val-act">{a:.1%}</span></span>
@@ -816,7 +803,6 @@ ax_mc_path.grid(True, alpha=0.2)
 
 st.pyplot(fig_mc_path)
 
-# --- CSS für die Szenario-Karten ---
 st.markdown("""
 <style>
     .mc-container {
@@ -859,8 +845,6 @@ st.markdown("""
     .optimist { border-left-color: #27AE60; }
 </style>
 """, unsafe_allow_html=True)
-
-# HTML für die Karten zusammenbauen
 mc_html = f"""
 <div style="margin-bottom: 10px; font-weight: bold; color: #4A90E2;">
     ⏳ Ergebnis nach {mc_jahre} Jahren (Projektion):
@@ -889,7 +873,6 @@ mc_html = f"""
     </div>
 </div>
 """
-
 st.markdown(mc_html, unsafe_allow_html=True)
 
 st.markdown("---")
