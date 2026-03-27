@@ -696,7 +696,7 @@ with st.expander("Details zur Berechnung einsehen"):
         "Szenario-Performance": [f"{s*100:.1f}%" for s in schocks],
         "Portfolio-Performance": [f"{(f*s)*100:.2f}%" for f, s in zip(factors.values, schocks)]
     })
-    st.table(details_df)
+    st.table(details_df.set_index('Faktor'))
 
 st.markdown("---")
 st.caption(f"Datenzeitraum: {daten.index[0].strftime('%d.%m.%Y')} bis {daten.index[-1].strftime('%d.%m.%Y')}")
