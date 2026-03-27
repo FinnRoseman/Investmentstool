@@ -669,11 +669,18 @@ verlust_pro_faktor = factors.values * schocks
 erwarteter_gesamtverlust = np.sum(verlust_pro_faktor)
 verlust_euro = endsumme * erwarteter_gesamtverlust
 
-st.markdown(f"### Geschätzte Auswirkung: **{erwarteter_gesamtverlust:.2%}**")
-if erwarteter_gesamtverlust < 0:
-    st.error(f"In diesem Szenario würde dein Depot voraussichtlich **{verlust_euro:,.2f} €** an Wert verlieren.")
-else:
-    st.success(f"In diesem Szenario würde dein Depot voraussichtlich um **{verlust_euro:,.2f} €** steigen.")
+farbe = "#EB5757" if erwarteter_gesamtverlust < 0 else "#27AE60"
+st.markdown(
+    f"""
+    <div style="padding: 10px 0px;">
+        <span style="font-size: 26px; font-weight: bold;">Geschätzte Auswirkung: </span>
+        <span style="font-size: 26px; font-weight: bold; color: {farbe};">
+            {erwarteter_gesamtverlust:.2%} ({verlust_euro:,.2f} €)
+        </span>
+    </div>
+    """, 
+    unsafe_allow_html=True
+)
 with st.expander("Details zur Berechnung einsehen"):
     st.write("Das Modell berechnet, wie deine individuellen Faktor-Ladungen auf die Marktstörung reagieren:")
     details_df = pd.DataFrame({
