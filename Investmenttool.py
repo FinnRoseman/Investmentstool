@@ -145,7 +145,6 @@ for t in ticker_liste:
 
 st.title("Portfolio Backtest Dashboard")
 with st.expander("Portfolio-Zusammensetzung (Name & Gewichtung)"):
-    # 1. CSS (bleibt gleich, sorgt für das Design)
     st.markdown("""
     <style>
         .port-container {
@@ -185,15 +184,11 @@ with st.expander("Portfolio-Zusammensetzung (Name & Gewichtung)"):
         .port-weight { font-weight: bold; color: white; margin-left: 10px; z-index: 1; min-width: 60px; text-align: right; }
     </style>
     """, unsafe_allow_html=True)
-
-    # 2. Den HTML-String VORAB komplett zusammenbauen
     rows_html = ""
     for t in ticker_liste:
         name = ticker_namen.get(t, t)
         anteil_val = zuordnung.get(t, 0)
         anteil_pct = anteil_val * 100
-        
-        # Jede Zeile wird an den Gesamt-String angehängt
         rows_html += f"""
         <div class="port-row">
             <div class="port-bar" style="width: {anteil_pct}%;"></div>
@@ -201,8 +196,6 @@ with st.expander("Portfolio-Zusammensetzung (Name & Gewichtung)"):
             <div class="port-name">{name}</div>
             <div class="port-weight">{anteil_pct:.1f}%</div>
         </div>"""
-
-    # 3. Das gesamte Paket in einem einzigen Aufruf senden
     st.markdown(f'<div class="port-container">{rows_html}</div>', unsafe_allow_html=True)
     summe_anteile = sum(anteile_orig)
     if abs(summe_anteile - 1.0) > 0.001:
