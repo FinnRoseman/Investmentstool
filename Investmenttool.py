@@ -646,15 +646,14 @@ st.markdown("---")
 st.subheader("🌋 Risiko-Simulator & Szenarioanalyse")
 
 szenarien = {
-    "Normaler Marktrückgang (-10%)": [-0.10, 0, 0, 0, 0],
-    "KI-Blase platzt": [-0.15, -0.05, 0.20, 0.10, 0.05],
-    "Zins-Schock (Starke Zinserhöhung)": [-0.05, -0.10, 0.15, -0.05, -0.10],
-    "Stagflation (Inflation + Rezession)": [-0.20, 0.05, 0.15, 0.10, 0.05],
-    "Globaler Finanz-Crash (2008 Style)": [-0.50, -0.10, 0.10, 0.20, 0.15]
+    "Stagflation": [-0.25, 0.00, +0.10, +0.05, +0.02],
+    "Inflation": [-0.18, -0.02, 0.08, 0.12, 0.05],
+    "Schwere Rezession": [-0.45, -0.10, +0.05, +0.12, +0.08],
+    "Tech-Blase": [-0.20, -0.05, +0.15, +0.05, +0.02],
+    "Small Cap Rallye": [+0.10, +0.15, +0.02, -0.05, -0.02]
 }
 
 sim_col1, sim_col2 = st.columns(2)
-
 with sim_col1:
     auswahl = st.selectbox(
         "Wähle ein Szenario:", 
