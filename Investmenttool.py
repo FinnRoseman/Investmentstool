@@ -138,8 +138,8 @@ for t in ticker_liste:
     except:
         ticker_namen[t] = t
 
-st.title("📈 Portfolio Backtest Dashboard")
-with st.expander("📋 Portfolio-Zusammensetzung (Name & Gewichtung)"):
+st.title("Portfolio Backtest Dashboard")
+with st.expander("Portfolio-Zusammensetzung (Name & Gewichtung)"):
     legende_df = pd.DataFrame({
         "Ticker": ticker_liste,
         "Name": [ticker_namen.get(t, t) for t in ticker_liste],
@@ -311,7 +311,7 @@ else:
 # --- 4. ANZEIGEN ---
 
 # Kennzahlen-Kacheln
-st.subheader("Key Performance Indicators")
+st.subheader("🔢 Key Performance Indicators")
 col1, col2, col3, col4, col5 = st.columns(5)
 col1.metric("Erwartete Rendite p.a. (CAPM)", f"{capm_erwartung_pa:.2%}", help="Theoretische Renditeerwartung basierend auf dem Marktrisiko (Beta).")
 col2.metric("Rendite p.a. (CAGR)", f"{cagr:.2%}", help="Die tatsächlich erzielte durchschnittliche jährliche Wachstumsrate unter Berücksichtigung des Zinseszinseffektes.")
@@ -329,7 +329,7 @@ col10.metric("Yield on Cost", f"{port_yoc:.2%}", help="Die persönliche Dividend
 st.markdown("---")
 
 # 1. Performance-Chart (Full Width oben)
-st.subheader("Performance & Trends", help="Vergleich der Portfolio-Performance gegen die Benchmark inklusive gleitender Durchschnitte (100/200 Tage).")
+st.subheader("📈 Performance & Trends", help="Vergleich der Portfolio-Performance gegen die Benchmark inklusive gleitender Durchschnitte (100/200 Tage).")
 fig_perf, ax_perf = plt.subplots(figsize=(10, 5), constrained_layout=True)
 port_kum = ((1 + port_rendite).cumprod() - 1) * 100
 bench_kum = ((1 + bench_rendite).cumprod() - 1) * 100
@@ -350,7 +350,7 @@ st.markdown("---")
 col_rendite, col_regionen = st.columns([1, 1])
 
 with col_rendite:
-    st.subheader("Rendite-Analyse", help="Jährliche Renditen und die kumulierte Rendite über feste Zeiträume.")
+    st.subheader("💰 Rendite-Analyse", help="Jährliche Renditen und die kumulierte Rendite über feste Zeiträume.")
     yearly_ret = port_rendite.groupby(port_rendite.index.year).apply(lambda x: (1 + x).prod() - 1) * 100
     periods = {"1Y": 252, "3Y": 756, "5Y": 1260, "10Y": 2520, "20Y": 5040}
     period_rets = {label: ((1 + port_rendite.iloc[-days:]).prod() - 1) * 100 
@@ -372,7 +372,7 @@ with col_rendite:
     st.pyplot(fig_balken)
 
 with col_regionen:
-    st.subheader("Regionale Verteilung", help="Geografische Gewichtung des Portfolios.")
+    st.subheader("🌎 Regionale Verteilung", help="Geografische Gewichtung des Portfolios.")
     if (total_na + total_sa + total_eu + total_ap + total_af) > 0:
         reg_labels = ['Nordamerika', 'Südamerika', 'Europa', 'Asien-Pazifik', 'Afrika']
         reg_values = [total_na, total_sa, total_eu, total_ap, total_af]
@@ -403,7 +403,7 @@ st.markdown("---")
 att_col1, att_col2 = st.columns(2)
 
 with att_col1:
-    st.subheader("Rolling Returns (12 Monate)", help="Zeigt die Rendite eines Zeitpunktes im Vergleich zu dem gleichen Zeitpunkt vor einem Jahr.")
+    st.subheader("🔄 Rolling Returns (12 Monate)", help="Zeigt die Rendite eines Zeitpunktes im Vergleich zu dem gleichen Zeitpunkt vor einem Jahr.")
     rolling_1y = port_rendite.rolling(window=252).apply(lambda x: (1 + x).prod() - 1)
     
     fig_roll, ax_roll = plt.subplots(figsize=(10, 6), constrained_layout=True)
@@ -417,7 +417,7 @@ with att_col1:
     st.pyplot(fig_roll)
 
 with att_col2:
-    st.subheader("Rendite-Verteilung", help="Gibt an, welche Position wie viel zur Gesamtrendite beiträgt")
+    st.subheader("📊 Rendite-Verteilung", help="Gibt an, welche Position wie viel zur Gesamtrendite beiträgt")
     beitraege = []
     for t in verfuegbare:
         einzel_ret = (1 + renditen[t]).prod() - 1
@@ -468,7 +468,7 @@ else:
 st.markdown("---")
 
 # Mean-Variance-Optimization
-st.subheader("Mean-Variance-Optimization", help="10.000 Simulationen des Portfolios zur optimalen Gewichtung für das maximale Sharpe Ratio auf Basis der erwarteten Rendite.")
+st.subheader("🎯 Mean-Variance-Optimization", help="10.000 Simulationen des Portfolios zur optimalen Gewichtung für das maximale Sharpe Ratio auf Basis der erwarteten Rendite.")
 
 if len(verfuegbare) > 1:
     np.random.seed(42)
@@ -536,13 +536,13 @@ st.markdown("---")
 g_col1, g_col2 = st.columns(2)
 
 with g_col1:
-    st.subheader("Korrelationsmatrix", help="Zeigt, wie stark sich Assets gemeinsam bewegen. 1.0 = Gleichlaufend, 0 = kein Zusammenhang, -1.0 = Gegenlaufend.")
+    st.subheader("⛓️ Korrelationsmatrix", help="Zeigt, wie stark sich Assets gemeinsam bewegen. 1.0 = Gleichlaufend, 0 = kein Zusammenhang, -1.0 = Gegenlaufend.")
     fig_corr, ax_corr = plt.subplots(figsize=(10, 8), constrained_layout=True)
     sns.heatmap(renditen[verfuegbare].corr(), annot=True, cmap='RdYlGn_r', center=0.3, fmt=".2f", linewidths=0.5, ax=ax_corr)
     st.pyplot(fig_corr)
 
 with g_col2:
-    st.subheader("Risiko-Verteilung", help="Gibt an, welche Position wie stark zur Gesamtvolatilität beiträgt")
+    st.subheader("🚨 Risiko-Verteilung", help="Gibt an, welche Position wie stark zur Gesamtvolatilität beiträgt")
     fig_bar, ax_bar = plt.subplots(figsize=(10, 8), constrained_layout=True)
     colors = ['#9B51E0' if x > 0 else '#22a884' for x in rel_risk_contrib]
     y_pos = np.arange(len(verfuegbare))
@@ -564,7 +564,7 @@ with g_col2:
 st.markdown("---")
 
 # Risiko-Tabelle
-st.subheader("Risiko-Analyse (NTM)", help="Value at Risk (VaR) gibt den Verlust an, der mit 95% Wahrscheinlichkeit nicht überschritten wird. Expected Shortfall ist der Schnitt der schlimmsten 5% der Fälle.")
+st.subheader("🔎 Risiko-Analyse (NTM)", help="Value at Risk (VaR) gibt den Verlust an, der mit 95% Wahrscheinlichkeit nicht überschritten wird. Expected Shortfall ist der Schnitt der schlimmsten 5% der Fälle.")
 risiko_data = {
     "Methode": ["Parametrisch", "Historisch", "Monte-Carlo"],
     "Value at Risk 95%": [f"{var_95_para:.2%}", f"{var_95_hist:.2%}", f"{mc_var_95_jahr:.2%}"],
@@ -574,7 +574,7 @@ st.table(pd.DataFrame(risiko_data).set_index('Methode'))
 
 # Monte Carlo Pfadsimulation (10 Jahre)
 st.markdown("---")
-st.subheader("Monte Carlo Pfadsimulation (10 Jahre)", help="Simuliert 100 mögliche Zukunftsszenarien basierend auf der historischen Volatilität und Rendite.")
+st.subheader("🎲 Monte Carlo Pfadsimulation (10 Jahre)", help="Simuliert 100 mögliche Zukunftsszenarien basierend auf der historischen Volatilität und Rendite.")
 
 mc_jahre = 10
 aktuelles_jahr = pd.Timestamp.now().year
@@ -617,7 +617,7 @@ st.info(f"""
 """)
 
 st.markdown("---")
-st.subheader("Faktorenanalyse", help="Diese Analyse zeigt, welche wissenschaftlichen Faktoren (Betas) dein Portfolio antreiben.")
+st.subheader("🧬 Faktorenanalyse", help="Diese Analyse zeigt, welche wissenschaftlichen Faktoren (Betas) dein Portfolio antreiben.")
 
 try:
     with st.spinner("Berechne Faktor-Exposures..."):
@@ -643,10 +643,10 @@ except Exception as e:
     st.error(f"Faktoranalyse konnte nicht geladen werden: {e}")
 
 st.markdown("---")
-st.subheader("Szenario- und Sensitivitätsanalyse", help="Nur sinnvoll bei 100% Aktien.")
+st.subheader("🌋 Szenario- und Sensitivitätsanalyse", help="Nur sinnvoll bei 100% Aktien.")
 
 szenarien = {
-    "Stagflation": [-0.35, -0.05, +0.15, +0.08, +0.05],
+    "Stagflation": [-0.35, -0.05, +0.15, +0.08, +0.05], 
     "Inflation": [-0.20, 0.00, 0.10, 0.12, 0.05],
     "Rezession": [-0.45, -0.10, +0.05, +0.15, +0.10],
     "Tech-Blase": [-0.40, -0.05, +0.35, +0.15, +0.10],
