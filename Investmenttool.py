@@ -4,28 +4,12 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import streamlit as st
-import pandas_datareader.data as web
 
 # --- CACHING FUNKTION ---
 @st.cache_data(show_spinner="Marktdaten werden geladen...")
 def get_cached_data(ticker_tuple, period):
     df = yf.download(list(ticker_tuple), period=period, progress=False)
     return df
-def get_factor_loadings(portfolio_returns):
-    import statsmodels.api as sm
-    ff_data = web.DataReader('F-F_Research_Data_5_Factors_2x3', 'famafrench', start='2010-01-01')[0]
-    ff_data = ff_data / 100
-    ff_data.index = ff_data.index.to_timestamp().to_period('M')
-    port_monthly = portfolio_returns.resample('M').apply(lambda x: (1 + x).prod() - 1)
-    port_monthly.index = port_monthly.index.to_period('M')
-    combined = pd.concat([port_monthly, ff_data], axis=1).dropna()
-    if len(combined) < 5:
-        raise ValueError(f"Überschneidung zu gering: Nur {len(combined)} Monate gefunden.")
-    Y = combined.iloc[:, 0] - combined['RF']
-    X = combined[['Mkt-RF', 'SMB', 'HML', 'RMW', 'CMA']]
-    X = sm.add_constant(X)
-    model = sm.OLS(Y, X).fit()
-    return model.params[1:]
 
 # --- STREAMLIT PAGE CONFIGURATION ---
 st.set_page_config(page_title="Portfolio Analyzer", layout="wide")
@@ -615,37 +599,5 @@ st.info(f"""
 - Pessimistisches Szenario (5%): **{bottom_pfad[-1]:,.2f} €** (**{mc_cagr_pessimist:.2%} p.a.**)
 - Optimistisches Szenario (95%): **{top_pfad[-1]:,.2f} €** (**{mc_cagr_optimist:.2%} p.a.**)
 """)
-
-st.markdown("---")
-st.subheader("🧬 Faktor-DNA Analyse (Fama-French 5-Factor)", help="Diese Analyse zeigt, welche Risikoprämien (Faktoren) deine Rendite wirklich treiben.")
-
-try:
-    with st.spinner("Berechne Faktor-Exposures..."):
-        factors = get_factor_loadings(port_rendite)
-        f_col1, f_col2 = st.columns([1, 1])
-        with f_col1:
-            fig_fac, ax_fac = plt.subplots(figsize=(10, 6))
-            colors_fac = ['#4A90E2', '#27AE60', '#F2994A', '#9B51E0', '#EB5757']
-            factors.index = ['Markt (Mkt-RF)', 'Größe (SMB)', 'Value (HML)', 'Profitabilität (RMW)', 'Investitionen (CMA)']
-            factors.plot(kind='barh', color=colors_fac, ax=ax_fac)
-            ax_fac.axvline(0, color='black', linewidth=0.8)
-            ax_fac.set_title("Faktor-Ladungen (Betas)")
-            ax_fac.grid(axis='x', alpha=0.3)
-            st.pyplot(fig_fac)
-
-        with f_col2:
-            st.write("**Was bedeuten diese Werte?**")
-            st.info("""
-            - **Mkt-RF**: Sensitivität zum breiten Markt (ähnlich deinem klassischen Beta).
-            - **SMB (Size)**: Positive Werte = Fokus auf kleine Firmen (Small Caps).
-            - **HML (Value)**: Positive Werte = Fokus auf günstige Aktien (Substanzwerte).
-            - **RMW (Profitability)**: Hohe Werte = Fokus auf Firmen mit hohen operativen Margen (Quality).
-            - **CMA (Investment)**: Hohe Werte = Fokus auf Firmen, die konservativ investieren (Quality-Merkmal).
-            """)
-            highest_factor = factors.idxmax()
-            st.success(f"Dein Portfolio wird am stärksten durch den Faktor **{highest_factor}** beeinflusst.")
-
-except Exception as e:
-    st.error(f"Faktor-Analyse konnte nicht geladen werden. Grund: {e}")
 
 st.caption(f"Datenzeitraum: {daten.index[0].strftime('%d.%m.%Y')} bis {daten.index[-1].strftime('%d.%m.%Y')}")
