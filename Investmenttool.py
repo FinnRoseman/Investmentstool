@@ -302,57 +302,52 @@ for i, t in enumerate(verfuegbare):
             port_yoc += ticker_yoc * gewicht
 avg_capital = (startkapital + endsumme) / 2
 st.subheader(f"Wertentwicklung bei {startkapital:,.0f} € Investment")
-
-# Logik-Vorbereitung (NaN-Check und Farben)
 farbe_perf = "#27AE60" if absoluter_gewinn >= 0 else "#EB5757"
 div_wert = 0.00 if np.isnan(total_div_euro) else total_div_euro
-
 abs_anzeige = f"{absoluter_gewinn:,.2f} €" if startkapital > 0 else "0.00 €"
 rel_anzeige = f"{total_ret:.2%}" if startkapital > 0 else "0.00%"
 div_anzeige = f"{div_wert:,.2f} €" if startkapital > 0 else "0.00 €"
-
-# DAS KOMPLETTE HTML IN EINEM AUFRUF
-st.markdown(f"""
+st.markdown("""
 <style>
-    .header-grid {{
+    .header-grid {
         display: grid;
         grid-template-columns: 1.5fr 1.2fr 1fr 1.2fr;
         gap: 15px;
         margin-bottom: 25px;
-    }}
-    .header-card {{
+    }
+    .header-card {
         background-color: rgba(100,100,100,0.1);
         padding: 20px;
         border-radius: 12px;
         border-left: 5px solid #4A90E2;
-    }}
-    .header-label {{ color: #9CA3AF; font-size: 14px; margin: 0; }}
-    .header-value {{ color: white; font-size: 28px; font-weight: bold; margin: 5px 0 0 0; }}
+    }
+    .header-label { color: #9CA3AF !important; font-size: 14px !important; margin: 0 !important; }
+    .header-value { color: white !important; font-size: 28px !important; font-weight: bold !important; margin: 5px 0 0 0 !important; }
 </style>
-
-<div class="header-grid">
-    <div class="header-card">
-        <p class="header-label">Endwert Heute</p>
-        <p class="header-value">{endsumme:,.2f} €</p>
-    </div>
-    
-    <div class="header-card" style="border-left-color: {farbe_perf};">
-        <p class="header-label">Seit Kauf Absolut</p>
-        <p class="header-value" style="color: {farbe_perf};">{abs_anzeige}</p>
-    </div>
-    
-    <div class="header-card" style="border-left-color: {farbe_perf};">
-        <p class="header-label">Seit Kauf Relativ</p>
-        <p class="header-value" style="color: {farbe_perf};">{rel_anzeige}</p>
-    </div>
-    
-    <div class="header-card">
-        <p class="header-label">Ausschüttungen (LTM)</p>
-        <p class="header-value">{div_anzeige}</p>
-    </div>
-</div>
 """, unsafe_allow_html=True)
 
+html_code = f"""
+<div class="header-grid">
+<div class="header-card">
+<p class="header-label">Endwert Heute</p>
+<p class="header-value">{endsumme:,.2f} €</p>
+</div>
+<div class="header-card" style="border-left-color: {farbe_perf};">
+<p class="header-label">Seit Kauf Absolut</p>
+<p class="header-value" style="color: {farbe_perf} !important;">{abs_anzeige}</p>
+</div>
+<div class="header-card" style="border-left-color: {farbe_perf};">
+<p class="header-label">Seit Kauf Relativ</p>
+<p class="header-value" style="color: {farbe_perf} !important;">{rel_anzeige}</p>
+</div>
+<div class="header-card">
+<p class="header-label">Ausschüttungen (LTM)</p>
+<p class="header-value">{div_anzeige}</p>
+</div>
+</div>
+"""
+
+st.write(html_code, unsafe_allow_html=True)
 st.markdown("---")
 
 # --- 4. ANZEIGEN ---
