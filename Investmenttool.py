@@ -691,4 +691,5 @@ with st.expander("Details zur Berechnung einsehen"):
     })
     st.table(details_df)
 
+st.markdown("---")
 st.caption(f"Datenzeitraum: {daten.index[0].strftime('%d.%m.%Y')} bis {daten.index[-1].strftime('%d.%m.%Y')}")
