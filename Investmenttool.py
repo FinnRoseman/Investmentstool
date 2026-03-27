@@ -660,9 +660,10 @@ with sim_col1:
     schocks = szenarien[auswahl]
 
 with sim_col2:
-    eigener_schock = st.slider("Oder manueller Markt-Schock (%)", -50, 0, -10)
-    if eigener_schock != -10:
+    eigener_schock = st.slider("Oder manueller Markt-Schock (%)", -50, 0, 0)
+    if eigener_schock != 0:
         schocks = [eigener_schock/100, 0, 0, 0, 0]
+        st.info("⚠️ Manueller Modus: Szenario-Vorgaben werden ignoriert.")
 
 verlust_pro_faktor = factors.values * schocks
 erwarteter_gesamtverlust = np.sum(verlust_pro_faktor)
