@@ -697,12 +697,11 @@ with sim_col2:
     farbe_sens = "#EB5757" if gesamt_sens_ret < 0 else "#27AE60"
     st.markdown(f"""
         <div style="background-color: rgba(100,100,100,0.1); padding: 15px; border-radius: 10px; border-left: 5px solid {farbe_sens};">
-            <p style="margin:0; font-size:14px; color:gray;">Auswirkung bei Crash von {ausgewaehlter_name}:</p>
+            <p style="margin:0; font-size:14px; color:gray;">Auswirkung von Benchmark-Bewegungen:</p>
             <h2 style="margin:0; color:{farbe_sens};">{gesamt_sens_ret:.2%}</h2>
             <p style="margin:0; font-weight:bold;">{verlust_sens_euro:,.2f} €</p>
         </div>
     """, unsafe_allow_html=True)
-    st.info(f"Basis: Beta von **{beta:.2f}** gegenüber der Benchmark.")
 
 st.markdown("---")
 st.caption(f"Datenzeitraum: {daten.index[0].strftime('%d.%m.%Y')} bis {daten.index[-1].strftime('%d.%m.%Y')}")
