@@ -648,8 +648,7 @@ except Exception as e:
     st.error(f"Faktoranalyse konnte nicht geladen werden: {e}")
 
 st.markdown("---")
-st.subheader("🌋 Szenario- und Sensitivitätsanalyse", help="Nur sinnvoll bei 100% Aktien.")
-
+st.subheader("🌋 Szenario- und Sensitivitätsanalyse", help="Vergleicht komplexe historische Marktumgebungen mit einem einfachen Markt-Stresstest.")
 szenarien = {
     "Stagflation": [-0.35, -0.05, +0.15, +0.08, +0.05], 
     "Inflation": [-0.20, 0.00, 0.10, 0.12, 0.05],
@@ -659,50 +658,51 @@ szenarien = {
 }
 sim_col1, sim_col2 = st.columns(2)
 with sim_col1:
+    st.markdown("### 🏛️ Szenario-Analyse")
     auswahl = st.selectbox(
         "Wähle ein Szenario:", 
         list(szenarien.keys()), 
-        help="Wähle ein vordefiniertes Marktszenario aus."
+        help="Simuliert komplexe Krisen unter Berücksichtigung aller 5 Fama-French Faktoren."
     )
     schocks = szenarien[auswahl]
-with sim_col2:
-    eigener_schock = st.slider(
-        "Manueller Markt-Schock (%)", 
-        -50.0, 0.0, 0.0, 1.0, 
-        help="Bewege den Regler, um ein eigenes Crash-Szenario zu testen. Setze ihn auf 0, um wieder das Dropdown zu nutzen."
-    )
-if eigener_schock != 0.0:
-    erwarteter_gesamtverlust = (beta * eigener_schock / 100)
-    st.info("👉 Manueller Modus aktiv")
-else:
     verlust_pro_faktor = factors.values * schocks
-    erwarteter_gesamtverlust = np.sum(verlust_pro_faktor)
-    st.caption(f"ℹ️ Szenario-Modus aktiv: {auswahl}")
-
-verlust_euro = endsumme * erwarteter_gesamtverlust
-verlust_euro = endsumme * erwarteter_gesamtverlust
-
-farbe = "#EB5757" if erwarteter_gesamtverlust < 0 else "#27AE60"
-st.markdown(
-    f"""
-    <div style="padding: 10px 0px;">
-        <span style="font-size: 26px; font-weight: bold;">Geschätzte Auswirkung: </span>
-        <span style="font-size: 26px; font-weight: bold; color: {farbe};">
-            {erwarteter_gesamtverlust:.2%} ({verlust_euro:,.2f} €)
-        </span>
-    </div>
-    """, 
-    unsafe_allow_html=True
-)
-with st.expander("Details zur Berechnung einsehen"):
-    st.write("Das Modell berechnet, wie deine individuellen Faktor-Ladungen auf die Marktstörung reagieren:")
-    details_df = pd.DataFrame({
-        "Faktor": factors.index,
-        "Beta": factors.values.round(2),
-        "Szenario-Performance": [f"{s*100:.1f}%" for s in schocks],
-        "Portfolio-Performance": [f"{(f*s)*100:.2f}%" for f, s in zip(factors.values, schocks)]
-    })
-    st.table(details_df.set_index('Faktor'))
+    gesamt_sz_ret = np.sum(verlust_pro_faktor)
+    verlust_sz_euro = endsumme * gesamt_sz_ret
+    farbe_sz = "#EB5757" if gesamt_sz_ret < 0 else "#27AE60"
+    st.markdown(f"""
+        <div style="background-color: rgba(100,100,100,0.1); padding: 15px; border-radius: 10px; border-left: 5px solid {farbe_sz};">
+            <p style="margin:0; font-size:14px; color:gray;">Erwartete Auswirkung (Multi-Faktor):</p>
+            <h2 style="margin:0; color:{farbe_sz};">{gesamt_sz_ret:.2%}</h2>
+            <p style="margin:0; font-weight:bold;">{verlust_sz_euro:,.2f} €</p>
+        </div>
+    """, unsafe_allow_html=True)
+    with st.expander("🔬 Faktor-Details (Fama-French)"):
+        st.write("Wie dein Portfolio-Stil auf dieses Szenario reagiert:")
+        details_df = pd.DataFrame({
+            "Faktor": factors.index,
+            "Dein Beta": factors.values.round(2),
+            "Faktor-Schock": [f"{s*100:.1f}%" for s in schocks],
+            "Beitrag": [f"{(f*s)*100:.2f}%" for f, s in zip(factors.values, schocks)]
+        })
+        st.table(details_df.set_index('Faktor'))
+with sim_col2:
+    st.markdown("### 🕹️ Markt-Stresstest")
+    eigener_schock = st.slider(
+        "Manueller Schock (%)", 
+        -50.0, 0.0, -10.0, 1.0, 
+        help="Simuliert einen isolierten Rückgang deiner gewählten Benchmark."
+    )
+    gesamt_sens_ret = (beta * eigener_schock / 100)
+    verlust_sens_euro = endsumme * gesamt_sens_ret
+    farbe_sens = "#EB5757" if gesamt_sens_ret < 0 else "#27AE60"
+    st.markdown(f"""
+        <div style="background-color: rgba(100,100,100,0.1); padding: 15px; border-radius: 10px; border-left: 5px solid {farbe_sens};">
+            <p style="margin:0; font-size:14px; color:gray;">Auswirkung bei Crash von {ausgewaehlter_name}:</p>
+            <h2 style="margin:0; color:{farbe_sens};">{gesamt_sens_ret:.2%}</h2>
+            <p style="margin:0; font-weight:bold;">{verlust_sens_euro:,.2f} €</p>
+        </div>
+    """, unsafe_allow_html=True)
+    st.info(f"Basis: Beta von **{beta:.2f}** gegenüber der Benchmark.")
 
 st.markdown("---")
 st.caption(f"Datenzeitraum: {daten.index[0].strftime('%d.%m.%Y')} bis {daten.index[-1].strftime('%d.%m.%Y')}")
