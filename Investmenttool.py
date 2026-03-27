@@ -673,7 +673,7 @@ with sim_col2:
     )
 if eigener_schock != 0.0:
     erwarteter_gesamtverlust = (beta * eigener_schock / 100)
-    st.info(f"👉 Manueller Modus aktiv: {eigener_schock}% Schock bezogen auf {ausgewaehlter_name} (Beta: {beta:.2f}).")
+    st.info(f"👉 Manueller Modus aktiv: {eigener_schock}%")
 else:
     verlust_pro_faktor = factors.values * schocks
     erwarteter_gesamtverlust = np.sum(verlust_pro_faktor)
