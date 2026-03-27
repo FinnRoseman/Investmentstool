@@ -666,60 +666,38 @@ with g_col2:
 st.markdown("---")
 
 # Risiko-Tabelle
-st.subheader("🔎 Risiko-Analyse (NTM)", help="VaR: Verlust, der mit 95% Wahrscheinlichkeit nicht überschritten wird. Expected Shortfall: Durchschnitt der schlimmsten 5% der Fälle.")
-st.markdown("""
+st.subheader("🔎 Risiko-Analyse (NTM)")
+r_labels = ["Parametrisch", "Historisch", "Monte-Carlo"]
+r_vars = [f"{var_95_para:.2%}", f"{var_95_hist:.2%}", f"{mc_var_95_jahr:.2%}"]
+r_ess = [f"{es_95_para:.2%}", f"{es_95_hist:.2%}", f"{mc_es_95_jahr:.2%}"]
+risk_html = """
 <style>
-    .risk-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 15px;
-        margin-bottom: 20px;
+    .risk-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+    .risk-card { 
+        background-color: rgba(100,100,100,0.1); 
+        padding: 18px; 
+        border-radius: 12px; 
+        border-left: 5px solid #4A90E2;
+        font-family: sans-serif;
     }
-    .risk-card {
-        background-color: rgba(100,100,100,0.1);
-        padding: 18px;
-        border-radius: 12px;
-        border-left: 5px solid #4A90E2; /* Einheitliches Blau */
-    }
-    .risk-method-title {
-        color: #9CA3AF;
-        font-size: 13px;
-        margin: 0 0 12px 0;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        font-weight: bold;
-    }
-    .risk-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 6px;
-    }
+    .risk-title { color: #9CA3AF; font-size: 13px; margin: 0 0 12px 0; text-transform: uppercase; font-weight: bold; }
+    .risk-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
     .risk-label { color: #9CA3AF; font-size: 13px; margin: 0; }
     .risk-num { color: white; font-size: 18px; font-weight: bold; margin: 0; }
 </style>
-""", unsafe_allow_html=True)
-
-methoden = ["Parametrisch", "Historisch", "Monte-Carlo"]
-vars = [f"{var_95_para:.2%}", f"{var_95_hist:.2%}", f"{mc_var_95_jahr:.2%}"]
-ess = [f"{es_95_para:.2%}", f"{es_95_hist:.2%}", f"{mc_es_95_jahr:.2%}"]
-cols_html = ""
-for m, v, e in zip(methoden, vars, ess):
-    cols_html += f"""
+<div class="risk-grid">
+"""
+for m, v, e in zip(r_labels, r_vars, r_ess):
+    risk_html += f"""
     <div class="risk-card">
-        <p class="risk-method-title">{m}</p>
-        <div class="risk-row">
-            <p class="risk-label">VaR 95%</p>
-            <p class="risk-num">{v}</p>
-        </div>
-        <div class="risk-row">
-            <p class="risk-label">Exp. Shortfall</p>
-            <p class="risk-num">{e}</p>
-        </div>
+        <div class="risk-title">{m}</div>
+        <div class="risk-row"><p class="risk-label">VaR 95%</p><p class="risk-num">{v}</p></div>
+        <div class="risk-row"><p class="risk-label">Exp. Shortfall</p><p class="risk-num">{e}</p></div>
     </div>
     """
-
-st.markdown(f'<div class="risk-grid">{cols_html}</div>', unsafe_allow_html=True)
+risk_html += "</div>"
+st.markdown(risk_html, unsafe_allow_html=True)
+st.markdown("---")
 
 # Monte Carlo Pfadsimulation (10 Jahre)
 st.markdown("---")
