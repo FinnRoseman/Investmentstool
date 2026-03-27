@@ -816,12 +816,81 @@ ax_mc_path.grid(True, alpha=0.2)
 
 st.pyplot(fig_mc_path)
 
-st.info(f"""
-**Ergebnis nach {mc_jahre} Jahren (Projektion):**
-- Mittleres Szenario (Median): **{median_pfad[-1]:,.2f} €** (**{mc_cagr_median:.2%} p.a.**)
-- Pessimistisches Szenario (5%): **{bottom_pfad[-1]:,.2f} €** (**{mc_cagr_pessimist:.2%} p.a.**)
-- Optimistisches Szenario (95%): **{top_pfad[-1]:,.2f} €** (**{mc_cagr_optimist:.2%} p.a.**)
-""")
+# --- CSS für die Szenario-Karten ---
+st.markdown("""
+<style>
+    .mc-container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 10px;
+    }
+    .mc-card {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        padding: 15px;
+        border-left: 5px solid #4A90E2;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .mc-label {
+        color: #9CA3AF;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    .mc-value {
+        text-align: right;
+    }
+    .mc-amount {
+        display: block;
+        color: white;
+        font-size: 18px;
+        font-weight: bold;
+    }
+    .mc-cagr {
+        color: #4A90E2;
+        font-size: 13px;
+        font-weight: bold;
+    }
+    /* Farbanpassungen für die Szenarien */
+    .pessimist { border-left-color: #E74C3C; }
+    .median { border-left-color: #4A90E2; }
+    .optimist { border-left-color: #27AE60; }
+</style>
+""", unsafe_allow_html=True)
+
+# HTML für die Karten zusammenbauen
+mc_html = f"""
+<div style="margin-bottom: 10px; font-weight: bold; color: #4A90E2;">
+    ⏳ Ergebnis nach {mc_jahre} Jahren (Projektion):
+</div>
+<div class="mc-container">
+    <div class="mc-card optimist">
+        <span class="mc-label">🚀 Optimistisch (95%)</span>
+        <div class="mc-value">
+            <span class="mc-amount">{top_pfad[-1]:,.2f} €</span>
+            <span class="mc-cagr" style="color: #27AE60;">+{mc_cagr_optimist:.2%} p.a.</span>
+        </div>
+    </div>
+    <div class="mc-card median">
+        <span class="mc-label">📈 Median (50%)</span>
+        <div class="mc-value">
+            <span class="mc-amount">{median_pfad[-1]:,.2f} €</span>
+            <span class="mc-cagr">+{mc_cagr_median:.2%} p.a.</span>
+        </div>
+    </div>
+    <div class="mc-card pessimist">
+        <span class="mc-label">📉 Pessimistisch (5%)</span>
+        <div class="mc-value">
+            <span class="mc-amount">{bottom_pfad[-1]:,.2f} €</span>
+            <span class="mc-cagr" style="color: #E74C3C;">+{mc_cagr_pessimist:.2%} p.a.</span>
+        </div>
+    </div>
+</div>
+"""
+
+st.markdown(mc_html, unsafe_allow_html=True)
 
 st.markdown("---")
 st.subheader("🧬 Faktorenanalyse", help="Diese Analyse zeigt, welche wissenschaftlichen Faktoren (Betas) dein Portfolio antreiben.")
