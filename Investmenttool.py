@@ -319,17 +319,25 @@ else:
 st.subheader("🔢 Key Performance Indicators")
 st.markdown("""
 <style>
-    .kpi-grid {
+    /* Grid für die erste Reihe (5 Kacheln) */
+    .kpi-grid-5-row1 {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 12px;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+    /* Grid für die zweite Reihe (5 Kacheln) */
+    .kpi-grid-5-row2 {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 15px;
         margin-bottom: 20px;
     }
     .kpi-card {
         background-color: rgba(100,100,100,0.1);
         padding: 15px;
         border-radius: 10px;
-        border-left: 4px solid #4A90E2; /* Neutrale Akzentfarbe */
+        border-left: 4px solid #4A90E2; /* Einheitliches Blau für ALLE Ränder */
         transition: transform 0.2s;
     }
     .kpi-card:hover {
@@ -339,66 +347,47 @@ st.markdown("""
         color: #9CA3AF;
         font-size: 13px;
         margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 5px;
     }
     .kpi-value {
-        color: white;
+        color: white; /* Einheitliches Weiß für ALLE Werte */
         font-size: 24px;
         font-weight: bold;
         margin: 5px 0 0 0;
+    }
+    /* Responsives Verhalten für kleinere Bildschirme */
+    @media (max-width: 1200px) {
+        .kpi-grid-5-row1, .kpi-grid-5-row2 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+    @media (max-width: 800px) {
+        .kpi-grid-5-row1, .kpi-grid-5-row2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    @media (max-width: 500px) {
+        .kpi-grid-5-row1, .kpi-grid-5-row2 {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 """, unsafe_allow_html=True)
 
 st.markdown(f"""
-<div class="kpi-grid">
-    <div class="kpi-card">
-        <p class="kpi-label">Erwartete Rendite (CAPM)</p>
-        <p class="kpi-value">{capm_erwartung_pa:.2%}</p>
-    </div>
-    <div class="kpi-card">
-        <p class="kpi-label">Rendite p.a. (CAGR)</p>
-        <p class="kpi-value">{cagr:.2%}</p>
-    </div>
-    <div class="kpi-card">
-        <p class="kpi-label">Alpha</p>
-        <p class="kpi-value" style="color: {'#27AE60' if alpha > 0 else '#EB5757'}">{alpha:+.2%}</p>
-    </div>
-    <div class="kpi-card">
-        <p class="kpi-label">Sharpe Ratio</p>
-        <p class="kpi-value">{sharpe_ratio:.2f}</p>
-    </div>
-    <div class="kpi-card">
-        <p class="kpi-label">Dividendenrendite</p>
-        <p class="kpi-value">{port_current_yield:.2%}</p>
-    </div>
+<div class="kpi-grid-5-row1">
+    <div class="kpi-card"><p class="kpi-label">Erwartete Rendite (CAPM)</p><p class="kpi-value">{capm_erwartung_pa:.2%}</p></div>
+    <div class="kpi-card"><p class="kpi-label">Rendite p.a. (CAGR)</p><p class="kpi-value">{cagr:.2%}</p></div>
+    <div class="kpi-card"><p class="kpi-label">Alpha</p><p class="kpi-value">{alpha:+.2%}</p></div> <div class="kpi-card"><p class="kpi-label">Sharpe Ratio</p><p class="kpi-value">{sharpe_ratio:.2f}</p></div>
+    <div class="kpi-card"><p class="kpi-label">Dividendenrendite</p><p class="kpi-value">{port_current_yield:.2%}</p></div>
 </div>
 """, unsafe_allow_html=True)
 
 st.markdown(f"""
-<div class="kpi-grid">
-    <div class="kpi-card" style="border-left-color: #EB5757;">
-        <p class="kpi-label">Max Drawdown</p>
-        <p class="kpi-value">{max_drawdown:.2%}</p>
-    </div>
-    <div class="kpi-card">
-        <p class="kpi-label">Volatilität p.a.</p>
-        <p class="kpi-value">{vola:.2%}</p>
-    </div>
-    <div class="kpi-card">
-        <p class="kpi-label">Beta</p>
-        <p class="kpi-value">{beta:.2f}</p>
-    </div>
-    <div class="kpi-card">
-        <p class="kpi-label">Tracking Error</p>
-        <p class="kpi-value">{tracking_error:.2%}</p>
-    </div>
-    <div class="kpi-card">
-        <p class="kpi-label">Yield on Cost</p>
-        <p class="kpi-value">{port_yoc:.2%}</p>
-    </div>
+<div class="kpi-grid-5-row2">
+    <div class="kpi-card"><p class="kpi-label">Max Drawdown</p><p class="kpi-value">{max_drawdown:.2%}</p></div> <div class="kpi-card"><p class="kpi-label">Volatilität p.a.</p><p class="kpi-value">{vola:.2%}</p></div>
+    <div class="kpi-card"><p class="kpi-label">Beta</p><p class="kpi-value">{beta:.2f}</p></div>
+    <div class="kpi-card"><p class="kpi-label">Tracking Error</p><p class="kpi-value">{tracking_error:.2%}</p></div>
+    <div class="kpi-card"><p class="kpi-label">Yield on Cost</p><p class="kpi-value">{port_yoc:.2%}</p></div>
 </div>
 """, unsafe_allow_html=True)
 
