@@ -667,44 +667,58 @@ st.markdown("---")
 
 # Risiko-Tabelle
 st.subheader("🔎 Risiko-Analyse (NTM)")
-
-# 1. Daten vorbereiten
-r_labels = ["Parametrisch", "Historisch", "Monte-Carlo"]
-r_vars = [f"{var_95_para:.2%}", f"{var_95_hist:.2%}", f"{mc_var_95_jahr:.2%}"]
-r_ess = [f"{es_95_para:.2%}", f"{es_95_hist:.2%}", f"{mc_es_95_jahr:.2%}"]
-
-# 2. Den kompletten HTML-String zusammenbauen
-risk_html = """
+st.markdown("""
 <style>
-    .risk-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-    .risk-card { 
-        background-color: rgba(100,100,100,0.1); 
-        padding: 18px; 
-        border-radius: 12px; 
-        border-left: 5px solid #4A90E2;
-        font-family: sans-serif;
+    .risk-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 20px;
     }
-    .risk-title { color: #9CA3AF; font-size: 13px; margin: 0 0 12px 0; text-transform: uppercase; font-weight: bold; }
-    .risk-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+    .risk-card {
+        background-color: rgba(100,100,100,0.1);
+        padding: 18px;
+        border-radius: 12px;
+        border-left: 5px solid #4A90E2;
+        flex: 1;
+        min-width: 250px;
+    }
+    .risk-title {
+        color: #9CA3AF;
+        font-size: 13px;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        font-weight: bold;
+        letter-spacing: 1px;
+    }
+    .risk-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 6px;
+    }
     .risk-label { color: #9CA3AF; font-size: 13px; margin: 0; }
     .risk-num { color: white; font-size: 18px; font-weight: bold; margin: 0; }
 </style>
-<div class="risk-grid">
-"""
-
-for m, v, e in zip(r_labels, r_vars, r_ess):
-    risk_html += f"""
+""", unsafe_allow_html=True)
+methoden_namen = ["Parametrisch", "Historisch", "Monte-Carlo"]
+var_werte = [var_95_para, var_95_hist, mc_var_95_jahr]
+es_werte = [es_95_para, es_95_hist, mc_es_95_jahr]
+cards_html = ""
+for m, v, e in zip(methoden_namen, var_werte, es_werte):
+    cards_html += f"""
     <div class="risk-card">
         <div class="risk-title">{m}</div>
-        <div class="risk-row"><p class="risk-label">VaR 95%</p><p class="risk-num">{v}</p></div>
-        <div class="risk-row"><p class="risk-label">Exp. Shortfall</p><p class="risk-num">{e}</p></div>
+        <div class="risk-row">
+            <span class="risk-label">VaR 95%</span>
+            <span class="risk-num">{v:.2%}</span>
+        </div>
+        <div class="risk-row">
+            <span class="risk-label">Exp. Shortfall</span>
+            <span class="risk-num">{e:.2%}</span>
+        </div>
     </div>
     """
-
-risk_html += "</div>"
-
-# 3. Ausgabe (Sicherheits-Check gegen Code-Block-Bug)
-st.markdown(risk_html, unsafe_allow_html=True)
+st.write(f'<div class="risk-grid">{cards_html}</div>', unsafe_allow_html=True)
 st.markdown("---")
 
 # Monte Carlo Pfadsimulation (10 Jahre)
