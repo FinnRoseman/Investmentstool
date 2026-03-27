@@ -647,12 +647,9 @@ try:
 except Exception as e:
     st.error(f"Faktoranalyse konnte nicht geladen werden: {e}")
 
-# 1. Wir definieren die Funktion als Fragment
 @st.fragment
 def render_simulation_area(factors, beta, endsumme, ausgewaehlter_name):
     st.markdown("---")
-    st.subheader("🌋 Szenario- und Sensitivitätsanalyse", help="Analysiere Marktrisiken isoliert vom Rest der App.")
-
     szenarien = {
         "Stagflation": [-0.35, -0.05, +0.15, +0.08, +0.05], 
         "Inflation": [-0.20, 0.00, 0.10, 0.12, 0.05],
@@ -660,9 +657,7 @@ def render_simulation_area(factors, beta, endsumme, ausgewaehlter_name):
         "Tech-Blase": [-0.40, -0.05, +0.35, +0.15, +0.10],
         "Small Cap Rallye": [+0.15, +0.20, +0.05, -0.05, -0.05]
     }
-
     sim_col1, sim_col2 = st.columns(2)
-
     with sim_col1:
         st.markdown("### 🔮 Szenario-Analyse")
         auswahl = st.selectbox(
