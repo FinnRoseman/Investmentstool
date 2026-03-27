@@ -653,7 +653,7 @@ def render_simulation_area(factors, beta, endsumme, ausgewaehlter_name):
     szenarien = {
         "Stagflation": [-0.35, -0.05, +0.15, +0.08, +0.05], 
         "Inflation": [-0.20, 0.00, 0.10, 0.12, 0.05],
-        "Rezession": [-0.45, -0.10, +0.05, +0.15, +0.10],
+        "Schwere Rezession": [-0.45, -0.10, +0.05, +0.15, +0.10],
         "Tech-Blase": [-0.40, -0.05, +0.35, +0.15, +0.10],
         "Small Cap Rallye": [+0.15, +0.20, +0.05, -0.05, -0.05]
     }
