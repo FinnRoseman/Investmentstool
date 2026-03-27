@@ -656,14 +656,23 @@ szenarien = {
 sim_col1, sim_col2 = st.columns(2)
 
 with sim_col1:
-    auswahl = st.selectbox("Wähle ein historisches/fiktives Szenario:", list(szenarien.keys()))
+    auswahl = st.selectbox(
+        "Wähle ein Szenario:", 
+        list(szenarien.keys()), 
+        help="Wähle ein vordefiniertes Marktszenario aus."
+    )
     schocks = szenarien[auswahl]
-
 with sim_col2:
-    eigener_schock = st.slider("Oder manueller Markt-Schock (%)", -50, 0, 0)
-    if eigener_schock != 0:
-        schocks = [eigener_schock/100, 0, 0, 0, 0]
-        st.info("⚠️ Manueller Modus: Szenario-Vorgaben werden ignoriert.")
+    eigener_schock = st.slider(
+        "Manueller Markt-Schock (%)", 
+        -50.0, 0.0, 0.0, 1.0, 
+        help="Bewege den Regler, um ein eigenes Crash-Szenario zu testen. Setze ihn auf 0, um wieder das Dropdown zu nutzen."
+    )
+if eigener_schock != 0.0:
+    schocks = [eigener_schock/100, 0, 0, 0, 0]
+    st.info(f"👉 Manueller Modus aktiv: {eigener_schock}% Markt-Crash.")
+else:
+    st.caption(f"ℹ️ Szenario-Modus aktiv: {auswahl}")
 
 verlust_pro_faktor = factors.values * schocks
 erwarteter_gesamtverlust = np.sum(verlust_pro_faktor)
