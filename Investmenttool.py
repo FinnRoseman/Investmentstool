@@ -317,19 +317,90 @@ else:
 
 # Kennzahlen-Kacheln
 st.subheader("🔢 Key Performance Indicators")
-col1, col2, col3, col4, col5 = st.columns(5)
-col1.metric("Erwartete Rendite p.a. (CAPM)", f"{capm_erwartung_pa:.2%}", help="Theoretische Renditeerwartung basierend auf dem Marktrisiko (Beta).")
-col2.metric("Rendite p.a. (CAGR)", f"{cagr:.2%}", help="Die tatsächlich erzielte durchschnittliche jährliche Wachstumsrate unter Berücksichtigung des Zinseszinseffektes.")
-col3.metric("Alpha", f"{alpha:.2%}", help="Die erzielte Überrendite im Vergleich zur beim eingegangenen Risiko (Beta) erwartete Rendite.")
-col4.metric("Sharpe Ratio", f"{sharpe_ratio:.2f}", help="Misst die erzielte Überrendite pro Risikoeinheit. 0,5 - 1 ist gut, über 1 ist sehr gut.")
-col5.metric("Dividendenrendite", f"{port_current_yield:.2%}", help="Die aktuelle jährliche Ausschüttung im Verhältnis zum Portfoliowert.")
+st.markdown("""
+<style>
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    .kpi-card {
+        background-color: rgba(100,100,100,0.1);
+        padding: 15px;
+        border-radius: 10px;
+        border-left: 4px solid #4A90E2; /* Neutrale Akzentfarbe */
+        transition: transform 0.2s;
+    }
+    .kpi-card:hover {
+        background-color: rgba(100,100,100,0.15);
+    }
+    .kpi-label {
+        color: #9CA3AF;
+        font-size: 13px;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .kpi-value {
+        color: white;
+        font-size: 24px;
+        font-weight: bold;
+        margin: 5px 0 0 0;
+    }
+</style>
+""", unsafe_allow_html=True)
 
-col6, col7, col8, col9, col10 = st.columns(5)
-col6.metric("Max Drawdown", f"{max_drawdown:.2%}", help="Der maximale Wertverlust vom Höchststand bis zum tiefsten Punkt im betrachteten Zeitraum.")
-col7.metric("Volatilität p.a.", f"{vola:.2%}", help="Die Schwankungsbreite der Renditen. Ein Maß für das Gesamtrisiko.")
-col8.metric("Beta", f"{beta:.2f}", help="Gibt an, wie stark das Portfolio im Vergleich zum Gesamtmarkt schwankt (Marktrisiko).")
-col9.metric("Tracking Error", f"{tracking_error:.2%}", help="Misst die Volatilität der Renditedifferenz zwischen dem Portfolio und der Benchmark.")
-col10.metric("Yield on Cost", f"{port_yoc:.2%}", help="Die persönliche Dividendenrendite bezogen auf den ursprünglichen Kaufpreis (Einstandskurs).")
+st.markdown(f"""
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <p class="kpi-label">Erwartete Rendite (CAPM)</p>
+        <p class="kpi-value">{capm_erwartung_pa:.2%}</p>
+    </div>
+    <div class="kpi-card">
+        <p class="kpi-label">Rendite p.a. (CAGR)</p>
+        <p class="kpi-value">{cagr:.2%}</p>
+    </div>
+    <div class="kpi-card">
+        <p class="kpi-label">Alpha</p>
+        <p class="kpi-value" style="color: {'#27AE60' if alpha > 0 else '#EB5757'}">{alpha:+.2%}</p>
+    </div>
+    <div class="kpi-card">
+        <p class="kpi-label">Sharpe Ratio</p>
+        <p class="kpi-value">{sharpe_ratio:.2f}</p>
+    </div>
+    <div class="kpi-card">
+        <p class="kpi-label">Dividendenrendite</p>
+        <p class="kpi-value">{port_current_yield:.2%}</p>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown(f"""
+<div class="kpi-grid">
+    <div class="kpi-card" style="border-left-color: #EB5757;">
+        <p class="kpi-label">Max Drawdown</p>
+        <p class="kpi-value">{max_drawdown:.2%}</p>
+    </div>
+    <div class="kpi-card">
+        <p class="kpi-label">Volatilität p.a.</p>
+        <p class="kpi-value">{vola:.2%}</p>
+    </div>
+    <div class="kpi-card">
+        <p class="kpi-label">Beta</p>
+        <p class="kpi-value">{beta:.2f}</p>
+    </div>
+    <div class="kpi-card">
+        <p class="kpi-label">Tracking Error</p>
+        <p class="kpi-value">{tracking_error:.2%}</p>
+    </div>
+    <div class="kpi-card">
+        <p class="kpi-label">Yield on Cost</p>
+        <p class="kpi-value">{port_yoc:.2%}</p>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 st.markdown("---")
 
