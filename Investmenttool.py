@@ -692,9 +692,9 @@ with st.expander("Details zur Berechnung einsehen"):
     st.write("Das Modell berechnet, wie deine individuellen Faktor-Ladungen auf die Marktstörung reagieren:")
     details_df = pd.DataFrame({
         "Faktor": factors.index,
-        "Deine Ladung (Beta)": factors.values.round(2),
-        "Szenario-Schock": [f"{s*100:.1f}%" for s in schocks],
-        "Beitrag zum Ergebnis": [f"{(f*s)*100:.2f}%" for f, s in zip(factors.values, schocks)]
+        "Beta": factors.values.round(2),
+        "Szenario-Performance": [f"{s*100:.1f}%" for s in schocks],
+        "Portfolio-Performance": [f"{(f*s)*100:.2f}%" for f, s in zip(factors.values, schocks)]
     })
     st.table(details_df)
 
