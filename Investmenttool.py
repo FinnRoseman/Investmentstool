@@ -617,7 +617,7 @@ st.info(f"""
 """)
 
 st.markdown("---")
-st.subheader("🧬 Faktor-DNA Analyse (Fama-French 5-Factor)", help="Diese Analyse zeigt, welche Risikoprämien (Faktoren) deine Rendite wirklich treiben.")
+st.subheader("Faktorenanalyse", help="Zeigt, welche Faktoren im Portfolio wie stark/schwach ausgeprägt sind.")
 
 try:
     with st.spinner("Berechne Faktor-Exposures..."):
