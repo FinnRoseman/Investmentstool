@@ -13,17 +13,23 @@ def get_cached_data(ticker_tuple, period):
     return df
 def get_factor_loadings(portfolio_returns):
     ff_data = web.DataReader('F-F_Research_Data_5_Factors_2x3', 'famafrench', 
-                             start=portfolio_returns.index[0])[0]
-    ff_data = ff_data / 100 
-    port_monthly = portfolio_returns.resample('M').apply(lambda x: (1 + x).prod() - 1)
+                             start='2000-01-01')[0] 
+    ff_data = ff_data / 100
     ff_data.index = ff_data.index.to_timestamp()
-    combined = pd.concat([port_monthly, ff_data], axis=1).dropna()
+    port_monthly = portfolio_returns.resample('M').apply(lambda x: (1 + x).prod() - 1)
+    common_start = max(port_monthly.index[0], ff_data.index[0])
+    common_end = min(port_monthly.index[-1], ff_data.index[-1])
+    port_monthly = port_monthly[common_start:common_end]
+    ff_data_subset = ff_data[common_start:common_end]
+    combined = pd.concat([port_monthly, ff_data_subset], axis=1).dropna()
+    if len(combined) < 6:
+        raise ValueError("Nicht genug historische Datenüberschneidung für die Faktor-Analyse.")
     import statsmodels.api as sm
     Y = combined.iloc[:, 0] - combined['RF']
     X = combined[['Mkt-RF', 'SMB', 'HML', 'RMW', 'CMA']]
     X = sm.add_constant(X)
     model = sm.OLS(Y, X).fit()
-    return model.params[1:] 
+    return model.params[1:]
 
 # --- STREAMLIT PAGE CONFIGURATION ---
 st.set_page_config(page_title="Portfolio Analyzer", layout="wide")
