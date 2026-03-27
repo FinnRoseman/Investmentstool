@@ -302,16 +302,52 @@ for i, t in enumerate(verfuegbare):
             port_yoc += ticker_yoc * gewicht
 avg_capital = (startkapital + endsumme) / 2
 st.subheader(f"Wertentwicklung bei {startkapital:,.0f} € Investment")
-e1, e2, e3, e4 = st.columns([1.5, 1.2, 1, 1.2])
-e1.metric("Endwert Heute", f"{endsumme:,.2f} €")
-if startkapital > 0:
-    e2.metric("Seit Kauf Absolut", f"{absoluter_gewinn:,.2f} €")
-    e3.metric("Seit Kauf Relativ", f"{total_ret:.2%}")
-    e4.metric("Ausschüttungen (LTM)", f"{total_div_euro:,.2f} €")
-else:
-    e2.metric("Seit Kauf Absolut", "0.00€")
-    e3.metric("Seit Kauf Relativ", "0.00%")
-    e4.metric("Ausschüttungen (LTM)", "0.00 €")
+st.markdown("""
+<style>
+    .header-grid {
+        display: grid;
+        grid-template-columns: 1.5fr 1.2fr 1fr 1.2fr;
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+    .header-card {
+        background-color: rgba(100,100,100,0.1);
+        padding: 20px;
+        border-radius: 12px;
+        border-left: 5px solid #4A90E2;
+    }
+    .header-label { color: #9CA3AF; font-size: 14px; margin: 0; }
+    .header-value { color: white; font-size: 28px; font-weight: bold; margin: 5px 0 0 0; }
+</style>
+""", unsafe_allow_html=True)
+
+farbe_perf = "#27AE60" if absoluter_gewinn >= 0 else "#EB5757"
+
+abs_anzeige = f"{absoluter_gewinn:,.2f} €" if startkapital > 0 else "0.00 €"
+rel_anzeige = f"{total_ret:.2%}" if startkapital > 0 else "0.00%"
+div_anzeige = f"{total_div_euro:,.2f} €" if startkapital > 0 else "0.00 €"
+
+st.markdown(f"""
+<div class="header-grid">
+    <div class="header-card">
+        <p class="header-label">Endwert Heute</p>
+        <p class="header-value">{endsumme:,.2f} €</p>
+    </div>
+    
+    <div class="header-card" style="border-left-color: {farbe_perf};">
+        <p class="header-label">Seit Kauf Absolut</p>
+        <p class="header-value" style="color: {farbe_perf};">{abs_anzeige}</p>
+    </div>
+    <div class="header-card" style="border-left-color: {farbe_perf};">
+        <p class="header-label">Seit Kauf Relativ</p>
+        <p class="header-value" style="color: {farbe_perf};">{rel_anzeige}</p>
+    </div>
+    <div class="header-card">
+        <p class="header-label">Ausschüttungen (LTM)</p>
+        <p class="header-value">{div_anzeige}</p>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 # --- 4. ANZEIGEN ---
 
