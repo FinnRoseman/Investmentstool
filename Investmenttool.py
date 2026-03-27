@@ -672,13 +672,14 @@ with sim_col2:
         help="Bewege den Regler, um ein eigenes Crash-Szenario zu testen. Setze ihn auf 0, um wieder das Dropdown zu nutzen."
     )
 if eigener_schock != 0.0:
-    schocks = [eigener_schock/100, 0, 0, 0, 0]
-    st.info(f"👉 Manueller Modus aktiv: {eigener_schock}% Markt-Crash.")
+    erwarteter_gesamtverlust = (beta * eigener_schock / 100)
+    st.info(f"👉 Manueller Modus aktiv: {eigener_schock}% Schock bezogen auf {ausgewaehlter_name} (Beta: {beta:.2f}).")
 else:
+    verlust_pro_faktor = factors.values * schocks
+    erwarteter_gesamtverlust = np.sum(verlust_pro_faktor)
     st.caption(f"ℹ️ Szenario-Modus aktiv: {auswahl}")
 
-verlust_pro_faktor = factors.values * schocks
-erwarteter_gesamtverlust = np.sum(verlust_pro_faktor)
+verlust_euro = endsumme * erwarteter_gesamtverlust
 verlust_euro = endsumme * erwarteter_gesamtverlust
 
 farbe = "#EB5757" if erwarteter_gesamtverlust < 0 else "#27AE60"
