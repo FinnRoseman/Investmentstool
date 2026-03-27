@@ -685,6 +685,17 @@ with sim_col2:
     gesamt_sens_ret = (beta * eigener_schock / 100)
     verlust_sens_euro = endsumme * gesamt_sens_ret
     farbe_sens = "#EB5757" if gesamt_sens_ret < 0 else "#27AE60"
+    st.markdown("""
+    <style>
+        /* Ändert nur die Farbe des Sliders von Rot auf Grau */
+        div[data-baseweb="slider"] > div > div {
+            background: #D1D5DB !important;
+        }
+        div[role="slider"] {
+            background-color: #D1D5DB !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
     st.markdown(f"""
         <div style="background-color: rgba(100,100,100,0.1); padding: 15px; border-radius: 10px; border-left: 5px solid {farbe_sens};">
             <p style="margin:0; font-size:14px; color:gray;">Portfolio:</p>
