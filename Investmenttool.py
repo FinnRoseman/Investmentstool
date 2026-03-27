@@ -648,7 +648,6 @@ except Exception as e:
     st.error(f"Faktoranalyse konnte nicht geladen werden: {e}")
 
 st.markdown("---")
-st.subheader("🌋 Szenario- und Sensitivitätsanalyse", help="Vergleicht komplexe historische Marktumgebungen mit einem einfachen Markt-Stresstest.")
 szenarien = {
     "Stagflation": [-0.35, -0.05, +0.15, +0.08, +0.05], 
     "Inflation": [-0.20, 0.00, 0.10, 0.12, 0.05],
@@ -660,9 +659,9 @@ sim_col1, sim_col2 = st.columns(2)
 with sim_col1:
     st.markdown("### 🔮 Szenario-Analyse")
     auswahl = st.selectbox(
-        "Wähle ein Szenario:", 
+        "Szenario:", 
         list(szenarien.keys()), 
-        help="Simuliert verschiedene Szenarien unter Berücksichtigung aller 5 Fama-French Faktoren."
+        help="Simuliert verschiedene Szenarien unter Berücksichtigung des Fünf-Faktoren-Modells (Fama-French)."
     )
     schocks = szenarien[auswahl]
     verlust_pro_faktor = factors.values * schocks
@@ -671,7 +670,7 @@ with sim_col1:
     farbe_sz = "#EB5757" if gesamt_sz_ret < 0 else "#27AE60"
     st.markdown(f"""
         <div style="background-color: rgba(100,100,100,0.1); padding: 15px; border-radius: 10px; border-left: 5px solid {farbe_sz};">
-            <p style="margin:0; font-size:14px; color:gray;">Erwartete Auswirkung (Multi-Faktor):</p>
+            <p style="margin:0; font-size:14px; color:gray;">Portfolio:</p>
             <h2 style="margin:0; color:{farbe_sz};">{gesamt_sz_ret:.2%}</h2>
             <p style="margin:0; font-weight:bold;">{verlust_sz_euro:,.2f} €</p>
         </div>
