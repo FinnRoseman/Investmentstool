@@ -666,28 +666,54 @@ if len(verfuegbare) > 1:
     with opt_col2:
         st.markdown("""
         <style>
-            .opt-container { background: rgba(100,100,100,0.05); border-radius: 12px; padding: 12px; margin-bottom: 15px; }
-            .opt-row { margin-bottom: 15px; position: relative; }
-            .opt-ticker-label { color: #4A90E2; font-family: monospace; font-weight: bold; font-size: 13px; margin-bottom: 4px; }
-            .bar-label { display: flex; justify-content: space-between; font-size: 11px; color: #9CA3AF; margin-bottom: 2px; }
-            .bar-bg { background: rgba(255,255,255,0.05); height: 6px; border-radius: 3px; width: 100%; margin-bottom: 8px; overflow: hidden; }
-            .bar-fill-act { background: #6B7280; height: 100%; border-radius: 3px; }
-            .bar-fill-opt { background: #4A90E2; height: 100%; border-radius: 3px; }
-            .opt-stats { background: rgba(74, 144, 226, 0.1); border-radius: 8px; padding: 10px; border-left: 4px solid #4A90E2; }
-            .stat-item { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
-            .stat-val { font-weight: bold; color: white; }
+            .opt-container { background: rgba(100,100,100,0.05); border-radius: 12px; padding: 10px; margin-bottom: 12px; }
+            .opt-row { margin-bottom: 10px; position: relative; } /* Weniger Abstand */
+            .opt-ticker-label { color: #4A90E2; font-family: monospace; font-weight: bold; font-size: 13px; margin-bottom: 3px; }
+            /* Der neue geteilte Balken (Stacked) */
+            .bar-bg-stacked { 
+                background: rgba(255,255,255,0.05); /* Der leere Teil ist transparent-weiß */
+                height: 10px; /* Etwas dicker für bessere Sichtbarkeit */
+                border-radius: 5px; 
+                width: 100%; 
+                display: flex; /* Flexbox für die Aufteilung */
+                overflow: hidden;
+                margin-bottom: 4px;
+            }
+            .bar-segment-act { background: #6B7280; } /* Grau für Aktuell */
+            .bar-segment-opt { background: #4A90E2; } /* Blau für Optimiert */
+            
+            /* Kompakte Werte-Zeile */
+            .values-row {
+                display: flex;
+                justify-content: space-between;
+                font-size: 11px;
+                color: #9CA3AF;
+            }
+            .val-act { color: #D1D5DB; }
+            .val-opt { color: #4A90E2; font-weight: bold; }
+            /* Stats-Box (neutraleres Blau) */
+            .opt-stats-box { background: rgba(100,100,100,0.08); border-radius: 8px; padding: 10px; }
+            .stat-line { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 3px; color: #9CA3AF; }
+            .stat-val-bold { font-weight: bold; color: white; }
         </style>
         """, unsafe_allow_html=True)
         opt_html = '<div class="opt-container">'
         for t, a, w in zip(verfuegbare, anteile, best_w):
-            opt_html += f'<div class="opt-row">'
-            opt_html += f'<div class="opt-ticker-label">{t}</div>'
-            opt_html += f'<div class="bar-label"><span>Aktuell</span><span>{a:.1%}</span></div>'
-            opt_html += f'<div class="bar-bg"><div class="bar-fill-act" style="width: {a*100}%;"></div></div>'
-            opt_html += f'<div class="bar-label"><span>Optimiert</span><span>{w:.1%}</span></div>'
-            opt_html += f'<div class="bar-bg"><div class="bar-fill-opt" style="width: {w*100}%;"></div></div>'
-            opt_html += f'</div>'
-        opt_html += '</div>'
+            a_pct = a * 100
+            w_pct = w * 100
+            opt_html += f"""
+            <div class="opt-row">
+                <div class="opt-ticker-label">{t}</div>
+                <div class="bar-bg-stacked">
+                    <div class="bar-segment-act" style="width: {a_pct}%;"></div>
+                    <div class="bar-segment-opt" style="width: {w_pct}%;"></div>
+                </div>
+                <div class="values-row">
+                    <span>Aktuell <span class="val-act">{a:.1%}</span></span>
+                    <span><span class="val-opt">{w:.1%}</span> Optimiert</span>
+                </div>
+            </div>"""
+        opt_html += "</div>"
         st.markdown(opt_html, unsafe_allow_html=True)
 else: 
     st.info("Die Portfolio-Optimierung steht erst ab zwei Positionen zur Verfügung.")
