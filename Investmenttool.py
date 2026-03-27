@@ -302,31 +302,34 @@ for i, t in enumerate(verfuegbare):
             port_yoc += ticker_yoc * gewicht
 avg_capital = (startkapital + endsumme) / 2
 st.subheader(f"Wertentwicklung bei {startkapital:,.0f} € Investment")
-st.markdown("""
-<style>
-    .header-grid {
-        display: grid;
-        grid-template-columns: 1.5fr 1.2fr 1fr 1.2fr;
-        gap: 15px;
-        margin-bottom: 25px;
-    }
-    .header-card {
-        background-color: rgba(100,100,100,0.1);
-        padding: 20px;
-        border-radius: 12px;
-        border-left: 5px solid #4A90E2;
-    }
-    .header-label { color: #9CA3AF; font-size: 14px; margin: 0; }
-    .header-value { color: white; font-size: 28px; font-weight: bold; margin: 5px 0 0 0; }
-</style>
-""", unsafe_allow_html=True)
+
+# Logik-Vorbereitung (NaN-Check und Farben)
 farbe_perf = "#27AE60" if absoluter_gewinn >= 0 else "#EB5757"
 div_wert = 0.00 if np.isnan(total_div_euro) else total_div_euro
+
 abs_anzeige = f"{absoluter_gewinn:,.2f} €" if startkapital > 0 else "0.00 €"
 rel_anzeige = f"{total_ret:.2%}" if startkapital > 0 else "0.00%"
 div_anzeige = f"{div_wert:,.2f} €" if startkapital > 0 else "0.00 €"
 
+# DAS KOMPLETTE HTML IN EINEM AUFRUF
 st.markdown(f"""
+<style>
+    .header-grid {{
+        display: grid;
+        grid-template-columns: 1.5fr 1.2fr 1fr 1.2fr;
+        gap: 15px;
+        margin-bottom: 25px;
+    }}
+    .header-card {{
+        background-color: rgba(100,100,100,0.1);
+        padding: 20px;
+        border-radius: 12px;
+        border-left: 5px solid #4A90E2;
+    }}
+    .header-label {{ color: #9CA3AF; font-size: 14px; margin: 0; }}
+    .header-value {{ color: white; font-size: 28px; font-weight: bold; margin: 5px 0 0 0; }}
+</style>
+
 <div class="header-grid">
     <div class="header-card">
         <p class="header-label">Endwert Heute</p>
@@ -349,6 +352,8 @@ st.markdown(f"""
     </div>
 </div>
 """, unsafe_allow_html=True)
+
+st.markdown("---")
 
 # --- 4. ANZEIGEN ---
 
