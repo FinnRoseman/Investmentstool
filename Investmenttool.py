@@ -643,7 +643,7 @@ except Exception as e:
     st.error(f"Faktoranalyse konnte nicht geladen werden: {e}")
 
 st.markdown("---")
-st.subheader("🌋 Risiko-Simulator & Szenarioanalyse")
+st.subheader("Szenario- und Sensitivitätsanalyse", help="Nur sinnvoll bei 100% Aktien.")
 
 szenarien = {
     "Stagflation": [-0.35, -0.05, +0.15, +0.08, +0.05],
