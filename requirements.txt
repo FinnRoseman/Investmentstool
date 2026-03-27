@@ -3,3 +3,6 @@ yfinance
 pandas
 matplotlib
 seaborn
+pandas-datareader
+statsmodels
+setuptools
