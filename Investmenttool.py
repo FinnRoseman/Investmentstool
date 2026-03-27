@@ -658,7 +658,7 @@ szenarien = {
 }
 sim_col1, sim_col2 = st.columns(2)
 with sim_col1:
-    st.markdown("### 🏛️ Szenario-Analyse")
+    st.markdown("### 🔮 Szenario-Analyse")
     auswahl = st.selectbox(
         "Wähle ein Szenario:", 
         list(szenarien.keys()), 
@@ -676,7 +676,7 @@ with sim_col1:
             <p style="margin:0; font-weight:bold;">{verlust_sz_euro:,.2f} €</p>
         </div>
     """, unsafe_allow_html=True)
-    with st.expander("🔬 Faktor-Details (Fama-French)"):
+    with st.expander("Faktor-Details (Fama-French)"):
         st.write("Wie dein Portfolio-Stil auf dieses Szenario reagiert:")
         details_df = pd.DataFrame({
             "Faktor": factors.index,
@@ -686,18 +686,18 @@ with sim_col1:
         })
         st.table(details_df.set_index('Faktor'))
 with sim_col2:
-    st.markdown("### 🕹️ Markt-Stresstest")
+    st.markdown("### 🕹️ Benchmark-Sensitivität")
     eigener_schock = st.slider(
-        "Manueller Schock (%)", 
+        "Benchmark:", 
         -50.0, 50.0, -10.0, 1.0, 
-        help="Simuliert einen isolierten Rückgang deiner gewählten Benchmark."
+        help="Simuliert eine Bewegung der gewählten Benchmark in dem Portfolio."
     )
     gesamt_sens_ret = (beta * eigener_schock / 100)
     verlust_sens_euro = endsumme * gesamt_sens_ret
     farbe_sens = "#EB5757" if gesamt_sens_ret < 0 else "#27AE60"
     st.markdown(f"""
         <div style="background-color: rgba(100,100,100,0.1); padding: 15px; border-radius: 10px; border-left: 5px solid {farbe_sens};">
-            <p style="margin:0; font-size:14px; color:gray;">Auswirkung von Benchmark-Bewegungen:</p>
+            <p style="margin:0; font-size:14px; color:gray;">Portfolio:</p>
             <h2 style="margin:0; color:{farbe_sens};">{gesamt_sens_ret:.2%}</h2>
             <p style="margin:0; font-weight:bold;">{verlust_sens_euro:,.2f} €</p>
         </div>
