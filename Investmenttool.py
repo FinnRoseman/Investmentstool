@@ -377,7 +377,7 @@ st.markdown(f"""
 <div class="kpi-grid-5-row1">
     <div class="kpi-card"><p class="kpi-label">Erwartete Rendite (CAPM)</p><p class="kpi-value">{capm_erwartung_pa:.2%}</p></div>
     <div class="kpi-card"><p class="kpi-label">Rendite p.a. (CAGR)</p><p class="kpi-value">{cagr:.2%}</p></div>
-    <div class="kpi-card"><p class="kpi-label">Alpha</p><p class="kpi-value">{alpha:+.2%}</p></div> <div class="kpi-card"><p class="kpi-label">Sharpe Ratio</p><p class="kpi-value">{sharpe_ratio:.2f}</p></div>
+    <div class="kpi-card"><p class="kpi-label">Alpha</p><p class="kpi-value">{alpha:.2%}</p></div> <div class="kpi-card"><p class="kpi-label">Sharpe Ratio</p><p class="kpi-value">{sharpe_ratio:.2f}</p></div>
     <div class="kpi-card"><p class="kpi-label">Dividendenrendite</p><p class="kpi-value">{port_current_yield:.2%}</p></div>
 </div>
 """, unsafe_allow_html=True)
