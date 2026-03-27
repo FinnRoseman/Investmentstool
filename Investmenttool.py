@@ -667,9 +667,13 @@ st.markdown("---")
 
 # Risiko-Tabelle
 st.subheader("🔎 Risiko-Analyse (NTM)")
+
+# 1. Daten vorbereiten
 r_labels = ["Parametrisch", "Historisch", "Monte-Carlo"]
 r_vars = [f"{var_95_para:.2%}", f"{var_95_hist:.2%}", f"{mc_var_95_jahr:.2%}"]
 r_ess = [f"{es_95_para:.2%}", f"{es_95_hist:.2%}", f"{mc_es_95_jahr:.2%}"]
+
+# 2. Den kompletten HTML-String zusammenbauen
 risk_html = """
 <style>
     .risk-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
@@ -687,6 +691,7 @@ risk_html = """
 </style>
 <div class="risk-grid">
 """
+
 for m, v, e in zip(r_labels, r_vars, r_ess):
     risk_html += f"""
     <div class="risk-card">
@@ -695,7 +700,10 @@ for m, v, e in zip(r_labels, r_vars, r_ess):
         <div class="risk-row"><p class="risk-label">Exp. Shortfall</p><p class="risk-num">{e}</p></div>
     </div>
     """
+
 risk_html += "</div>"
+
+# 3. Ausgabe (Sicherheits-Check gegen Code-Block-Bug)
 st.markdown(risk_html, unsafe_allow_html=True)
 st.markdown("---")
 
