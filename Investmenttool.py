@@ -642,4 +642,45 @@ try:
 except Exception as e:
     st.error(f"Faktoranalyse konnte nicht geladen werden: {e}")
 
+st.markdown("---")
+st.subheader("🌋 Risiko-Simulator & Szenarioanalyse")
+
+szenarien = {
+    "Normaler Marktrückgang (-10%)": [-0.10, 0, 0, 0, 0],
+    "KI-Blase platzt": [-0.15, -0.05, 0.20, 0.10, 0.05],
+    "Zins-Schock (Starke Zinserhöhung)": [-0.05, -0.10, 0.15, -0.05, -0.10],
+    "Stagflation (Inflation + Rezession)": [-0.20, 0.05, 0.15, 0.10, 0.05],
+    "Globaler Finanz-Crash (2008 Style)": [-0.50, -0.10, 0.10, 0.20, 0.15]
+}
+
+sim_col1, sim_col2 = st.columns(2)
+
+with sim_col1:
+    auswahl = st.selectbox("Wähle ein historisches/fiktives Szenario:", list(szenarien.keys()))
+    schocks = szenarien[auswahl]
+
+with sim_col2:
+    eigener_schock = st.slider("Oder manueller Markt-Schock (%)", -50, 0, -10)
+    if eigener_schock != -10:
+        schocks = [eigener_schock/100, 0, 0, 0, 0]
+
+verlust_pro_faktor = factors.values * schocks
+erwarteter_gesamtverlust = np.sum(verlust_pro_faktor)
+verlust_euro = endsumme * erwarteter_gesamtverlust
+
+st.markdown(f"### Geschätzte Auswirkung: **{erwarteter_gesamtverlust:.2%}**")
+if erwarteter_gesamtverlust < 0:
+    st.error(f"In diesem Szenario würde dein Depot voraussichtlich **{verlust_euro:,.2f} €** an Wert verlieren.")
+else:
+    st.success(f"In diesem Szenario würde dein Depot voraussichtlich um **{verlust_euro:,.2f} €** steigen.")
+with st.expander("Details zur Berechnung einsehen"):
+    st.write("Das Modell berechnet, wie deine individuellen Faktor-Ladungen auf die Marktstörung reagieren:")
+    details_df = pd.DataFrame({
+        "Faktor": factors.index,
+        "Deine Ladung (Beta)": factors.values.round(2),
+        "Szenario-Schock": [f"{s*100:.1f}%" for s in schocks],
+        "Beitrag zum Ergebnis": [f"{(f*s)*100:.2f}%" for f, s in zip(factors.values, schocks)]
+    })
+    st.table(details_df)
+
 st.caption(f"Datenzeitraum: {daten.index[0].strftime('%d.%m.%Y')} bis {daten.index[-1].strftime('%d.%m.%Y')}")
