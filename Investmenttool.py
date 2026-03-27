@@ -689,7 +689,7 @@ with sim_col2:
     st.markdown("### 🕹️ Markt-Stresstest")
     eigener_schock = st.slider(
         "Manueller Schock (%)", 
-        -50.0, 0.0, -10.0, 1.0, 
+        -50.0, 50.0, -10.0, 1.0, 
         help="Simuliert einen isolierten Rückgang deiner gewählten Benchmark."
     )
     gesamt_sens_ret = (beta * eigener_schock / 100)
