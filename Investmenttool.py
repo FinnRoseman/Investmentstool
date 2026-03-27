@@ -13,33 +13,17 @@ def get_cached_data(ticker_tuple, period):
     return df
 def get_factor_loadings(portfolio_returns):
     import statsmodels.api as sm
-    
-    # 1. Faktor-Daten laden
     ff_data = web.DataReader('F-F_Research_Data_5_Factors_2x3', 'famafrench', start='2010-01-01')[0]
     ff_data = ff_data / 100
-    
-    # Zeitstempel vereinheitlichen: Nur Jahr und Monat (z.B. 2024-01)
     ff_data.index = ff_data.index.to_timestamp().to_period('M')
-    
-    # 2. Portfolio auf monatlich umstellen
     port_monthly = portfolio_returns.resample('M').apply(lambda x: (1 + x).prod() - 1)
     port_monthly.index = port_monthly.index.to_period('M')
-    
-    # 3. Mergen über die Monats-Indizes
     combined = pd.concat([port_monthly, ff_data], axis=1).dropna()
-    
-    # Debug Hilfe: Falls es immer noch nicht geht, zeigt uns das, was im Index steht
-    # st.write(f"FF-Index Probe: {ff_data.index[0]}")
-    # st.write(f"Port-Index Probe: {port_monthly.index[0]}")
-
     if len(combined) < 5:
         raise ValueError(f"Überschneidung zu gering: Nur {len(combined)} Monate gefunden.")
-
-    # 4. Regression
     Y = combined.iloc[:, 0] - combined['RF']
     X = combined[['Mkt-RF', 'SMB', 'HML', 'RMW', 'CMA']]
     X = sm.add_constant(X)
-    
     model = sm.OLS(Y, X).fit()
     return model.params[1:]
 
