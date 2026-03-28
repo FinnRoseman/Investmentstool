@@ -477,16 +477,11 @@ st.markdown(f"""
 st.markdown("---")
 
 # 1. Performance-Chart (Full Width oben)
-# --- Neue Performance Grafik (Fehlerresistent) ---
-st.subheader("📈 Performance & Trends", help="Interaktiver Vergleich...")
-
-# 1. Daten berechnen (Bleibt gleich)
+st.subheader("📈 Performance & Trends")
 port_kum = ((1 + port_rendite).cumprod() - 1) * 100
 bench_kum = ((1 + bench_rendite).cumprod() - 1) * 100
 sma100 = port_kum.rolling(window=100).mean()
 sma200 = port_kum.rolling(window=200).mean()
-
-# 2. DataFrame sicher zusammenbauen
 df_perf_plot = pd.DataFrame({
     'Datum': port_kum.index,
     'Portfolio': port_kum.values,
@@ -494,16 +489,12 @@ df_perf_plot = pd.DataFrame({
     '100-Tage-Linie': sma100.values,
     '200-Tage-Linie': sma200.values
 })
-
-# 3. Interaktiven Plot erstellen (Explizite Zuweisung)
 fig_perf = px.line(
     df_perf_plot,
     x='Datum', 
     y=['Portfolio', 'Benchmark', '100-Tage-Linie', '200-Tage-Linie'],
     labels={'value': 'Entwicklung (%)', 'variable': 'Linie'}
 )
-
-# 4. Design & Styling (Dunkles Theme)
 fig_perf.update_layout(
     template='plotly_dark',
     plot_bgcolor='rgba(0,0,0,0)',
@@ -514,13 +505,9 @@ fig_perf.update_layout(
     hovermode='x unified',
     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
 )
-
-# Linien-Farben zuweisen
-colors = {'Portfolio': '#4A90E2', 'Benchmark': '#6B7280', '100-Tage-Linie': '#F59E0B', '200-Tage-Linie': '#EF4444'}
+colors = {'Portfolio': '#4A90E2', 'Benchmark': '#FFD700', '100-Tage-Linie': '#F59E0B', '200-Tage-Linie': '#EF4444'}
 for name, color in colors.items():
     fig_perf.update_traces(line=dict(color=color, width=2 if 'Linie' not in name else 1), selector=dict(name=name))
-    if name == 'Benchmark':
-        fig_perf.update_traces(line=dict(dash='dash'), selector=dict(name=name))
 
 st.plotly_chart(fig_perf, use_container_width=True)
 
