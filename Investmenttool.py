@@ -113,12 +113,12 @@ bench_optionen = {
     "40/60 (LifeStrategy 40% Equity)": "V40A.DE",
     "20/80 (LifeStrategy 20% Equity)": "V20A.DE",
     "0/100 (Global Bonds)": "EUNA.DE",
-    "Individueller Ticker...": "CUSTOM"
+    "Individuelle Benchmark": "CUSTOM"
 }
 ausgewaehlter_name = st.sidebar.selectbox("Vergleichs-Index", list(bench_optionen.keys()))
 
-if ausgewaehlter_name == "Individueller Ticker...":
-    benchmark = st.sidebar.text_input("Gib den Ticker ein (z.B. SPY):", "SPY").strip().upper()
+if ausgewaehlter_name == "Individuelle Benchmark":
+    benchmark = st.sidebar.text_input("Gib einen Ticker ein:", "").strip().upper()
 else:
     benchmark = bench_optionen[ausgewaehlter_name]
 
