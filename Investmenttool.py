@@ -477,37 +477,51 @@ st.markdown(f"""
 st.markdown("---")
 
 # 1. Performance-Chart (Full Width oben)
-st.subheader("📈 Performance & Trends", help="Interaktiver Vergleich der Portfolio-Performance gegen die Benchmark inklusive gleitender Durchschnitte (100/200 Tage). Nutze die Maus zum Hovern und Zoomen.")
+# --- Neue Performance Grafik (Fehlerresistent) ---
+st.subheader("📈 Performance & Trends", help="Interaktiver Vergleich...")
+
+# 1. Daten berechnen (Bleibt gleich)
 port_kum = ((1 + port_rendite).cumprod() - 1) * 100
 bench_kum = ((1 + bench_rendite).cumprod() - 1) * 100
 sma100 = port_kum.rolling(window=100).mean()
 sma200 = port_kum.rolling(window=200).mean()
-df_perf_plot = pd.concat([
-    port_kum.rename('Portfolio'), 
-    bench_kum.rename('Benchmark'),
-    sma100.rename('100-Tage-Linie'),
-    sma200.rename('200-Tage-Linie')
-], axis=1).reset_index()
+
+# 2. DataFrame sicher zusammenbauen
+df_perf_plot = pd.DataFrame({
+    'Datum': port_kum.index,
+    'Portfolio': port_kum.values,
+    'Benchmark': bench_kum.values,
+    '100-Tage-Linie': sma100.values,
+    '200-Tage-Linie': sma200.values
+})
+
+# 3. Interaktiven Plot erstellen (Explizite Zuweisung)
 fig_perf = px.line(
     df_perf_plot,
-    x='index', 
+    x='Datum', 
     y=['Portfolio', 'Benchmark', '100-Tage-Linie', '200-Tage-Linie'],
-    labels={'index': 'Datum', 'value': 'Entwicklung (%)', 'variable': 'Linie'},
+    labels={'value': 'Entwicklung (%)', 'variable': 'Linie'}
 )
+
+# 4. Design & Styling (Dunkles Theme)
 fig_perf.update_layout(
     template='plotly_dark',
-    plot_bgcolor='rgba(0,0,0,0)', 
-    paper_bgcolor='rgba(0,0,0,0)', 
-    margin=dict(l=20, r=20, t=30, b=20), 
-    xaxis=dict(gridcolor='rgba(255,255,255,0.05)'), 
-    yaxis=dict(gridcolor='rgba(255,255,255,0.05)', ticksuffix='%'), 
-    hovermode='x unified', 
-    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1) 
+    plot_bgcolor='rgba(0,0,0,0)',
+    paper_bgcolor='rgba(0,0,0,0)',
+    margin=dict(l=10, r=10, t=30, b=10),
+    xaxis=dict(gridcolor='rgba(255,255,255,0.05)', title=""),
+    yaxis=dict(gridcolor='rgba(255,255,255,0.05)', ticksuffix='%', title=""),
+    hovermode='x unified',
+    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
 )
-fig_perf.update_traces(line=dict(color='#4A90E2', width=2.5), selector=dict(name='Portfolio')) 
-fig_perf.update_traces(line=dict(color='#6B7280', width=1.5, dash='dash'), selector=dict(name='Benchmark'))
-fig_perf.update_traces(line=dict(color='#F59E0B', width=1), selector=dict(name='100-Tage-Linie')) 
-fig_perf.update_traces(line=dict(color='#EF4444', width=1), selector=dict(name='200-Tage-Linie'))
+
+# Linien-Farben zuweisen
+colors = {'Portfolio': '#4A90E2', 'Benchmark': '#6B7280', '100-Tage-Linie': '#F59E0B', '200-Tage-Linie': '#EF4444'}
+for name, color in colors.items():
+    fig_perf.update_traces(line=dict(color=color, width=2 if 'Linie' not in name else 1), selector=dict(name=name))
+    if name == 'Benchmark':
+        fig_perf.update_traces(line=dict(dash='dash'), selector=dict(name=name))
+
 st.plotly_chart(fig_perf, use_container_width=True)
 
 st.markdown("---")
