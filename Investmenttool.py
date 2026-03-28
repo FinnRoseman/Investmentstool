@@ -115,10 +115,20 @@ bench_optionen = {
     "0/100 (Global Bonds)": "EUNA.DE",
     "Individuelle Benchmark": "CUSTOM"
 }
-ausgewaehlter_name = st.sidebar.selectbox("Vergleichs-Index", list(bench_optionen.keys()))
-
+ausgewaehlter_name = st.sidebar.selectbox(
+    "Vergleichs-Index", 
+    list(bench_optionen.keys()),
+    key="sb_benchmark_select"
+)
 if ausgewaehlter_name == "Individuelle Benchmark":
-    benchmark = st.sidebar.text_input("Gib einen Ticker ein:", "").strip().upper()
+    benchmark = st.sidebar.text_input(
+        "Gib einen Ticker ein (z.B. SPY):", 
+        value="", 
+        placeholder="Ticker hier eingeben...",
+        key="sb_custom_bench"
+    ).strip().upper()
+    if not benchmark:
+        benchmark = "EUNL.DE" 
 else:
     benchmark = bench_optionen[ausgewaehlter_name]
 
