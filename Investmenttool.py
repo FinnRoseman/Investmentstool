@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import streamlit as st
 import pandas_datareader.data as web
 import plotly.express as px
+import plotly.graph_objects as go
 
 # --- CACHING FUNKTION ---
 @st.cache_data(show_spinner="Marktdaten werden geladen...")
@@ -518,49 +519,84 @@ col_rendite, col_regionen = st.columns([1, 1])
 
 with col_rendite:
     st.subheader("💰 Rendite-Analyse", help="Jährliche Renditen und die kumulierte Rendite über feste Zeiträume.")
+    
+    # Datenvorbereitung
     yearly_ret = port_rendite.groupby(port_rendite.index.year).apply(lambda x: (1 + x).prod() - 1) * 100
     periods = {"1Y": 252, "3Y": 756, "5Y": 1260, "10Y": 2520, "20Y": 5040}
     period_rets = {label: ((1 + port_rendite.iloc[-days:]).prod() - 1) * 100 
                    for label, days in periods.items() if len(port_rendite) >= days}
-    fig_balken, (ax1, ax2) = plt.subplots(2, 1, figsize=(5, 5), constrained_layout=True) 
-    colors_y = ['#27AE60' if x > 0 else '#EB5757' for x in yearly_ret]
-    ax1.bar(yearly_ret.index.astype(str), yearly_ret.values, color=colors_y)
-    ax1.set_title("Annualisiert (%)", fontsize=10, fontweight='bold')
-    ax1.axhline(0, color='black', linewidth=0.5)
-    ax1.tick_params(axis='both', labelsize=8)
-    labels_p = list(period_rets.keys())
-    values_p = list(period_rets.values())
-    colors_p = ['#27AE60' if x > 0 else '#EB5757' for x in values_p]
-    ax2.bar(labels_p, values_p, color=colors_p)
-    ax2.set_title("Kumuliert (%)", fontsize=10, fontweight='bold')
-    ax2.axhline(0, color='black', linewidth=0.5)
-    ax2.tick_params(axis='both', labelsize=8)
     
-    st.pyplot(fig_balken)
+    # 1. Plot: Jährliche Rendite
+    fig_yearly = px.bar(
+        x=yearly_ret.index.astype(str), 
+        y=yearly_ret.values,
+        color=yearly_ret.values,
+        color_continuous_scale=['#EB5757', '#27AE60'], # Rot für Negativ, Grün für Positiv
+        labels={'x': 'Jahr', 'y': 'Rendite (%)'}
+    )
+    
+    # 2. Plot: Perioden-Rendite
+    fig_periods = px.bar(
+        x=list(period_rets.keys()), 
+        y=list(period_rets.values()),
+        color=list(period_rets.values()),
+        color_continuous_scale=['#EB5757', '#27AE60'],
+        labels={'x': 'Zeitraum', 'y': 'Kumuliert (%)'}
+    )
+
+    for fig in [fig_yearly, fig_periods]:
+        fig.update_layout(
+            template='plotly_dark', 
+            plot_bgcolor='rgba(0,0,0,0)', 
+            paper_bgcolor='rgba(0,0,0,0)',
+            margin=dict(l=0, r=0, t=30, b=0),
+            coloraxis_showscale=False,
+            height=250
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
 with col_regionen:
     st.subheader("🌎 Regionale Verteilung", help="Geografische Gewichtung des Portfolios.")
-    if (total_na + total_sa + total_eu + total_ap + total_af) > 0:
-        reg_labels = ['Nordamerika', 'Südamerika', 'Europa', 'Asien-Pazifik', 'Afrika']
-        reg_values = [total_na, total_sa, total_eu, total_ap, total_af]
-        reg_colors = ['#4A90E2', '#9B51E0', '#F2994A', '#27AE60', '#EB5757']
-        labels_filtered = [l for l, v in zip(reg_labels, reg_values) if v > 0]
-        values_filtered = [v for v in reg_values if v > 0]
-        colors_filtered = [c for c, v in zip(reg_colors, reg_values) if v > 0]
-        fig_reg, ax_reg = plt.subplots(figsize=(5, 5), constrained_layout=True) 
-        fig_reg.patch.set_facecolor('white')
-        ax_reg.pie(
-            values_filtered, 
-            labels=labels_filtered, 
-            autopct='%1.1f%%', 
-            startangle=140, 
-            colors=colors_filtered,
-            textprops={'color':"black", 'weight':'bold', 'fontsize': 6.5}, 
-            pctdistance=0.7, 
-            labeldistance=1.1 
+    
+    reg_labels = ['Nordamerika', 'Südamerika', 'Europa', 'Asien-Pazifik', 'Afrika']
+    reg_values = [total_na, total_sa, total_eu, total_ap, total_af]
+    reg_colors = ['#4A90E2', '#9B51E0', '#F2994A', '#27AE60', '#EB5757']
+    
+    # Filtern
+    labels_f = [l for l, v in zip(reg_labels, reg_values) if v > 0]
+    values_f = [v for v in reg_values if v > 0]
+    colors_f = [c for c, v in zip(reg_colors, reg_values) if v > 0]
+
+    if sum(values_f) > 0:
+        fig_donut = go.Figure(data=[go.Pie(
+            labels=labels_f, 
+            values=values_f, 
+            hole=.6, # Macht es zum Donut
+            marker=dict(colors=colors_f, line=dict(color='#1E1E1E', width=2)),
+            textinfo='percent',
+            hoverinfo='label+percent',
+            insidetextorientation='radial',
+            opacity=0.85 # Grund-Transparenz
+        )])
+
+        fig_donut.update_layout(
+            template='plotly_dark',
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            margin=dict(l=10, r=10, t=10, b=10),
+            showlegend=True,
+            legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5),
+            hoverlabel=dict(bgcolor="#222", font_size=14, font_family="monospace"),
+            height=450 # Etwas höher für bessere Sichtbarkeit
         )
-        ax_reg.axis('equal') 
-        st.pyplot(fig_reg)
+        
+        # Interaktivität: Beim Drüberfahren volle Opazität
+        fig_donut.update_traces(
+            hoverinfo="label+percent",
+            hovertemplate="<b>%{label}</b><br>Anteil: %{percent}<extra></extra>"
+        )
+
+        st.plotly_chart(fig_donut, use_container_width=True)
     else:
         st.info("Daten in Sidebar eintragen.")
 
