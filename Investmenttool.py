@@ -475,8 +475,6 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-st.markdown("---")
-
 tab_allg, tab_rend, tab_risk, tab_sim = st.tabs([
     "🏠 Allgemein", 
     "📈 Rendite", 
