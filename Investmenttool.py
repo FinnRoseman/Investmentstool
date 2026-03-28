@@ -395,7 +395,6 @@ html_code = f"""
 """
 
 st.write(html_code, unsafe_allow_html=True)
-st.markdown("---")
 
 # --- 4. ANZEIGEN ---
 
