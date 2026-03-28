@@ -678,7 +678,7 @@ if cal_data:
         z=[div_per_month.values],
         x=monats_namen,
         y=['Dividende'],
-        colorscale=[[0, '#1E1E1E'], [0.01, '#004B54'], [1, '#00E6FF']], 
+        colorscale=[[0, '#1E1E1E'], [0.0001, '#00E6FF'], [1, '#00E6FF']], 
         showscale=False,
         hoverinfo='text',
         text=[hover_texts],
