@@ -737,20 +737,58 @@ if len(verfuegbare) > 1:
     opt_col1, opt_col2 = st.columns([2, 1], vertical_alignment="center")
 
     with opt_col1:
-        dynamische_hoehe = 4.1 + (len(verfuegbare) * 0.3)
-        fig_ef, ax_ef = plt.subplots(figsize=(10, dynamische_hoehe))
-        scatter = ax_ef.scatter(results[1,:], results[0,:], c=results[2,:], cmap='viridis', marker='o', alpha=0.3)
-        ax_ef.scatter(vola, capm_erwartung_pa, color='red', marker='o', s=200, label='Aktuelles Portfolio')
-        ax_ef.scatter(opt_vol, opt_ret, color='orange', marker='o', s=200, label='Optimiertes Portfolio')
-        ax_ef.set_xticklabels([f'{x*100:.0f}%' for x in ax_ef.get_xticks()])
-        ax_ef.set_yticklabels([f'{y*100:.0f}%' for y in ax_ef.get_yticks()])
-        ax_ef.set_xlabel('Volatilität p.a.')
-        ax_ef.set_ylabel('Erwartete Rendite p.a.')
-        ax_ef.legend()
-        plt.colorbar(scatter, label='Sharpe Ratio')
-        fig_ef.tight_layout()
-        fig_ef.subplots_adjust(left=0.1, right=0.95, top=0.95, bottom=0.15)
-        st.pyplot(fig_ef) 
+        df_sim = pd.DataFrame({
+            'Volatilität': results[1, :],
+            'Rendite': results[0, :],
+            'Sharpe Ratio': results[2, :]
+        })
+        fig_ef = px.scatter(
+            df_sim, x='Volatilität', y='Rendite', color='Sharpe Ratio',
+            color_continuous_scale='Viridis', # Oder 'Plasma' für noch mehr Neon-Vibe
+            labels={'Volatilität': 'Volatilität p.a.', 'Rendite': 'Erwartete Rendite p.a.'},
+            opacity=0.4
+        )
+        fig_ef.add_trace(go.Scatter(
+            x=[vola], y=[capm_erwartung_pa],
+            mode='markers',
+            marker=dict(color='#6B7280', size=15, line=dict(color='white', width=2)),
+            name='Aktuelles Portfolio',
+            hovertemplate="<b>Aktuelles Portfolio</b><br>Vola: %{x:.2%}<br>Rendite: %{y:.2%}<extra></extra>"
+        ))
+        fig_ef.add_trace(go.Scatter(
+            x=[opt_vol], y=[opt_ret],
+            mode='markers',
+            marker=dict(color='#4A90E2', size=18, symbol='star', line=dict(color='white', width=2)),
+            name='Optimiertes Portfolio',
+            hovertemplate="<b>Max Sharpe Portfolio</b><br>Vola: %{x:.2%}<br>Rendite: %{y:.2%}<extra></extra>"
+        ))
+        fig_ef.update_layout(
+            template='plotly_dark',
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            margin=dict(l=0, r=0, t=20, b=0),
+            xaxis=dict(
+                gridcolor='rgba(255,255,255,0.05)', 
+                tickformat='.0%', 
+                title="Risiko (Volatilität p.a.)"
+            ),
+            yaxis=dict(
+                gridcolor='rgba(255,255,255,0.05)', 
+                tickformat='.0%', 
+                title="Erwartete Rendite p.a."
+            ),
+            coloraxis_colorbar=dict(
+                title="Sharpe",
+                thicknessmode="pixels", thickness=15,
+                lenmode="fraction", len=0.6,
+                yanchor="top", y=1,
+                ticksuffix=""
+            ),
+            showlegend=True,
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            height=500 
+        )
+        st.plotly_chart(fig_ef, use_container_width=True)
     with opt_col2:
         st.markdown("""
         <style>
