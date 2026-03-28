@@ -737,45 +737,54 @@ if len(verfuegbare) > 1:
     opt_col1, opt_col2 = st.columns([2, 1], vertical_alignment="center")
 
     with opt_col1:
+        # 1. Daten für die Wolke vorbereiten
         df_sim = pd.DataFrame({
             'Volatilität': results[1, :],
             'Rendite': results[0, :],
             'Sharpe Ratio': results[2, :]
         })
+        
+        # 2. Die Wolke (wir weisen sie einer Variable zu)
         fig_ef = px.scatter(
             df_sim, x='Volatilität', y='Rendite', color='Sharpe Ratio',
             color_continuous_scale='Viridis',
             labels={'Volatilität': 'Volatilität p.a.', 'Rendite': 'Erwartete Rendite p.a.'},
-            opacity=0.4
+            opacity=0.3 # <--- Reduzierte Opacity der Wolke, damit Punkte durchscheinen
         )
-        fig_ef.add_trace(go.Scatter(
-            x=[vola], 
-            y=[capm_erwartung_pa], 
-            mode='markers',
-            marker=dict(
-                color='white', 
-                size=18, 
-                symbol='circle',
-                line=dict(color='black', width=2)
-            ),
-            name='Aktuelles Portfolio',
-            hovertemplate="<b>Aktuelles Portfolio</b><br>Vola: %{x:.2%}<br>Rendite: %{y:.2%}<extra></extra>"
-        ))
+        
+        # 3. Den Stern für die Optimierung (wir weisen ihn auch einer Variable zu)
         fig_ef.add_trace(go.Scatter(
             x=[opt_vol], y=[opt_ret],
             mode='markers',
             marker=dict(
                 color='#4A90E2', 
-                size=20, 
+                size=22, 
                 symbol='star', 
-                line=dict(color='white', width=2)
+                line=dict(color='white', width=2),
+                # DER TRICK: Sehr hoher Zorder-Wert
+                zorder=20 
             ),
-            name='Optimiertes Portfolio',
-            hovertemplate="<b>Max Sharpe Portfolio</b><br>Vola: %{x:.2%}<br>Rendite: %{y:.2%}<extra></extra>"
+            name='Optimiertes Portfolio'
         ))
-        fig_ef.data[1].marker.size = 20 
-        fig_ef.data[2].marker.size = 22 
-        
+
+        # 4. Dein Portfolio als WEISSER KREIS (GANZ ZUM SCHLUSS)
+        fig_ef.add_trace(go.Scatter(
+            x=[vola], 
+            y=[capm_erwartung_pa], 
+            mode='markers',
+            marker=dict(
+                color='white',           # Weiß sticht maximal hervor
+                size=24,                 # Etwas größer als der Stern
+                symbol='circle',
+                line=dict(color='black', width=3), # Schwarzer Rand zur Abgrenzung
+                # DER TRICK: Höchster Zorder-Wert, damit er ganz oben liegt
+                zorder=30
+            ),
+            name='Aktuelles Portfolio',
+            hovertemplate="<b>Aktuelles Portfolio</b><br>Vola: %{x:.2%}<br>Rendite: %{y:.2%}<extra></extra>"
+        ))
+
+        # --- FINAL LAYOUT & TRACE ALIGNMENT ---
         fig_ef.update_layout(
             template='plotly_dark',
             plot_bgcolor='rgba(0,0,0,0)',
@@ -785,7 +794,8 @@ if len(verfuegbare) > 1:
                 gridcolor='rgba(255,255,255,0.05)',
                 tickformat='.0%', 
                 title="Risiko (Volatilität p.a.)",
-                autorange=True
+                # Wir stellen sicher, dass alle Traces (auch der weiße Kreis) im Bild sind
+                autorange=True 
             ),
             yaxis=dict(
                 gridcolor='rgba(255,255,255,0.05)',
