@@ -1073,54 +1073,56 @@ with tab_risk:
     except Exception as e:
         st.error(f"Faktoranalyse konnte nicht geladen werden: {e}")
 
-@st.fragment
-def render_simulation_area(factors, beta, endsumme, ausgewaehlter_name):
-    st.markdown("---")
-    szenarien = {
-        "Stagflation": [-0.35, -0.05, +0.15, +0.08, +0.05], 
-        "Inflation": [-0.20, 0.00, 0.10, 0.12, 0.05],
-        "Schwere Rezession": [-0.45, -0.10, +0.05, +0.15, +0.10],
-        "Tech-Blase": [-0.40, -0.05, +0.35, +0.15, +0.10],
-        "Small Cap Rallye": [+0.15, +0.20, +0.05, -0.05, -0.05]
-    }
-    sim_col1, sim_col2 = st.columns(2)
-    with sim_col1:
-        st.markdown("### 🔮 Szenario-Analyse")
-        auswahl = st.selectbox(
-            "Szenario:", 
-            list(szenarien.keys()), 
-            help="Simuliert verschiedene Szenarien unter Berücksichtigung des Fünf-Faktoren-Modells (Fama-French)."
-        )
-        schocks = szenarien[auswahl]
-        verlust_pro_faktor = factors.values * schocks
-        gesamt_sz_ret = np.sum(verlust_pro_faktor)
-        verlust_sz_euro = endsumme * gesamt_sz_ret
-        farbe_sz = "#EB5757" if gesamt_sz_ret < 0 else "#27AE60"
-        st.markdown(f"""
-            <div style="background-color: rgba(100,100,100,0.1); padding: 15px; border-radius: 10px; border-left: 5px solid {farbe_sz};">
-                <p style="margin:0; font-size:14px; color:gray;">Portfolio:</p>
-                <h2 style="margin:0; color:{farbe_sz};">{gesamt_sz_ret:.2%}</h2>
-                <p style="margin:0; font-weight:bold;">{verlust_sz_euro:,.2f} €</p>
-            </div>
-        """, unsafe_allow_html=True)
-    with sim_col2:
-        st.markdown("### 🕹️ Benchmark-Sensitivität")
-        eigener_schock = st.slider(
-            "Benchmark:", 
-            -50.0, 50.0, 0.0, 1.0, 
-            help="Simuliert eine Bewegung der gewählten Benchmark in dem Portfolio."
-        )
-        gesamt_sens_ret = (beta * eigener_schock / 100)
-        verlust_sens_euro = endsumme * gesamt_sens_ret
-        farbe_sens = "#EB5757" if gesamt_sens_ret < 0 else "#27AE60"
-        st.markdown(f"""
-            <div style="background-color: rgba(100,100,100,0.1); padding: 15px; border-radius: 10px; border-left: 5px solid {farbe_sens};">
-                <p style="margin:0; font-size:14px; color:gray;">Portfolio:</p>
-                <h2 style="margin:0; color:{farbe_sens};">{gesamt_sens_ret:.2%}</h2>
-                <p style="margin:0; font-weight:bold;">{verlust_sens_euro:,.2f} €</p>
-            </div>
-        """, unsafe_allow_html=True)
-render_simulation_area(factors, beta, endsumme, ausgewaehlter_name)
+# --- INHALT FÜR TAB: SIMULATIONEN ---
+with tab_sim:
+    @st.fragment
+    def render_simulation_area(factors, beta, endsumme, ausgewaehlter_name):
+        st.markdown("---")
+        szenarien = {
+            "Stagflation": [-0.35, -0.05, +0.15, +0.08, +0.05], 
+            "Inflation": [-0.20, 0.00, 0.10, 0.12, 0.05],
+            "Schwere Rezession": [-0.45, -0.10, +0.05, +0.15, +0.10],
+            "Tech-Blase": [-0.40, -0.05, +0.35, +0.15, +0.10],
+            "Small Cap Rallye": [+0.15, +0.20, +0.05, -0.05, -0.05]
+        }
+        sim_col1, sim_col2 = st.columns(2)
+        with sim_col1:
+            st.markdown("### 🔮 Szenario-Analyse")
+            auswahl = st.selectbox(
+                "Szenario wählen:", 
+                list(szenarien.keys()), 
+                help="Simuliert verschiedene Marktszenarien basierend auf dem Fama-French Fünf-Faktoren-Modell."
+            )
+            schocks = szenarien[auswahl]
+            verlust_pro_faktor = factors.values * schocks
+            gesamt_sz_ret = np.sum(verlust_pro_faktor)
+            verlust_sz_euro = endsumme * gesamt_sz_ret
+            farbe_sz = "#EB5757" if gesamt_sz_ret < 0 else "#27AE60"
+            st.markdown(f"""
+                <div style="background-color: rgba(100,100,100,0.1); padding: 15px; border-radius: 10px; border-left: 5px solid {farbe_sz};">
+                    <p style="margin:0; font-size:14px; color:gray;">Erwartete Portfolio-Reaktion:</p>
+                    <h2 style="margin:0; color:{farbe_sz};">{gesamt_sz_ret:.2%}</h2>
+                    <p style="margin:0; font-weight:bold;">{verlust_sz_euro:,.2f} €</p>
+                </div>
+            """, unsafe_allow_html=True)    
+        with sim_col2:
+            st.markdown("### 🕹️ Benchmark-Sensitivität")
+            eigener_schock = st.slider(
+                f"Bewegung {ausgewaehlter_name} (%):", 
+                -50.0, 50.0, 0.0, 1.0, 
+                help="Simuliert die Auswirkung einer Benchmark-Bewegung basierend auf dem Portfolio-Beta."
+            )
+            gesamt_sens_ret = (beta * eigener_schock / 100)
+            verlust_sens_euro = endsumme * gesamt_sens_ret
+            farbe_sens = "#EB5757" if gesamt_sens_ret < 0 else "#27AE60"
+            st.markdown(f"""
+                <div style="background-color: rgba(100,100,100,0.1); padding: 15px; border-radius: 10px; border-left: 5px solid {farbe_sens};">
+                    <p style="margin:0; font-size:14px; color:gray;">Auswirkung auf Portfolio:</p>
+                    <h2 style="margin:0; color:{farbe_sens};">{gesamt_sens_ret:.2%}</h2>
+                    <p style="margin:0; font-weight:bold;">{verlust_sens_euro:,.2f} €</p>
+                </div>
+            """, unsafe_allow_html=True)
+    render_simulation_area(factors, beta, endsumme, ausgewaehlter_name)
 
 st.markdown("---")
 st.caption(f"Datenzeitraum: {daten.index[0].strftime('%d.%m.%Y')} bis {daten.index[-1].strftime('%d.%m.%Y')}")
