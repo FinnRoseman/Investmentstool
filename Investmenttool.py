@@ -863,33 +863,83 @@ else:
 
 st.markdown("---")
 
+# Korrelationsmatrix und Risikoverteilung
+
 g_col1, g_col2 = st.columns(2)
 
 with g_col1:
     st.subheader("⛓️ Korrelationsmatrix", help="Zeigt, wie stark sich Assets gemeinsam bewegen. 1.0 = Gleichlaufend, 0 = kein Zusammenhang, -1.0 = Gegenlaufend.")
-    fig_corr, ax_corr = plt.subplots(figsize=(10, 8), constrained_layout=True)
-    sns.heatmap(renditen[verfuegbare].corr(), annot=True, cmap='RdYlGn_r', center=0.3, fmt=".2f", linewidths=0.5, ax=ax_corr)
-    st.pyplot(fig_corr)
+    
+    corr_matrix = renditen[verfuegbare].corr()
+    
+    # Wir bilden die 'RdYlGn_r' Palette in Plotly nach
+    fig_corr = go.Figure(data=go.Heatmap(
+        z=corr_matrix.values,
+        x=corr_matrix.columns,
+        y=corr_matrix.columns,
+        colorscale='RdYlGn', # RdYlGn in Plotly ist standardmäßig invertiert wie dein _r
+        reversescale=True,
+        zmin=-1, zmax=1,
+        xgap=2, ygap=2,
+        hovertemplate="Ticker A: %{x}<br>Ticker B: %{y}<br>Korrelation: <b>%{z:.2f}</b><extra></extra>",
+        showscale=True
+    ))
+
+    # Zahlen direkt in die Boxen schreiben (wie dein annot=True)
+    for i, row in enumerate(corr_matrix.values):
+        for j, value in enumerate(row):
+            fig_corr.add_annotation(
+                x=corr_matrix.columns[j], y=corr_matrix.columns[i],
+                text=f"{value:.2f}", showarrow=False,
+                font=dict(color="white" if abs(value) > 0.7 else "black")
+            )
+
+    fig_corr.update_layout(
+        template='plotly_dark',
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        margin=dict(l=0, r=0, t=10, b=0),
+        height=450,
+        xaxis=dict(fixedrange=True, side="bottom"),
+        yaxis=dict(fixedrange=True, autorange="reversed")
+    )
+    st.plotly_chart(fig_corr, use_container_width=True, config={'displayModeBar': False})
 
 with g_col2:
     st.subheader("🚨 Risiko-Verteilung", help="Gibt an, welche Position wie stark zur Gesamtvolatilität beiträgt")
-    fig_bar, ax_bar = plt.subplots(figsize=(10, 8), constrained_layout=True)
-    colors = ['#9B51E0' if x > 0 else '#22a884' for x in rel_risk_contrib]
-    y_pos = np.arange(len(verfuegbare))
-    bars = ax_bar.barh(y_pos, rel_risk_contrib * 100, color=colors)
-    ax_bar.set_yticks(y_pos)
-    ax_bar.set_yticklabels(verfuegbare, fontweight='bold')
-    ax_bar.invert_yaxis() 
-    ax_bar.axvline(0, color='black', linewidth=1, alpha=0.5)
-    ax_bar.set_xlabel('Beitrag zur Volatilität (%)', fontweight='bold')
-    ax_bar.grid(axis='x', linestyle='--', alpha=0.7)
-    for bar in bars:
-        width = bar.get_width()
-        ax_bar.text(width, bar.get_y() + bar.get_height()/2, 
-                    f' {width:.1f}%', 
-                    va='center', fontweight='bold', fontsize=11)
     
-    st.pyplot(fig_bar)
+    risk_data = pd.DataFrame({
+        'Ticker': verfuegbare,
+        'Beitrag': rel_risk_contrib * 100
+    }).sort_values('Beitrag', ascending=True)
+
+    # Farben basierend auf deinem Code: Violett für positiv, Grün für negativ
+    risk_data['Farbe'] = risk_data['Beitrag'].apply(lambda x: '#9B51E0' if x > 0 else '#22a884')
+
+    fig_bar = px.bar(
+        risk_data, x='Beitrag', y='Ticker',
+        orientation='h',
+        text=risk_data['Beitrag'].apply(lambda x: f'{x:.1f}%'),
+        template='plotly_dark'
+    )
+
+    fig_bar.update_traces(
+        marker_color=risk_data['Farbe'],
+        textposition='outside',
+        hovertemplate="<b>%{y}</b><br>Risiko-Beitrag: %{x:.2f}%<extra></extra>",
+        width=0.7
+    )
+
+    fig_bar.update_layout(
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        xaxis=dict(title="Beitrag zur Volatilität (%)", showgrid=True, gridcolor='rgba(255,255,255,0.05)', zerolinecolor='white'),
+        yaxis=dict(title=None),
+        margin=dict(l=0, r=50, t=10, b=0),
+        height=450,
+        showlegend=False
+    )
+    st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False})
 
 st.markdown("---")
 
