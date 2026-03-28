@@ -662,7 +662,6 @@ with tab_rend:
             height=350
         )
         st.plotly_chart(fig_att, use_container_width=True)
-    st.markdown("---")
 
 # Dividendenkalender
 with tab_allg:
