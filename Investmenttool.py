@@ -477,42 +477,48 @@ st.markdown(f"""
 
 st.markdown("---")
 
+tab_allg, tab_rend, tab_risk, tab_sim = st.tabs([
+    "🏠 Allgemein", 
+    "📈 Rendite", 
+    "🚨 Risiko", 
+    "🎲 Simulationen"
+])
+
 # 1. Performance-Chart (Full Width oben)
-st.subheader("📈 Performance & Trends")
-port_kum = ((1 + port_rendite).cumprod() - 1) * 100
-bench_kum = ((1 + bench_rendite).cumprod() - 1) * 100
-sma100 = port_kum.rolling(window=100).mean()
-sma200 = port_kum.rolling(window=200).mean()
-df_perf_plot = pd.DataFrame({
-    'Datum': port_kum.index,
-    'Portfolio': port_kum.values,
-    'Benchmark': bench_kum.values,
-    '100-Tage-Linie': sma100.values,
-    '200-Tage-Linie': sma200.values
-})
-fig_perf = px.line(
-    df_perf_plot,
-    x='Datum', 
-    y=['Portfolio', 'Benchmark', '100-Tage-Linie', '200-Tage-Linie'],
-    labels={'value': 'Entwicklung (%)', 'variable': 'Linie'}
-)
-fig_perf.update_layout(
-    template='plotly_dark',
-    plot_bgcolor='rgba(0,0,0,0)',
-    paper_bgcolor='rgba(0,0,0,0)',
-    margin=dict(l=10, r=10, t=30, b=10),
-    xaxis=dict(gridcolor='rgba(255,255,255,0.05)', title=""),
-    yaxis=dict(gridcolor='rgba(255,255,255,0.05)', ticksuffix='%', title=""),
-    hovermode='x unified',
-    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-)
-colors = {'Portfolio': '#FFD700', 'Benchmark': '#4A90E2', '100-Tage-Linie': '#F59E0B', '200-Tage-Linie': '#EF4444'}
-for name, color in colors.items():
-    fig_perf.update_traces(line=dict(color=color, width=2 if 'Linie' not in name else 1), selector=dict(name=name))
-
-st.plotly_chart(fig_perf, use_container_width=True)
-
-st.markdown("---")
+with tab_allg:
+    st.subheader("📈 Performance & Trends")
+    port_kum = ((1 + port_rendite).cumprod() - 1) * 100
+    bench_kum = ((1 + bench_rendite).cumprod() - 1) * 100
+    sma100 = port_kum.rolling(window=100).mean()
+    sma200 = port_kum.rolling(window=200).mean()
+    df_perf_plot = pd.DataFrame({
+        'Datum': port_kum.index,
+        'Portfolio': port_kum.values,
+        'Benchmark': bench_kum.values,
+        '100-Tage-Linie': sma100.values,
+        '200-Tage-Linie': sma200.values
+    })
+    fig_perf = px.line(
+        df_perf_plot,
+        x='Datum', 
+        y=['Portfolio', 'Benchmark', '100-Tage-Linie', '200-Tage-Linie'],
+        labels={'value': 'Entwicklung (%)', 'variable': 'Linie'}
+    )
+    fig_perf.update_layout(
+        template='plotly_dark',
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        margin=dict(l=10, r=10, t=30, b=10),
+        xaxis=dict(gridcolor='rgba(255,255,255,0.05)', title=""),
+        yaxis=dict(gridcolor='rgba(255,255,255,0.05)', ticksuffix='%', title=""),
+        hovermode='x unified',
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+    )
+    colors = {'Portfolio': '#FFD700', 'Benchmark': '#4A90E2', '100-Tage-Linie': '#F59E0B', '200-Tage-Linie': '#EF4444'}
+    for name, color in colors.items():
+        fig_perf.update_traces(line=dict(color=color, width=2 if 'Linie' not in name else 1), selector=dict(name=name))
+    st.plotly_chart(fig_perf, use_container_width=True)
+    st.markdown("---")
 
 # 2. Spalten für Rendite-Check und Regionen-Verteilung
 col_rendite, col_regionen = st.columns([1, 1])
