@@ -665,47 +665,47 @@ with tab_rend:
     st.markdown("---")
 
 # Dividendenkalender
-st.subheader("📅 Dividenden-Kalender", help="Zeigt, wann wie viele Ausschüttungen zu erwarten sind")
-if cal_data:
-    df_cal = pd.DataFrame(cal_data)
-    div_per_month = df_cal.groupby('Monat_Nr')['Ausschüttung'].sum().reindex(range(1, 13), fill_value=0)
-    ticker_details = df_cal.groupby(['Monat_Nr', 'Ticker'])['Ausschüttung'].sum().reset_index()
-    monats_namen = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
-    hover_texts = []
-    for i in range(1, 13):
-        details = ticker_details[ticker_details['Monat_Nr'] == i]
-        if not details.empty:
-            txt = "<br>".join([f"• {row['Ticker']}: {row['Ausschüttung']:.2f} €" for _, row in details.iterrows()])
-            hover_texts.append(f"<b>{monats_namen[i-1]}</b><br>{txt}<br><b>Gesamt: {div_per_month[i]:.2f} €</b>")
-        else:
-            hover_texts.append(f"<b>{monats_namen[i-1]}</b><br>Keine Ausschüttung")
-    fig_div = go.Figure(data=go.Heatmap(
-        z=[div_per_month.values],
-        x=monats_namen,
-        y=['Dividende'],
-        colorscale=[[0, '#1E1E1E'], [0.0001, '#00E6FF'], [1, '#00E6FF']], 
-        showscale=False,
-        hoverinfo='text',
-        text=[hover_texts],
-        xgap=5, 
-        ygap=5
-    ))
-    fig_div.update_layout(
-        template='plotly_dark',
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        margin=dict(l=0, r=0, t=10, b=0),
-        height=180, 
-        xaxis=dict(side="bottom", fixedrange=True, showgrid=False),
-        yaxis=dict(visible=False, fixedrange=True) 
-    )
-    st.plotly_chart(fig_div, use_container_width=True, config={'displayModeBar': False})
-    total_div = div_per_month.sum()
-    st.caption(f"💸 Erwartete Gesamt-Dividende: **{total_div:.2f} €**")
-else:
-    st.info("Keine historischen Dividenden im gewählten Zeitraum gefunden.")
-
-st.markdown("---")
+with tab_allg:
+    st.subheader("📅 Dividenden-Kalender", help="Zeigt, wann wie viele Ausschüttungen zu erwarten sind")
+    if cal_data:
+        df_cal = pd.DataFrame(cal_data)
+        div_per_month = df_cal.groupby('Monat_Nr')['Ausschüttung'].sum().reindex(range(1, 13), fill_value=0)
+        ticker_details = df_cal.groupby(['Monat_Nr', 'Ticker'])['Ausschüttung'].sum().reset_index()
+        monats_namen = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
+        hover_texts = []
+        for i in range(1, 13):
+            details = ticker_details[ticker_details['Monat_Nr'] == i]
+            if not details.empty:
+                txt = "<br>".join([f"• {row['Ticker']}: {row['Ausschüttung']:.2f} €" for _, row in details.iterrows()])
+                hover_texts.append(f"<b>{monats_namen[i-1]}</b><br>{txt}<br><b>Gesamt: {div_per_month[i]:.2f} €</b>")
+            else:
+                hover_texts.append(f"<b>{monats_namen[i-1]}</b><br>Keine Ausschüttung")  
+        fig_div = go.Figure(data=go.Heatmap(
+            z=[div_per_month.values],
+            x=monats_namen,
+            y=['Dividende'],
+            colorscale=[[0, '#1E1E1E'], [0.0001, '#00E6FF'], [1, '#00E6FF']], 
+            showscale=False,
+            hoverinfo='text',
+            text=[hover_texts],
+            xgap=5, 
+            ygap=5
+        ))
+        fig_div.update_layout(
+            template='plotly_dark',
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            margin=dict(l=0, r=0, t=10, b=0),
+            height=180, 
+            xaxis=dict(side="bottom", fixedrange=True, showgrid=False),
+            yaxis=dict(visible=False, fixedrange=True) 
+        )
+        st.plotly_chart(fig_div, use_container_width=True, config={'displayModeBar': False})
+        total_div = div_per_month.sum()
+        st.caption(f"💸 Erwartete Gesamt-Dividende: **{total_div:.2f} €**")
+    else:
+        st.info("Keine historischen Dividenden im gewählten Zeitraum gefunden.")
+    st.markdown("---")
 
 # Mean-Variance-Optimization
 st.subheader("🎯 Mean-Variance-Optimization", help="10.000 Simulationen des Portfolios zur optimalen Gewichtung für das maximale Sharpe Ratio auf Basis der erwarteten Rendite.")
