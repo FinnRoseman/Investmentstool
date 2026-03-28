@@ -107,7 +107,13 @@ risk_free_rate = 0.02
 # --- 2. DESIGN ---
 st.sidebar.header("Benchmarkauswahl")
 
-# 1. Optionen definieren
+# 1. Wir prüfen, ob wir im "Individuell"-Modus sind, um den Key zu steuern
+if st.session_state.get('benchmark_selector') == "Individuelle Benchmark":
+    select_key = "bench_select_active"
+else:
+    select_key = "bench_select_stable"
+
+# 2. Die Liste der Optionen
 bench_options_list = [
     "100/0 (MSCI World)", 
     "80/20 (LifeStrategy 80% Equity)", 
@@ -127,17 +133,11 @@ bench_mapping = {
     "0/100 (Global Bonds)": "EUNA.DE"
 }
 
-# 2. Funktion zum Aufräumen (verhindert das Hängenbleiben)
-def reset_custom_bench():
-    if 'custom_input_field' in st.session_state:
-        st.session_state['custom_input_field'] = ""
-
-# 3. Selectbox mit on_change Trigger
+# 3. Die Selectbox mit dynamischem Key
 ausgewaehlter_name = st.sidebar.selectbox(
     "Vergleichs-Index", 
     options=bench_options_list,
-    key="benchmark_selector_final",
-    on_change=reset_custom_bench # Leert das Feld, wenn man die Box ändert
+    key="benchmark_selector" # Wir nutzen den Namen direkt als Key im State
 )
 
 # 4. Logik zur Zuweisung
@@ -149,13 +149,17 @@ if ausgewaehlter_name == "Individuelle Benchmark":
         key="custom_input_field"
     ).strip().upper()
     
-    # Sicherheitscheck für leeres Feld
+    # "if not" Logik integriert
     if custom_ticker:
         benchmark = custom_ticker
     else:
-        benchmark = "EUNL.DE" # Fallback auf MSCI World solange leer
+        benchmark = "EUNL.DE"
 else:
+    # Hier holen wir den Ticker direkt aus dem Mapping
     benchmark = bench_mapping.get(ausgewaehlter_name, "EUNL.DE")
+
+# NUR ZUM TESTEN (kannst du danach löschen):
+# st.sidebar.write(f"DEBUG: Gewählter Ticker ist {benchmark}")
 
 st.sidebar.header("Zeitraumauswahl")
 zeitraum_optionen = {
