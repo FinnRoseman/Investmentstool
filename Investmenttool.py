@@ -748,7 +748,7 @@ if len(verfuegbare) > 1:
             labels={'Volatilität': 'Volatilität p.a.', 'Rendite': 'Erwartete Rendite p.a.'},
             opacity=0.4
         )
-         fig_ef.add_trace(go.Scatter(
+        fig_ef.add_trace(go.Scatter(
             x=[opt_vol], 
             y=[opt_ret], 
             mode='markers',
