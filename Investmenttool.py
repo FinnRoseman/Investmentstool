@@ -955,7 +955,6 @@ with tab_risk:
 
 # Monte Carlo Pfadsimulation (10 Jahre)
 with tab_sim:
-    st.markdown("---")
     st.subheader("🎲 Monte-Carlo-Simulation", help="Simuliert 100 mögliche Pfade der Vermögensentwicklung basierend auf der historischen Volatilität und Rendite.")
     mc_jahre = 10
     aktuelles_jahr = pd.Timestamp.now().year
@@ -1075,7 +1074,6 @@ with tab_risk:
 with tab_sim:
     @st.fragment
     def render_simulation_area(factors, beta, endsumme, ausgewaehlter_name):
-        st.markdown("---")
         szenarien = {
             "Stagflation": [-0.35, -0.05, +0.15, +0.08, +0.05], 
             "Inflation": [-0.20, 0.00, 0.10, 0.12, 0.05],
