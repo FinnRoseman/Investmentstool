@@ -106,10 +106,14 @@ risk_free_rate = 0.02
 
 # --- 2. DESIGN ---
 st.sidebar.header("Benchmarkauswahl")
+def clear_custom_input():
+    if "custom_bench_input" in st.session_state:
+        st.session_state["custom_bench_input"] = ""
 modus = st.sidebar.radio(
     "Benchmark",
     ["Standardauswahl", "Individuelle Auswahl"],
-    key="bench_mode"
+    key="bench_mode",
+    on_change=clear_custom_input
 )
 if modus == "Standardauswahl":
     bench_optionen = {
