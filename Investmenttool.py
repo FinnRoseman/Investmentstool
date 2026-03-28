@@ -705,7 +705,6 @@ with tab_allg:
         st.caption(f"💸 Erwartete Gesamt-Dividende: **{total_div:.2f} €**")
     else:
         st.info("Keine historischen Dividenden im gewählten Zeitraum gefunden.")
-    st.markdown("---")
 
 # Mean-Variance-Optimization
 with tab_sim:
@@ -1124,5 +1123,4 @@ with tab_sim:
             """, unsafe_allow_html=True)
     render_simulation_area(factors, beta, endsumme, ausgewaehlter_name)
 
-st.markdown("---")
 st.caption(f"Datenzeitraum: {daten.index[0].strftime('%d.%m.%Y')} bis {daten.index[-1].strftime('%d.%m.%Y')}")
