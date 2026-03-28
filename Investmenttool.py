@@ -733,9 +733,6 @@ if len(verfuegbare) > 1:
     best_w = weights_record[max_sharpe_idx]
     opt_ret = results[0, max_sharpe_idx]
     opt_vol = results[1, max_sharpe_idx]
-    act_weights = np.array(anteile)
-    act_ret = np.sum(mu * act_weights) 
-    act_vol = np.sqrt(np.dot(act_weights.T, np.dot(cov, act_weights)))
 
     opt_col1, opt_col2 = st.columns([2, 1], vertical_alignment="center")
 
@@ -752,7 +749,7 @@ if len(verfuegbare) > 1:
             opacity=0.4
         )
         fig_ef.add_trace(go.Scatter(
-            x=[act_vol], y=[act_ret],
+            x=[vola], y=[capm_erwartung_pa],
             mode='markers',
             marker=dict(color='#6B7280', size=15, line=dict(color='white', width=2)),
             name='Aktuelles Portfolio',
@@ -772,13 +769,11 @@ if len(verfuegbare) > 1:
             margin=dict(l=0, r=0, t=20, b=0),
             xaxis=dict(
                 gridcolor='rgba(255,255,255,0.05)',
-                autorange=True,
                 tickformat='.0%', 
                 title="Risiko (Volatilität p.a.)"
             ),
             yaxis=dict(
                 gridcolor='rgba(255,255,255,0.05)',
-                autorange=True,
                 tickformat='.0%', 
                 title="Erwartete Rendite p.a."
             ),
