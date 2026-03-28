@@ -956,67 +956,45 @@ with tab_risk:
     st.markdown("---")
 
 # Monte Carlo Pfadsimulation (10 Jahre)
-# --- INHALT FÜR TAB: SIMULATIONEN ---
 with tab_sim:
-    # 1. Mean-Variance-Optimization (Code von vorhin)
-    # ... (MVO Code hier) ...
-
     st.markdown("---")
-    
-    # 2. Monte-Carlo-Simulation
     st.subheader("🎲 Monte-Carlo-Simulation", help="Simuliert 100 mögliche Pfade der Vermögensentwicklung basierend auf der historischen Volatilität und Rendite.")
-    
     mc_jahre = 10
     aktuelles_jahr = pd.Timestamp.now().year
     mc_tage = 252 * mc_jahre
     mc_pfade = 100 
     mc_startkapital = startkapital if startkapital > 0 else 10000 
-    
     mu_daily = port_rendite.mean()
     sigma_daily = port_rendite.std()
-    
     np.random.seed(42)
     rand_rets = np.random.normal(mu_daily, sigma_daily, (mc_tage, mc_pfade))
     mc_pfade_daten = mc_startkapital * (1 + rand_rets).cumprod(axis=0)
-    
     median_pfad = np.percentile(mc_pfade_daten, 50, axis=1)
     top_pfad = np.percentile(mc_pfade_daten, 95, axis=1)
     bottom_pfad = np.percentile(mc_pfade_daten, 5, axis=1)
-    
     mc_cagr_median = (median_pfad[-1] / mc_startkapital)**(1/mc_jahre) - 1
     mc_cagr_pessimist = (bottom_pfad[-1] / mc_startkapital)**(1/mc_jahre) - 1
     mc_cagr_optimist = (top_pfad[-1] / mc_startkapital)**(1/mc_jahre) - 1
-    
     zeit_achse = np.linspace(aktuelles_jahr, aktuelles_jahr + mc_jahre, mc_tage)
-    
     fig_mc_path = go.Figure()
-    
-    # Einzelne Pfade (dezent im Hintergrund)
     for i in range(mc_pfade):
         fig_mc_path.add_trace(go.Scatter(
             x=zeit_achse, y=mc_pfade_daten[:, i],
             mode='lines', line=dict(color='rgba(135, 206, 250, 0.1)', width=1),
             showlegend=False, hoverinfo='skip' 
         ))
-        
-    # Vertrauensintervall (Füllung)
     fig_mc_path.add_trace(go.Scatter(x=zeit_achse, y=top_pfad, mode='lines', line=dict(width=0), showlegend=False, hoverinfo='skip'))
     fig_mc_path.add_trace(go.Scatter(x=zeit_achse, y=bottom_pfad, mode='lines', fill='tonexty', 
                                      fillcolor='rgba(255, 255, 255, 0.03)', line=dict(width=0), showlegend=False, hoverinfo='skip'))
-    
-    # Haupt-Linien (Pessimist, Optimist, Median)
     fig_mc_path.add_trace(go.Scatter(x=zeit_achse, y=bottom_pfad, mode='lines', name='Pessimistisch (5%)',
                                      line=dict(color='#FF3131', width=2, dash='dash'),
                                      hovertemplate="Jahr: %{x:.1f}<br>Wert: <b>%{y:,.0f} €</b><extra></extra>"))
-    
     fig_mc_path.add_trace(go.Scatter(x=zeit_achse, y=top_pfad, mode='lines', name='Optimistisch (95%)',
                                      line=dict(color='#39FF14', width=2, dash='dash'),
                                      hovertemplate="Jahr: %{x:.1f}<br>Wert: <b>%{y:,.0f} €</b><extra></extra>"))
-    
     fig_mc_path.add_trace(go.Scatter(x=zeit_achse, y=median_pfad, mode='lines', name='Median (50%)',
                                      line=dict(color='#4A90E2', width=4),
                                      hovertemplate="Jahr: %{x:.1f}<br>Wert: <b>%{y:,.0f} €</b><extra></extra>"))
-    
     fig_mc_path.update_layout(
         title=dict(text=f"Simulation von {mc_pfade} Pfaden bei {mc_startkapital:,.0f}€ Startwert", font=dict(color='white', size=16), x=0, y=0.95),
         template='plotly_dark', plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
@@ -1025,10 +1003,7 @@ with tab_sim:
         yaxis=dict(title="Portfoliowert (€)", gridcolor='rgba(255,255,255,0.05)', ticksuffix=" €", tickformat=',.0f'),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, bgcolor="rgba(0,0,0,0)")
     )
-    
     st.plotly_chart(fig_mc_path, use_container_width=True, config={'displayModeBar': False})
-    
-    # Ergebnis-Cards (HTML/CSS)
     st.markdown("""
     <style>
         .mc-container { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
@@ -1041,7 +1016,6 @@ with tab_sim:
         .optimist { border-left-color: #27AE60; }
     </style>
     """, unsafe_allow_html=True)
-    
     mc_html = f"""
     <div style="margin-bottom: 10px; font-weight: bold; color: #4A90E2;">⏳ Ergebnis nach {mc_jahre} Jahren (Projektion):</div>
     <div class="mc-container">
@@ -1054,47 +1028,50 @@ with tab_sim:
     st.markdown("---")
 
 st.markdown("---")
-st.subheader("🧬 Faktorenanalyse", help="Diese Analyse zeigt, welche wissenschaftlichen Faktoren (Betas) dein Portfolio antreiben.")
-try:
-    with st.spinner("Berechne Faktor-Exposures..."):
-        factors = get_factor_loadings(port_rendite)
-        factor_names = [
-            'Market', 
-            'Size', 
-            'Value', 
-            'Quality I: Profitability', 
-            'Quality II: Investmentbehavior'
-        ]
-        colors_fac = ['#4A90E2', '#27AE60', '#F2994A', '#9B51E0', '#D488FF']
-        fig_fac = go.Figure(go.Bar(
-            x=factors.values, 
-            y=factor_names,
-            orientation='h',
-            marker_color=colors_fac, 
-            hovertemplate="Faktor: <b>%{y}</b><br>Beta: <b>%{x:.3f}</b><extra></extra>",
-            width=0.6
-        ))
-        fig_fac.update_layout(
-            template='plotly_dark',
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            margin=dict(l=0, r=20, t=10, b=10),
-            height=350, 
-            xaxis=dict(
-                title="Beta-Wert", 
-                gridcolor='rgba(255,255,255,0.05)', 
-                zerolinecolor='white',
-                zerolinewidth=1
-            ),
-            yaxis=dict(
-                autorange="reversed", 
-                fixedrange=True
+with tab_risk:
+    st.subheader("🧬 Faktorenanalyse", help="Diese Analyse zeigt, welche wissenschaftlichen Faktoren (Betas) dein Portfolio antreiben.")
+    try:
+        with st.spinner("Berechne Faktor-Exposures..."):
+            factors = get_factor_loadings(port_rendite)
+            factor_names = [
+                'Market', 
+                'Size', 
+                'Value', 
+                'Quality I: Profitability', 
+                'Quality II: Investmentbehavior'
+            ]
+            colors_fac = ['#4A90E2', '#27AE60', '#F2994A', '#9B51E0', '#D488FF']
+            
+            fig_fac = go.Figure(go.Bar(
+                x=factors.values, 
+                y=factor_names,
+                orientation='h',
+                marker_color=colors_fac, 
+                hovertemplate="Faktor: <b>%{y}</b><br>Beta: <b>%{x:.3f}</b><extra></extra>",
+                width=0.6
+            ))
+            
+            fig_fac.update_layout(
+                template='plotly_dark',
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
+                margin=dict(l=0, r=20, t=10, b=10),
+                height=350, 
+                xaxis=dict(
+                    title="Beta-Wert", 
+                    gridcolor='rgba(255,255,255,0.05)', 
+                    zerolinecolor='white',
+                    zerolinewidth=1
+                ),
+                yaxis=dict(
+                    autorange="reversed", 
+                    fixedrange=True
+                )
             )
-        )
-        st.plotly_chart(fig_fac, use_container_width=True, config={'displayModeBar': False})
+            st.plotly_chart(fig_fac, use_container_width=True, config={'displayModeBar': False})
 
-except Exception as e:
-    st.error(f"Faktoranalyse konnte nicht geladen werden: {e}")
+    except Exception as e:
+        st.error(f"Faktoranalyse konnte nicht geladen werden: {e}")
 
 @st.fragment
 def render_simulation_area(factors, beta, endsumme, ausgewaehlter_name):
