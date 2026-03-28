@@ -472,6 +472,7 @@ st.markdown(f"""
     <div class="kpi-card"><p class="kpi-label">Yield on Cost</p><p class="kpi-value">{port_yoc:.2%}</p></div>
 </div>
 """, unsafe_allow_html=True)
+st.markdown("---")
 
 tab_allg, tab_rend, tab_risk, tab_sim = st.tabs([
     "🏠 Allgemein", 
