@@ -106,15 +106,12 @@ risk_free_rate = 0.02
 
 # --- 2. DESIGN ---
 st.sidebar.header("Benchmarkauswahl")
-
-# 1. Auswahl des Modus (Radio-Buttons sind extrem stabil im State)
 modus = st.sidebar.radio(
     "Benchmark-Typ",
-    ["Standard-Indizes", "Individueller Ticker"],
+    ["Standardauswahl", "Individuelle Auswahl"],
     key="bench_mode"
 )
-
-if modus == "Standard-Indizes":
+if modus == "Standardauswahl":
     bench_optionen = {
         "100/0 (MSCI World)": "EUNL.DE",
         "80/20 (LifeStrategy 80% Equity)": "V80A.DE",
@@ -123,27 +120,20 @@ if modus == "Standard-Indizes":
         "20/80 (LifeStrategy 20% Equity)": "V20A.DE",
         "0/100 (Global Bonds)": "EUNA.DE"
     }
-    
     auswahl = st.sidebar.selectbox(
         "Index wählen",
         options=list(bench_optionen.keys()),
         key="standard_bench_select"
     )
     benchmark = bench_optionen[auswahl]
-
-else: # Individueller Ticker
+else:
     custom_ticker = st.sidebar.text_input(
-        "Ticker eingeben (z.B. AAPL):",
+        "Ticker eingeben:",
         value="",
         placeholder="Ticker hier tippen...",
         key="custom_bench_input"
     ).strip().upper()
-    
-    # Fallback auf MSCI World, falls das Feld leer ist
     benchmark = custom_ticker if custom_ticker else "EUNL.DE"
-
-# Optional: Kurze Info, was gerade aktiv ist
-st.sidebar.caption(f"Aktive Benchmark: **{benchmark}**")
 
 st.sidebar.header("Zeitraumauswahl")
 zeitraum_optionen = {
