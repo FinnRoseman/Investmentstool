@@ -928,33 +928,39 @@ with tab_risk:
     st.markdown("---")
 
 # Risiko-Tabelle
-st.subheader("🔎 Risiko-Analyse (NTM)")
-r_labels = ["Parametrisch", "Historisch", "Monte-Carlo"]
-r_vars = [var_95_para, var_95_hist, mc_var_95_jahr]
-r_ess = [es_95_para, es_95_hist, mc_es_95_jahr]
-st.markdown("""
-<style>
-.r-grid { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
-.r-card { 
-    background-color: rgba(100,100,100,0.1); 
-    padding: 18px; 
-    border-radius: 12px; 
-    border-left: 5px solid #4A90E2; 
-    flex: 1; 
-    min-width: 200px; 
-}
-.r-title { color: #9CA3AF; font-size: 13px; margin-bottom: 12px; text-transform: uppercase; font-weight: bold; }
-.r-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
-.r-lbl { color: #9CA3AF; font-size: 13px; }
-.r-val { color: white; font-size: 18px; font-weight: bold; }
-</style>
-""", unsafe_allow_html=True)
-cards_html = ""
-for m, v, e in zip(r_labels, r_vars, r_ess):
-    cards_html += f'<div class="r-card"><div class="r-title">{m}</div>'
-    cards_html += f'<div class="r-row"><span class="r-lbl">VaR 95%</span><span class="r-val">{v:.2%}</span></div>'
-    cards_html += f'<div class="r-row"><span class="r-lbl">Exp. Shortfall</span><span class="r-val">{e:.2%}</span></div></div>'
-st.markdown(f'<div class="r-grid">{cards_html}</div>', unsafe_allow_html=True)
+with tab_risk:
+    st.subheader("🔎 Risiko-Analyse (NTM)")
+    r_labels = ["Parametrisch", "Historisch", "Monte-Carlo"]
+    r_vars = [var_95_para, var_95_hist, mc_var_95_jahr]
+    r_ess = [es_95_para, es_95_hist, mc_es_95_jahr]
+    
+    st.markdown("""
+    <style>
+    .r-grid { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+    .r-card { 
+        background-color: rgba(100,100,100,0.1); 
+        padding: 18px; 
+        border-radius: 12px; 
+        border-left: 5px solid #4A90E2; 
+        flex: 1; 
+        min-width: 200px; 
+    }
+    .r-title { color: #9CA3AF; font-size: 13px; margin-bottom: 12px; text-transform: uppercase; font-weight: bold; }
+    .r-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+    .r-lbl { color: #9CA3AF; font-size: 13px; }
+    .r-val { color: white; font-size: 18px; font-weight: bold; }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    cards_html = ""
+    for m, v, e in zip(r_labels, r_vars, r_ess):
+        cards_html += f'<div class="r-card"><div class="r-title">{m}</div>'
+        cards_html += f'<div class="r-row"><span class="r-lbl">VaR 95%</span><span class="r-val">{v:.2%}</span></div>'
+        cards_html += f'<div class="r-row"><span class="r-lbl">Exp. Shortfall</span><span class="r-val">{e:.2%}</span></div></div>'
+    
+    st.markdown(f'<div class="r-grid">{cards_html}</div>', unsafe_allow_html=True)
+    
+    st.markdown("---")
 
 # Monte Carlo Pfadsimulation (10 Jahre)
 st.markdown("---")
