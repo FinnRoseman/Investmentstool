@@ -737,8 +737,6 @@ if len(verfuegbare) > 1:
     opt_col1, opt_col2 = st.columns([2, 1], vertical_alignment="center")
 
     with opt_col1:
-        plot_vola = vola / 100 if vola > 1 else vola
-        plot_ret = capm_erwartung_pa / 100 if capm_erwartung_pa > 1 else capm_erwartung_pa
         df_sim = pd.DataFrame({
             'Volatilität': results[1, :],
             'Rendite': results[0, :],
@@ -751,8 +749,8 @@ if len(verfuegbare) > 1:
             opacity=0.4
         )
         fig_ef.add_trace(go.Scatter(
-            x=[plot_vola], 
-            y=[plot_ret], 
+            x=[vola], 
+            y=[capm_erwartung_pa], 
             mode='markers',
             marker=dict(
                 color='white', 
