@@ -505,7 +505,7 @@ fig_perf.update_layout(
     hovermode='x unified',
     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
 )
-colors = {'Portfolio': '#4A90E2', 'Benchmark': '#FFD700', '100-Tage-Linie': '#F59E0B', '200-Tage-Linie': '#EF4444'}
+colors = {'Portfolio': '#FFD700', 'Benchmark': '#4A90E2', '100-Tage-Linie': '#F59E0B', '200-Tage-Linie': '#EF4444'}
 for name, color in colors.items():
     fig_perf.update_traces(line=dict(color=color, width=2 if 'Linie' not in name else 1), selector=dict(name=name))
 
