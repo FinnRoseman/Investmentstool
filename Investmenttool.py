@@ -1098,7 +1098,7 @@ with tab_risk:
 # --- INHALT FÜR TAB: SIMULATIONEN ---
 with tab_sim:
     @st.fragment
-    def render_simulation_area(factors, beta, endsumme, ausgewaehlter_name):
+    def render_simulation_area(factors, beta, endsumme):
         szenarien = {
             "Stagflation": [-0.35, -0.05, +0.15, +0.08, +0.05], 
             "Inflation": [-0.20, 0.00, 0.10, 0.12, 0.05],
@@ -1143,6 +1143,6 @@ with tab_sim:
                     <p style="margin:0; font-weight:bold;">{verlust_sens_euro:,.2f} €</p>
                 </div>
             """, unsafe_allow_html=True)
-    render_simulation_area(factors, beta, endsumme, ausgewaehlter_name)
+    render_simulation_area(factors, beta, endsumme)
 
 st.caption(f"Datenzeitraum: {daten.index[0].strftime('%d.%m.%Y')} bis {daten.index[-1].strftime('%d.%m.%Y')}")
