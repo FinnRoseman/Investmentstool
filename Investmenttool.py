@@ -755,16 +755,30 @@ if len(verfuegbare) > 1:
             x=[test_vola], 
             y=[test_ret], 
             mode='markers',
-            marker=dict(color='white', size=25, symbol='circle'),
-            name='Test Punkt'
+            marker=dict(
+                color='white', 
+                size=18, 
+                symbol='circle',
+                line=dict(color='black', width=2)
+            ),
+            name='Aktuelles Portfolio',
+            hovertemplate="<b>Aktuelles Portfolio</b><br>Vola: %{x:.2%}<br>Rendite: %{y:.2%}<extra></extra>"
         ))
         fig_ef.add_trace(go.Scatter(
             x=[opt_vol], y=[opt_ret],
             mode='markers',
-            marker=dict(color='#4A90E2', size=18, symbol='star', line=dict(color='white', width=2)),
+            marker=dict(
+                color='#4A90E2', 
+                size=20, 
+                symbol='star', 
+                line=dict(color='white', width=2)
+            ),
             name='Optimiertes Portfolio',
             hovertemplate="<b>Max Sharpe Portfolio</b><br>Vola: %{x:.2%}<br>Rendite: %{y:.2%}<extra></extra>"
         ))
+        fig_ef.data[1].marker.size = 20 
+        fig_ef.data[2].marker.size = 22 
+        
         fig_ef.update_layout(
             template='plotly_dark',
             plot_bgcolor='rgba(0,0,0,0)',
@@ -773,19 +787,20 @@ if len(verfuegbare) > 1:
             xaxis=dict(
                 gridcolor='rgba(255,255,255,0.05)',
                 tickformat='.0%', 
-                title="Risiko (Volatilität p.a.)"
+                title="Risiko (Volatilität p.a.)",
+                autorange=True
             ),
             yaxis=dict(
                 gridcolor='rgba(255,255,255,0.05)',
                 tickformat='.0%', 
-                title="Erwartete Rendite p.a."
+                title="Erwartete Rendite p.a.",
+                autorange=True
             ),
             coloraxis_colorbar=dict(
                 title="Sharpe",
                 thicknessmode="pixels", thickness=15,
                 lenmode="fraction", len=0.6,
-                yanchor="top", y=1,
-                ticksuffix=""
+                yanchor="top", y=1
             ),
             showlegend=True,
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
