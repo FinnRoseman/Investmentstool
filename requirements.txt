@@ -6,3 +6,4 @@ seaborn
 pandas-datareader
 statsmodels
 setuptools
+plotly
