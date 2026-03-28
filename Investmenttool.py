@@ -302,7 +302,6 @@ rel_risk_contrib = abs_risk_contrib / port_vola
 has_negative_risk = any(val < 0 for val in rel_risk_contrib)
 
 # Euro Rechner
-st.markdown("---")
 endsumme = startkapital * (1 + total_ret)
 absoluter_gewinn = endsumme - startkapital
 port_current_yield = 0.0
