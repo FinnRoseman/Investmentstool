@@ -708,165 +708,156 @@ with tab_allg:
     st.markdown("---")
 
 # Mean-Variance-Optimization
-st.subheader("🎯 Mean-Variance-Optimization", help="10.000 Simulationen des Portfolios zur optimalen Gewichtung für das maximale Sharpe Ratio auf Basis der erwarteten Rendite.")
-
-if len(verfuegbare) > 1:
-    np.random.seed(42)
-    opt_simulations = 10000
-    mu_list = []
-    for t in verfuegbare:
-        asset_beta = renditen[t].cov(bench_rendite) / bench_rendite.var()
-        expected_ret = risk_free_rate + asset_beta * (bench_cagr - risk_free_rate)
-        mu_list.append(expected_ret)
-    mu = np.array(mu_list)
-    cov = renditen[verfuegbare].cov() * 252  
-    results = np.zeros((3, opt_simulations))
-    weights_record = []
-
-    for i in range(opt_simulations):
-        w = np.random.random(len(verfuegbare))
-        w /= np.sum(w)
-        weights_record.append(w)
-        p_ret = np.sum(mu * w)
-        p_std = np.sqrt(np.dot(w.T, np.dot(cov, w)))
-        
-        results[0,i] = p_ret
-        results[1,i] = p_std
-        results[2,i] = (p_ret - risk_free_rate) / p_std
-        
-    max_sharpe_idx = np.argmax(results[2])
-    best_w = weights_record[max_sharpe_idx]
-    opt_ret = results[0, max_sharpe_idx]
-    opt_vol = results[1, max_sharpe_idx]
-
-    opt_col1, opt_col2 = st.columns([2, 1], vertical_alignment="center")
-
-    with opt_col1:
-        df_sim = pd.DataFrame({
-            'Volatilität': results[1, :],
-            'Rendite': results[0, :],
-            'Sharpe Ratio': results[2, :]
-        })
-        fig_ef = go.Figure()
-        fig_ef.add_trace(go.Scatter(
-            x=df_sim['Volatilität'],
-            y=df_sim['Rendite'],
-            mode='markers',
-            marker=dict(
-                color=df_sim['Sharpe Ratio'],
-                colorscale='Viridis',
-                showscale=True,
-                colorbar=dict(
-                    title="Sharpe",
-                    thickness=15,
-                    len=0.6,
-                    yanchor="top",
-                    y=1
+with tab_sim:
+    st.subheader("🎯 Mean-Variance-Optimization", help="10.000 Simulationen des Portfolios zur optimalen Gewichtung für das maximale Sharpe Ratio auf Basis der erwarteten Rendite.")
+    if len(verfuegbare) > 1:
+        np.random.seed(42)
+        opt_simulations = 10000
+        mu_list = []
+        for t in verfuegbare:
+            asset_beta = renditen[t].cov(bench_rendite) / bench_rendite.var()
+            expected_ret = risk_free_rate + asset_beta * (bench_cagr - risk_free_rate)
+            mu_list.append(expected_ret)
+        mu = np.array(mu_list)
+        cov = renditen[verfuegbare].cov() * 252  
+        results = np.zeros((3, opt_simulations))
+        weights_record = []
+        for i in range(opt_simulations):
+            w = np.random.random(len(verfuegbare))
+            w /= np.sum(w)
+            weights_record.append(w)
+            p_ret = np.sum(mu * w)
+            p_std = np.sqrt(np.dot(w.T, np.dot(cov, w)))
+            results[0,i] = p_ret
+            results[1,i] = p_std
+            results[2,i] = (p_ret - risk_free_rate) / p_std
+        max_sharpe_idx = np.argmax(results[2])
+        best_w = weights_record[max_sharpe_idx]
+        opt_ret = results[0, max_sharpe_idx]
+        opt_vol = results[1, max_sharpe_idx]
+        opt_col1, opt_col2 = st.columns([2, 1], vertical_alignment="center")
+        with opt_col1:
+            df_sim = pd.DataFrame({
+                'Volatilität': results[1, :],
+                'Rendite': results[0, :],
+                'Sharpe Ratio': results[2, :]
+            })
+            fig_ef = go.Figure()
+            fig_ef.add_trace(go.Scatter(
+                x=df_sim['Volatilität'],
+                y=df_sim['Rendite'],
+                mode='markers',
+                marker=dict(
+                    color=df_sim['Sharpe Ratio'],
+                    colorscale='Viridis',
+                    showscale=True,
+                    colorbar=dict(
+                        title="Sharpe",
+                        thickness=15,
+                        len=0.6,
+                        yanchor="top",
+                        y=1
+                    ),
+                    opacity=0.3,
+                    size=5
                 ),
-                opacity=0.3,
-                size=5
-            ),
-            name='Simulationen',
-            hoverinfo='skip' 
-        ))
-        fig_ef.add_trace(go.Scatter(
-            x=[vola], 
-            y=[capm_erwartung_pa], 
-            mode='markers',
-            marker=dict(
-                color='white', 
-                size=20, 
-                symbol='circle',
-                line=dict(color='black', width=3) 
-            ),
-            name='Aktuelles Portfolio',
-            hovertemplate="<b>Aktuelles Portfolio</b><br>Vola: %{x:.2%}<br>Rendite: %{y:.2%}<extra></extra>"
-        ))
-        fig_ef.add_trace(go.Scatter(
-            x=[opt_vol], 
-            y=[opt_ret],
-            mode='markers',
-            marker=dict(
-                color='#4A90E2', 
-                size=22, 
-                symbol='star', 
-                line=dict(color='white', width=2)
-            ),
-            name='Optimiertes Portfolio',
-            hovertemplate="<b>Max Sharpe Portfolio</b><br>Vola: %{x:.2%}<br>Rendite: %{y:.2%}<extra></extra>"
-        ))
-        fig_ef.update_layout(
-            template='plotly_dark',
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            margin=dict(l=0, r=0, t=20, b=0),
-            xaxis=dict(
-                gridcolor='rgba(255,255,255,0.05)',
-                tickformat='.0%', 
-                title="Risiko (Volatilität p.a.)",
-                autorange=True
-            ),
-            yaxis=dict(
-                gridcolor='rgba(255,255,255,0.05)',
-                tickformat='.0%', 
-                title="Erwartete Rendite p.a.",
-                autorange=True
-            ),
-            showlegend=True,
-            legend=dict(
-                orientation="h", 
-                yanchor="bottom", 
-                y=1.02, 
-                xanchor="right", 
-                x=1,
-                bgcolor="rgba(0,0,0,0)"
-            ),
-            height=500 
-        )
-        st.plotly_chart(fig_ef, use_container_width=True)
-    with opt_col2:
-        st.markdown("""
-        <style>
-            .opt-container { background: rgba(100,100,100,0.05); border-radius: 12px; padding: 10px; margin-bottom: 12px; }
-            .opt-row { margin-bottom: 10px; position: relative; }
-            .opt-ticker-label { color: #4A90E2; font-family: monospace; font-weight: bold; font-size: 13px; margin-bottom: 3px; }
-            .opt-name-label { color: #9CA3AF; font-size: 11px; margin-bottom: 4px; display: block; } /* Neu: Für den Namen */
-            .bar-bg-stacked { 
-                background: rgba(255,255,255,0.05); height: 10px; border-radius: 5px; 
-                width: 100%; display: flex; overflow: hidden; margin-bottom: 4px;
-            }
-            .bar-segment-act { background: #6B7280; }
-            .bar-segment-opt { background: #4A90E2; }
-            .values-row { display: flex; justify-content: space-between; font-size: 11px; color: #9CA3AF; }
-            .val-act { color: #D1D5DB; }
-            .val-opt { color: #4A90E2; font-weight: bold; }
-            .opt-stats-box { background: rgba(100,100,100,0.08); border-radius: 8px; padding: 10px; }
-            .stat-line { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 3px; color: #9CA3AF; }
-            .stat-val-bold { font-weight: bold; color: white; }
-        </style>
-        """, unsafe_allow_html=True)
-        opt_html = '<div class="opt-container">'
-        for t, a, w in zip(verfuegbare, anteile, best_w):
-            full_name = ticker_namen.get(t, t) 
-            opt_html += f"""
-            <div class="opt-row">
-                <div class="opt-ticker-label">{t}</div>
-                <div class="opt-name-label">{full_name}</div>
-                <div class="bar-bg-stacked">
-                    <div class="bar-segment-act" style="width: {a*100}%;"></div>
-                    <div class="bar-segment-opt" style="width: {w*100}%;"></div>
-                </div>
-                <div class="values-row">
-                    <span>Aktuell <span class="val-act">{a:.1%}</span></span>
-                    <span><span class="val-opt">{w:.1%}</span> Optimiert</span>
-                </div>
-            </div>"""
-        opt_html += "</div>"
-        st.markdown(opt_html, unsafe_allow_html=True)
-else: 
-    st.info("Die Portfolio-Optimierung steht erst ab zwei Positionen zur Verfügung.")
-
-st.markdown("---")
+                name='Simulationen',
+                hoverinfo='skip' 
+            ))
+            fig_ef.add_trace(go.Scatter(
+                x=[vola], 
+                y=[capm_erwartung_pa], 
+                mode='markers',
+                marker=dict(
+                    color='white', 
+                    size=20, 
+                    symbol='circle',
+                    line=dict(color='black', width=3) 
+                ),
+                name='Aktuelles Portfolio',
+                hovertemplate="<b>Aktuelles Portfolio</b><br>Vola: %{x:.2%}<br>Rendite: %{y:.2%}<extra></extra>"
+            ))
+            fig_ef.add_trace(go.Scatter(
+                x=[opt_vol], 
+                y=[opt_ret],
+                mode='markers',
+                marker=dict(
+                    color='#4A90E2', 
+                    size=22, 
+                    symbol='star', 
+                    line=dict(color='white', width=2)
+                ),
+                name='Optimiertes Portfolio',
+                hovertemplate="<b>Max Sharpe Portfolio</b><br>Vola: %{x:.2%}<br>Rendite: %{y:.2%}<extra></extra>"
+            ))
+            fig_ef.update_layout(
+                template='plotly_dark',
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
+                margin=dict(l=0, r=0, t=20, b=0),
+                xaxis=dict(
+                    gridcolor='rgba(255,255,255,0.05)',
+                    tickformat='.0%', 
+                    title="Risiko (Volatilität p.a.)",
+                    autorange=True
+                ),
+                yaxis=dict(
+                    gridcolor='rgba(255,255,255,0.05)',
+                    tickformat='.0%', 
+                    title="Erwartete Rendite p.a.",
+                    autorange=True
+                ),
+                showlegend=True,
+                legend=dict(
+                    orientation="h", 
+                    yanchor="bottom", 
+                    y=1.02, 
+                    xanchor="right", 
+                    x=1,
+                    bgcolor="rgba(0,0,0,0)"
+                ),
+                height=500 
+            )
+            st.plotly_chart(fig_ef, use_container_width=True)
+        with opt_col2:
+            st.markdown("""
+            <style>
+                .opt-container { background: rgba(100,100,100,0.05); border-radius: 12px; padding: 10px; margin-bottom: 12px; }
+                .opt-row { margin-bottom: 10px; position: relative; }
+                .opt-ticker-label { color: #4A90E2; font-family: monospace; font-weight: bold; font-size: 13px; margin-bottom: 3px; }
+                .opt-name-label { color: #9CA3AF; font-size: 11px; margin-bottom: 4px; display: block; }
+                .bar-bg-stacked { 
+                    background: rgba(255,255,255,0.05); height: 10px; border-radius: 5px; 
+                    width: 100%; display: flex; overflow: hidden; margin-bottom: 4px;
+                }
+                .bar-segment-act { background: #6B7280; }
+                .bar-segment-opt { background: #4A90E2; }
+                .values-row { display: flex; justify-content: space-between; font-size: 11px; color: #9CA3AF; }
+                .val-act { color: #D1D5DB; }
+                .val-opt { color: #4A90E2; font-weight: bold; }
+            </style>
+            """, unsafe_allow_html=True)  
+            opt_html = '<div class="opt-container">'
+            for t, a, w in zip(verfuegbare, anteile, best_w):
+                full_name = ticker_namen.get(t, t) 
+                opt_html += f"""
+                <div class="opt-row">
+                    <div class="opt-ticker-label">{t}</div>
+                    <div class="opt-name-label">{full_name}</div>
+                    <div class="bar-bg-stacked">
+                        <div class="bar-segment-act" style="width: {a*100}%;"></div>
+                        <div class="bar-segment-opt" style="width: {w*100}%;"></div>
+                    </div>
+                    <div class="values-row">
+                        <span>Aktuell <span class="val-act">{a:.1%}</span></span>
+                        <span><span class="val-opt">{w:.1%}</span> Optimiert</span>
+                    </div>
+                </div>"""
+            opt_html += "</div>"
+            st.markdown(opt_html, unsafe_allow_html=True)
+    else: 
+        st.info("Die Portfolio-Optimierung steht erst ab zwei Positionen zur Verfügung.")
+    st.markdown("---")
 
 # Korrelationsmatrix und Risikoverteilung
 
