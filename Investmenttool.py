@@ -516,34 +516,26 @@ st.markdown("---")
 
 # 2. Spalten für Rendite-Check und Regionen-Verteilung
 col_rendite, col_regionen = st.columns([1, 1])
-
 with col_rendite:
     st.subheader("💰 Rendite-Analyse", help="Jährliche Renditen und die kumulierte Rendite über feste Zeiträume.")
-    
-    # Datenvorbereitung
     yearly_ret = port_rendite.groupby(port_rendite.index.year).apply(lambda x: (1 + x).prod() - 1) * 100
     periods = {"1Y": 252, "3Y": 756, "5Y": 1260, "10Y": 2520, "20Y": 5040}
     period_rets = {label: ((1 + port_rendite.iloc[-days:]).prod() - 1) * 100 
                    for label, days in periods.items() if len(port_rendite) >= days}
-    
-    # 1. Plot: Jährliche Rendite
     fig_yearly = px.bar(
         x=yearly_ret.index.astype(str), 
         y=yearly_ret.values,
         color=yearly_ret.values,
-        color_continuous_scale=['#EB5757', '#27AE60'], # Rot für Negativ, Grün für Positiv
+        color_continuous_scale=['#EB5757', '#27AE60'],
         labels={'x': 'Jahr', 'y': 'Rendite (%)'}
     )
-    
-    # 2. Plot: Perioden-Rendite
     fig_periods = px.bar(
         x=list(period_rets.keys()), 
         y=list(period_rets.values()),
         color=list(period_rets.values()),
-        color_continuous_scale=['#EB5757', '#27AE60'],
+        colors_y = ['#39FF14' if x > 0 else '#FF3131' for x in yearly_ret.values],
         labels={'x': 'Zeitraum', 'y': 'Kumuliert (%)'}
     )
-
     for fig in [fig_yearly, fig_periods]:
         fig.update_layout(
             template='plotly_dark', 
@@ -554,15 +546,13 @@ with col_rendite:
             height=250
         )
         st.plotly_chart(fig, use_container_width=True)
-
 with col_regionen:
     st.subheader("🌎 Regionale Verteilung", help="Geografische Gewichtung des Portfolios.")
     
     reg_labels = ['Nordamerika', 'Südamerika', 'Europa', 'Asien-Pazifik', 'Afrika']
     reg_values = [total_na, total_sa, total_eu, total_ap, total_af]
-    reg_colors = ['#4A90E2', '#9B51E0', '#F2994A', '#27AE60', '#EB5757']
+    reg_colors = ['#00E6FF', '#CC00FF', '#FF9900', '#39FF14', '#FF3131']
     
-    # Filtern
     labels_f = [l for l, v in zip(reg_labels, reg_values) if v > 0]
     values_f = [v for v in reg_values if v > 0]
     colors_f = [c for c, v in zip(reg_colors, reg_values) if v > 0]
@@ -571,14 +561,13 @@ with col_regionen:
         fig_donut = go.Figure(data=[go.Pie(
             labels=labels_f, 
             values=values_f, 
-            hole=.6, # Macht es zum Donut
+            hole=.6,
             marker=dict(colors=colors_f, line=dict(color='#1E1E1E', width=2)),
             textinfo='percent',
             hoverinfo='label+percent',
             insidetextorientation='radial',
-            opacity=0.85 # Grund-Transparenz
+            opacity=1
         )])
-
         fig_donut.update_layout(
             template='plotly_dark',
             paper_bgcolor='rgba(0,0,0,0)',
@@ -587,15 +576,12 @@ with col_regionen:
             showlegend=True,
             legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5),
             hoverlabel=dict(bgcolor="#222", font_size=14, font_family="monospace"),
-            height=450 # Etwas höher für bessere Sichtbarkeit
+            height=450
         )
-        
-        # Interaktivität: Beim Drüberfahren volle Opazität
         fig_donut.update_traces(
             hoverinfo="label+percent",
             hovertemplate="<b>%{label}</b><br>Anteil: %{percent}<extra></extra>"
         )
-
         st.plotly_chart(fig_donut, use_container_width=True)
     else:
         st.info("Daten in Sidebar eintragen.")
