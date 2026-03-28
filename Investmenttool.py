@@ -748,10 +748,15 @@ if len(verfuegbare) > 1:
             labels={'Volatilität': 'Volatilität p.a.', 'Rendite': 'Erwartete Rendite p.a.'},
             opacity=0.4
         )
-        fig_ef.add_trace(go.Scatter(
-            x=[vola], y=[capm_erwartung_pa],
+       fig_ef.add_trace(go.Scatter(
+            x=[vola], 
+            y=[capm_erwartung_pa],
             mode='markers',
-            marker=dict(color='#6B7280', size=15, line=dict(color='white', width=2)),
+            marker=dict(
+            color='white', 
+            size=18, 
+            line=dict(color='black', width=2)
+        ),
             name='Aktuelles Portfolio',
             hovertemplate="<b>Aktuelles Portfolio</b><br>Vola: %{x:.2%}<br>Rendite: %{y:.2%}<extra></extra>"
         ))
