@@ -862,7 +862,6 @@ with tab_sim:
 # Korrelationsmatrix und Risikoverteilung
 with tab_risk:
     g_col1, g_col2 = st.columns(2)
-
     with g_col1:
         st.subheader("⛓️ Korrelationsmatrix", help="Zeigt, wie stark sich Assets gemeinsam bewegen. 1.0 = Gleichlaufend, 0 = kein Zusammenhang, -1.0 = Gegenlaufend.")
         corr_matrix = renditen[verfuegbare].corr()
@@ -894,7 +893,6 @@ with tab_risk:
             yaxis=dict(fixedrange=True, autorange="reversed")
         )
         st.plotly_chart(fig_corr, use_container_width=True, config={'displayModeBar': False})
-
     with g_col2:
         st.subheader("🚨 Risiko-Verteilung", help="Gibt an, welche Position wie stark zur Gesamtvolatilität beiträgt")
         risk_data = pd.DataFrame({
@@ -924,7 +922,6 @@ with tab_risk:
             showlegend=False
         )
         st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False})
-
     st.markdown("---")
 
 # Risiko-Tabelle
@@ -933,7 +930,6 @@ with tab_risk:
     r_labels = ["Parametrisch", "Historisch", "Monte-Carlo"]
     r_vars = [var_95_para, var_95_hist, mc_var_95_jahr]
     r_ess = [es_95_para, es_95_hist, mc_es_95_jahr]
-    
     st.markdown("""
     <style>
     .r-grid { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
@@ -951,193 +947,111 @@ with tab_risk:
     .r-val { color: white; font-size: 18px; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
-    
     cards_html = ""
     for m, v, e in zip(r_labels, r_vars, r_ess):
         cards_html += f'<div class="r-card"><div class="r-title">{m}</div>'
         cards_html += f'<div class="r-row"><span class="r-lbl">VaR 95%</span><span class="r-val">{v:.2%}</span></div>'
         cards_html += f'<div class="r-row"><span class="r-lbl">Exp. Shortfall</span><span class="r-val">{e:.2%}</span></div></div>'
-    
     st.markdown(f'<div class="r-grid">{cards_html}</div>', unsafe_allow_html=True)
-    
     st.markdown("---")
 
 # Monte Carlo Pfadsimulation (10 Jahre)
-st.markdown("---")
-mc_jahre = 10
-aktuelles_jahr = pd.Timestamp.now().year
-mc_tage = 252 * mc_jahre
-mc_pfade = 100 
-mc_startkapital = startkapital if startkapital > 0 else 10000 
-mu_daily = port_rendite.mean()
-sigma_daily = port_rendite.std()
-np.random.seed(42)
-rand_rets = np.random.normal(mu_daily, sigma_daily, (mc_tage, mc_pfade))
-mc_pfade_daten = mc_startkapital * (1 + rand_rets).cumprod(axis=0)
-median_pfad = np.percentile(mc_pfade_daten, 50, axis=1)
-top_pfad = np.percentile(mc_pfade_daten, 95, axis=1)
-bottom_pfad = np.percentile(mc_pfade_daten, 5, axis=1)
-mc_cagr_median = (median_pfad[-1] / mc_startkapital)**(1/mc_jahre) - 1
-mc_cagr_pessimist = (bottom_pfad[-1] / mc_startkapital)**(1/mc_jahre) - 1
-mc_cagr_optimist = (top_pfad[-1] / mc_startkapital)**(1/mc_jahre) - 1
-zeit_achse = np.linspace(aktuelles_jahr, aktuelles_jahr + mc_jahre, mc_tage)
-fig_mc_path = go.Figure()
-for i in range(mc_pfade):
-    fig_mc_path.add_trace(go.Scatter(
-        x=zeit_achse,
-        y=mc_pfade_daten[:, i],
-        mode='lines',
-        line=dict(color='rgba(135, 206, 250, 0.1)', width=1),
-        showlegend=False,
-        hoverinfo='skip' 
-    ))
-fig_mc_path.add_trace(go.Scatter(
-    x=zeit_achse,
-    y=top_pfad,
-    mode='lines',
-    line=dict(width=0),
-    showlegend=False,
-    hoverinfo='skip'
-))
-fig_mc_path.add_trace(go.Scatter(
-    x=zeit_achse,
-    y=bottom_pfad,
-    mode='lines',
-    fill='tonexty', 
-    fillcolor='rgba(255, 255, 255, 0.03)', 
-    line=dict(width=0),
-    showlegend=False,
-    hoverinfo='skip'
-))
-fig_mc_path.add_trace(go.Scatter(
-    x=zeit_achse,
-    y=bottom_pfad,
-    mode='lines',
-    name='Pessimistisch (5%)',
-    line=dict(color='#FF3131', width=2, dash='dash'), 
-    hovertemplate="Jahr: %{x:.1f}<br>Wert: <b>%{y:,.0f} €</b><br>Szenario: Pessimistisch<extra></extra>"
-))
-fig_mc_path.add_trace(go.Scatter(
-    x=zeit_achse,
-    y=top_pfad,
-    mode='lines',
-    name='Optimistisch (95%)',
-    line=dict(color='#39FF14', width=2, dash='dash'), 
-    hovertemplate="Jahr: %{x:.1f}<br>Wert: <b>%{y:,.0f} €</b><br>Szenario: Optimistisch<extra></extra>"
-))
-fig_mc_path.add_trace(go.Scatter(
-    x=zeit_achse,
-    y=median_pfad,
-    mode='lines',
-    name='Median (50%)',
-    line=dict(color='#4A90E2', width=4),
-    hovertemplate="Jahr: %{x:.1f}<br>Wert: <b>%{y:,.0f} €</b><br>Szenario: Median<extra></extra>"
-))
-fig_mc_path.update_layout(
-    title=dict(
-        text=f"Simulation von {mc_pfade} Pfaden bei {mc_startkapital:,.0f}€ Startwert",
-        font=dict(color='white', size=16),
-        x=0, y=0.95
-    ),
-    template='plotly_dark',
-    plot_bgcolor='rgba(0,0,0,0)',
-    paper_bgcolor='rgba(0,0,0,0)',
-    margin=dict(l=0, r=0, t=50, b=0),
-    xaxis=dict(
-        title="Jahr",
-        gridcolor='rgba(255,255,255,0.05)',
-        fixedrange=True,
-        tickformat='.0f', 
-        dtick=2 
-    ),
-    yaxis=dict(
-        title="Portfoliowert (€)",
-        gridcolor='rgba(255,255,255,0.05)',
-        fixedrange=True,
-        ticksuffix=" €",
-        tickformat=',.0f' 
-    ),
-    legend=dict(
-        orientation="h",
-        yanchor="bottom", y=1.02,
-        xanchor="right", x=1,
-        bgcolor="rgba(0,0,0,0)"
-    ),
-    height=500
-)
-st.plotly_chart(fig_mc_path, use_container_width=True, config={'displayModeBar': False})
+# --- INHALT FÜR TAB: SIMULATIONEN ---
+with tab_sim:
+    # 1. Mean-Variance-Optimization (Code von vorhin)
+    # ... (MVO Code hier) ...
 
-st.markdown("""
-<style>
-    .mc-container {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        margin-top: 10px;
-    }
-    .mc-card {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 10px;
-        padding: 15px;
-        border-left: 5px solid #4A90E2;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .mc-label {
-        color: #9CA3AF;
-        font-size: 14px;
-        font-weight: 500;
-    }
-    .mc-value {
-        text-align: right;
-    }
-    .mc-amount {
-        display: block;
-        color: white;
-        font-size: 18px;
-        font-weight: bold;
-    }
-    .mc-cagr {
-        color: #4A90E2;
-        font-size: 13px;
-        font-weight: bold;
-    }
-    /* Farbanpassungen für die Szenarien */
-    .pessimist { border-left-color: #E74C3C; }
-    .median { border-left-color: #4A90E2; }
-    .optimist { border-left-color: #27AE60; }
-</style>
-""", unsafe_allow_html=True)
-mc_html = f"""
-<div style="margin-bottom: 10px; font-weight: bold; color: #4A90E2;">
-    ⏳ Ergebnis nach {mc_jahre} Jahren (Projektion):
-</div>
-<div class="mc-container">
-    <div class="mc-card optimist">
-        <span class="mc-label">🚀 Optimistisch (95%)</span>
-        <div class="mc-value">
-            <span class="mc-amount">{top_pfad[-1]:,.2f} €</span>
-            <span class="mc-cagr" style="color: #27AE60;">+{mc_cagr_optimist:.2%} p.a.</span>
-        </div>
+    st.markdown("---")
+    
+    # 2. Monte-Carlo-Simulation
+    st.subheader("🎲 Monte-Carlo-Simulation", help="Simuliert 100 mögliche Pfade der Vermögensentwicklung basierend auf der historischen Volatilität und Rendite.")
+    
+    mc_jahre = 10
+    aktuelles_jahr = pd.Timestamp.now().year
+    mc_tage = 252 * mc_jahre
+    mc_pfade = 100 
+    mc_startkapital = startkapital if startkapital > 0 else 10000 
+    
+    mu_daily = port_rendite.mean()
+    sigma_daily = port_rendite.std()
+    
+    np.random.seed(42)
+    rand_rets = np.random.normal(mu_daily, sigma_daily, (mc_tage, mc_pfade))
+    mc_pfade_daten = mc_startkapital * (1 + rand_rets).cumprod(axis=0)
+    
+    median_pfad = np.percentile(mc_pfade_daten, 50, axis=1)
+    top_pfad = np.percentile(mc_pfade_daten, 95, axis=1)
+    bottom_pfad = np.percentile(mc_pfade_daten, 5, axis=1)
+    
+    mc_cagr_median = (median_pfad[-1] / mc_startkapital)**(1/mc_jahre) - 1
+    mc_cagr_pessimist = (bottom_pfad[-1] / mc_startkapital)**(1/mc_jahre) - 1
+    mc_cagr_optimist = (top_pfad[-1] / mc_startkapital)**(1/mc_jahre) - 1
+    
+    zeit_achse = np.linspace(aktuelles_jahr, aktuelles_jahr + mc_jahre, mc_tage)
+    
+    fig_mc_path = go.Figure()
+    
+    # Einzelne Pfade (dezent im Hintergrund)
+    for i in range(mc_pfade):
+        fig_mc_path.add_trace(go.Scatter(
+            x=zeit_achse, y=mc_pfade_daten[:, i],
+            mode='lines', line=dict(color='rgba(135, 206, 250, 0.1)', width=1),
+            showlegend=False, hoverinfo='skip' 
+        ))
+        
+    # Vertrauensintervall (Füllung)
+    fig_mc_path.add_trace(go.Scatter(x=zeit_achse, y=top_pfad, mode='lines', line=dict(width=0), showlegend=False, hoverinfo='skip'))
+    fig_mc_path.add_trace(go.Scatter(x=zeit_achse, y=bottom_pfad, mode='lines', fill='tonexty', 
+                                     fillcolor='rgba(255, 255, 255, 0.03)', line=dict(width=0), showlegend=False, hoverinfo='skip'))
+    
+    # Haupt-Linien (Pessimist, Optimist, Median)
+    fig_mc_path.add_trace(go.Scatter(x=zeit_achse, y=bottom_pfad, mode='lines', name='Pessimistisch (5%)',
+                                     line=dict(color='#FF3131', width=2, dash='dash'),
+                                     hovertemplate="Jahr: %{x:.1f}<br>Wert: <b>%{y:,.0f} €</b><extra></extra>"))
+    
+    fig_mc_path.add_trace(go.Scatter(x=zeit_achse, y=top_pfad, mode='lines', name='Optimistisch (95%)',
+                                     line=dict(color='#39FF14', width=2, dash='dash'),
+                                     hovertemplate="Jahr: %{x:.1f}<br>Wert: <b>%{y:,.0f} €</b><extra></extra>"))
+    
+    fig_mc_path.add_trace(go.Scatter(x=zeit_achse, y=median_pfad, mode='lines', name='Median (50%)',
+                                     line=dict(color='#4A90E2', width=4),
+                                     hovertemplate="Jahr: %{x:.1f}<br>Wert: <b>%{y:,.0f} €</b><extra></extra>"))
+    
+    fig_mc_path.update_layout(
+        title=dict(text=f"Simulation von {mc_pfade} Pfaden bei {mc_startkapital:,.0f}€ Startwert", font=dict(color='white', size=16), x=0, y=0.95),
+        template='plotly_dark', plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
+        margin=dict(l=0, r=0, t=50, b=0), height=500,
+        xaxis=dict(title="Jahr", gridcolor='rgba(255,255,255,0.05)', tickformat='.0f', dtick=2),
+        yaxis=dict(title="Portfoliowert (€)", gridcolor='rgba(255,255,255,0.05)', ticksuffix=" €", tickformat=',.0f'),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, bgcolor="rgba(0,0,0,0)")
+    )
+    
+    st.plotly_chart(fig_mc_path, use_container_width=True, config={'displayModeBar': False})
+    
+    # Ergebnis-Cards (HTML/CSS)
+    st.markdown("""
+    <style>
+        .mc-container { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+        .mc-card { background: rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 15px; border-left: 5px solid #4A90E2; display: flex; justify-content: space-between; align-items: center; }
+        .mc-label { color: #9CA3AF; font-size: 14px; font-weight: 500; }
+        .mc-amount { display: block; color: white; font-size: 18px; font-weight: bold; }
+        .mc-cagr { color: #4A90E2; font-size: 13px; font-weight: bold; }
+        .pessimist { border-left-color: #E74C3C; }
+        .median { border-left-color: #4A90E2; }
+        .optimist { border-left-color: #27AE60; }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    mc_html = f"""
+    <div style="margin-bottom: 10px; font-weight: bold; color: #4A90E2;">⏳ Ergebnis nach {mc_jahre} Jahren (Projektion):</div>
+    <div class="mc-container">
+        <div class="mc-card optimist"><span class="mc-label">🚀 Optimistisch (95%)</span><div class="mc-value"><span class="mc-amount">{top_pfad[-1]:,.2f} €</span><span class="mc-cagr" style="color: #27AE60;">+{mc_cagr_optimist:.2%} p.a.</span></div></div>
+        <div class="mc-card median"><span class="mc-label">📈 Median (50%)</span><div class="mc-value"><span class="mc-amount">{median_pfad[-1]:,.2f} €</span><span class="mc-cagr">+{mc_cagr_median:.2%} p.a.</span></div></div>
+        <div class="mc-card pessimist"><span class="mc-label">📉 Pessimistisch (5%)</span><div class="mc-value"><span class="mc-amount">{bottom_pfad[-1]:,.2f} €</span><span class="mc-cagr" style="color: #E74C3C;">+{mc_cagr_pessimist:.2%} p.a.</span></div></div>
     </div>
-    <div class="mc-card median">
-        <span class="mc-label">📈 Median (50%)</span>
-        <div class="mc-value">
-            <span class="mc-amount">{median_pfad[-1]:,.2f} €</span>
-            <span class="mc-cagr">+{mc_cagr_median:.2%} p.a.</span>
-        </div>
-    </div>
-    <div class="mc-card pessimist">
-        <span class="mc-label">📉 Pessimistisch (5%)</span>
-        <div class="mc-value">
-            <span class="mc-amount">{bottom_pfad[-1]:,.2f} €</span>
-            <span class="mc-cagr" style="color: #E74C3C;">+{mc_cagr_pessimist:.2%} p.a.</span>
-        </div>
-    </div>
-</div>
-"""
-st.markdown(mc_html, unsafe_allow_html=True)
+    """
+    st.markdown(mc_html, unsafe_allow_html=True)
+    st.markdown("---")
 
 st.markdown("---")
 st.subheader("🧬 Faktorenanalyse", help="Diese Analyse zeigt, welche wissenschaftlichen Faktoren (Betas) dein Portfolio antreiben.")
