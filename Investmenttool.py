@@ -752,8 +752,8 @@ if len(verfuegbare) > 1:
             opacity=0.4
         )
         fig_ef.add_trace(go.Scatter(
-            x=[test_vola], 
-            y=[test_ret], 
+            x=[test_vola*100], 
+            y=[test_ret*100], 
             mode='markers',
             marker=dict(color='white', size=25, symbol='circle'),
             name='Test Punkt'
