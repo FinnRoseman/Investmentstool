@@ -106,35 +106,38 @@ risk_free_rate = 0.02
 
 # --- 2. DESIGN ---
 st.sidebar.header("Benchmarkauswahl")
-bench_optionen = {
+bench_options_list = [
+    "100/0 (MSCI World)", 
+    "80/20 (LifeStrategy 80% Equity)", 
+    "60/40 (LifeStrategy 60% Equity)", 
+    "40/60 (LifeStrategy 40% Equity)", 
+    "20/80 (LifeStrategy 20% Equity)", 
+    "0/100 (Global Bonds)", 
+    "Individuelle Benchmark"
+]
+bench_mapping = {
     "100/0 (MSCI World)": "EUNL.DE",
     "80/20 (LifeStrategy 80% Equity)": "V80A.DE",
     "60/40 (LifeStrategy 60% Equity)": "V60A.DE",
     "40/60 (LifeStrategy 40% Equity)": "V40A.DE",
     "20/80 (LifeStrategy 20% Equity)": "V20A.DE",
-    "0/100 (Global Bonds)": "EUNA.DE",
-    "Individuelle Benchmark": "CUSTOM"
+    "0/100 (Global Bonds)": "EUNA.DE"
 }
-if 'benchmark_auswahl' not in st.session_state:
-    st.session_state['benchmark_auswahl'] = list(bench_optionen.keys())[0]
 ausgewaehlter_name = st.sidebar.selectbox(
     "Vergleichs-Index", 
-    options=list(bench_optionen.keys()),
-    key='benchmark_auswahl'
+    options=bench_options_list,
+    key="benchmark_selector_final"
 )
 if ausgewaehlter_name == "Individuelle Benchmark":
     custom_ticker = st.sidebar.text_input(
-        "Gib einen Ticker ein:", 
+        "Ticker eingeben (z.B. SPY):", 
         value="", 
-        placeholder="Ticker hier eingeben...",
-        key="custom_bench_input"
+        placeholder="Hier tippen...",
+        key="custom_input_field"
     ).strip().upper()
-    if custom_ticker:
-        benchmark = custom_ticker
-    else:
-        benchmark = "EUNL.DE" 
+    benchmark = custom_ticker if custom_ticker else "EUNL.DE"
 else:
-    benchmark = bench_optionen[ausgewaehlter_name]
+    benchmark = bench_mapping.get(ausgewaehlter_name, "EUNL.DE")
 
 st.sidebar.header("Zeitraumauswahl")
 zeitraum_optionen = {
