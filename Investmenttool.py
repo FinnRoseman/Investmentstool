@@ -960,6 +960,7 @@ for m, v, e in zip(r_labels, r_vars, r_ess):
 st.markdown(f'<div class="r-grid">{cards_html}</div>', unsafe_allow_html=True)
 
 # Monte Carlo Pfadsimulation (10 Jahre)
+st.markdown("---")
 mc_jahre = 10
 aktuelles_jahr = pd.Timestamp.now().year
 mc_tage = 252 * mc_jahre
