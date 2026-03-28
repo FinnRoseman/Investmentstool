@@ -1010,7 +1010,7 @@ fig_mc_path.add_trace(go.Scatter(
     x=zeit_achse,
     y=bottom_pfad,
     mode='lines',
-    name=f'Pessimistisch (5%)<br><i style="color:#9CA3AF;",
+    name='Pessimistisch (5%),
     line=dict(color='#FF3131', width=2, dash='dash'), 
     hovertemplate="Jahr: %{x:.1f}<br>Wert: <b>%{y:,.0f} €</b><br>Szenario: Pessimistisch<extra></extra>"
 ))
@@ -1018,7 +1018,7 @@ fig_mc_path.add_trace(go.Scatter(
     x=zeit_achse,
     y=top_pfad,
     mode='lines',
-    name=f'Optimistisch (95%)<br><i style="color:#9CA3AF;">CAGR: {mc_cagr_optimist:.1%}</i>',
+    name='Optimistisch (95%),
     line=dict(color='#39FF14', width=2, dash='dash'), 
     hovertemplate="Jahr: %{x:.1f}<br>Wert: <b>%{y:,.0f} €</b><br>Szenario: Optimistisch<extra></extra>"
 ))
@@ -1026,7 +1026,7 @@ fig_mc_path.add_trace(go.Scatter(
     x=zeit_achse,
     y=median_pfad,
     mode='lines',
-    name=f'Median (50%)<br><i style="color:#9CA3AF;">CAGR: {mc_cagr_median:.1%}</i>',
+    name='Median (50%),
     line=dict(color='white', width=4),
     hovertemplate="Jahr: %{x:.1f}<br>Wert: <b>%{y:,.0f} €</b><br>Szenario: Median<extra></extra>"
 ))
