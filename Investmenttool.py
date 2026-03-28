@@ -519,34 +519,24 @@ col_rendite, col_regionen = st.columns([1, 1])
 
 with col_rendite:
     st.subheader("💰 Rendite-Analyse", help="Jährliche Renditen und die kumulierte Rendite über feste Zeiträume.")
-    
-    # 1. Daten berechnen
     yearly_ret = port_rendite.groupby(port_rendite.index.year).apply(lambda x: (1 + x).prod() - 1) * 100
     periods = {"1Y": 252, "3Y": 756, "5Y": 1260, "10Y": 2520, "20Y": 5040}
     period_rets = {label: ((1 + port_rendite.iloc[-days:]).prod() - 1) * 100 
                    for label, days in periods.items() if len(port_rendite) >= days}
-    
-    # 2. Farblisten erstellen (KEIN Verlauf, nur Neon-Grün oder Neon-Rot)
     colors_y = ['#39FF14' if x > 0 else '#FF3131' for x in yearly_ret.values]
     colors_p = ['#39FF14' if x > 0 else '#FF3131' for x in period_rets.values()]
-
-    # 3. Jährliche Grafik (px.bar ohne 'color=' Parameter)
     fig_yearly = px.bar(
         x=yearly_ret.index.astype(str), 
         y=yearly_ret.values,
         labels={'x': 'Jahr', 'y': 'Rendite (%)'}
     )
-    fig_yearly.update_traces(marker_color=colors_y) # Hier werden die harten Farben zugewiesen
-
-    # 4. Perioden Grafik (px.bar ohne 'color=' Parameter)
+    fig_yearly.update_traces(marker_color=colors_y)
     fig_periods = px.bar(
         x=list(period_rets.keys()), 
         y=list(period_rets.values()),
         labels={'x': 'Zeitraum', 'y': 'Kumuliert (%)'}
     )
-    fig_periods.update_traces(marker_color=colors_p) # Hier werden die harten Farben zugewiesen
-
-    # 5. Layout-Finish (Bleibt wie gewünscht)
+    fig_periods.update_traces(marker_color=colors_p)
     for fig in [fig_yearly, fig_periods]:
         fig.update_layout(
             template='plotly_dark', 
@@ -556,19 +546,14 @@ with col_rendite:
             height=250
         )
         st.plotly_chart(fig, use_container_width=True)
-
 with col_regionen:
-    # Dieser Teil bleibt exakt so, wie du ihn oben gepostet hast
     st.subheader("🌎 Regionale Verteilung", help="Geografische Gewichtung des Portfolios.")
-    
     reg_labels = ['Nordamerika', 'Südamerika', 'Europa', 'Asien-Pazifik', 'Afrika']
     reg_values = [total_na, total_sa, total_eu, total_ap, total_af]
     reg_colors = ['#00E6FF', '#CC00FF', '#FF9900', '#39FF14', '#FF3131']
-    
     labels_f = [l for l, v in zip(reg_labels, reg_values) if v > 0]
     values_f = [v for v in reg_values if v > 0]
     colors_f = [c for c, v in zip(reg_colors, reg_values) if v > 0]
-
     if sum(values_f) > 0:
         fig_donut = go.Figure(data=[go.Pie(
             labels=labels_f, 
@@ -602,43 +587,75 @@ st.markdown("---")
 
 # Rolling Returns & Rendite Verteilung
 att_col1, att_col2 = st.columns(2)
-
 with att_col1:
-    st.subheader("🔄 Rolling Returns (12 Monate)", help="Zeigt die Rendite eines Zeitpunktes im Vergleich zu dem gleichen Zeitpunkt vor einem Jahr.")
-    rolling_1y = port_rendite.rolling(window=252).apply(lambda x: (1 + x).prod() - 1)
-    
-    fig_roll, ax_roll = plt.subplots(figsize=(10, 6), constrained_layout=True)
-    ax_roll.plot(rolling_1y * 100, color='blue', alpha=0.8)
-    ax_roll.axhline(rolling_1y.mean() * 100, color='red', linestyle='--', label='Schnitt')
-    ax_roll.axhline(0, color='black', linewidth=1)
-    ax_roll.set_ylabel('Rendite p.a. (%)')
-    ax_roll.fill_between(rolling_1y.index, rolling_1y * 100, 0, where=(rolling_1y > 0), facecolor='green', alpha=0.1)
-    ax_roll.fill_between(rolling_1y.index, rolling_1y * 100, 0, where=(rolling_1y < 0), facecolor='red', alpha=0.1)
-    ax_roll.grid(True, alpha=0.3)
-    st.pyplot(fig_roll)
+    st.subheader("🔄 Rolling Returns (12 Monate)", help="Zeigt die Rendite eines Zeitpunktes im Vergleich zum Vorjahr.")
+    rolling_1y = port_rendite.rolling(window=252).apply(lambda x: (1 + x).prod() - 1) * 100
+    rolling_mean = rolling_1y.mean()
+    fig_roll = go.Figure()
+    fig_roll.add_trace(go.Scatter(
+        x=rolling_1y.index, y=rolling_1y,
+        mode='lines',
+        line=dict(color='#00E6FF', width=2),
+        name='Rolling Return',
+        fill='tozeroy',
+        fillcolor='rgba(0, 230, 255, 0.1)'
+    ))
+    fig_roll.add_trace(go.Scatter(
+        x=rolling_1y.index, y=[rolling_mean]*len(rolling_1y),
+        mode='lines',
+        line=dict(color='#FF3131', width=1.5, dash='dash'),
+        name=f'Schnitt ({rolling_mean:.1f}%)'
+    ))
+    fig_roll.update_layout(
+        template='plotly_dark',
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        margin=dict(l=0, r=0, t=20, b=0),
+        hovermode='x unified',
+        xaxis=dict(showgrid=False, title=""),
+        yaxis=dict(gridcolor='rgba(255,255,255,0.05)', ticksuffix='%', title=""),
+        showlegend=False,
+        height=350
+    )
+    st.plotly_chart(fig_roll, use_container_width=True)
 
 with att_col2:
-    st.subheader("📊 Rendite-Verteilung", help="Gibt an, welche Position wie viel zur Gesamtrendite beiträgt")
+    st.subheader("📊 Rendite-Verteilung", help="Beitrag jeder Position zur Gesamtrendite.")
     beitraege = []
     for t in verfuegbare:
         einzel_ret = (1 + renditen[t]).prod() - 1
         gewicht = anteile[verfuegbare.index(t)]
-        beitraege.append(einzel_ret * gewicht)
-    fig_att, ax_att = plt.subplots(figsize=(10, 6), constrained_layout=True)
-    y_pos_att = np.arange(len(verfuegbare))
-    bars_att = ax_att.barh(y_pos_att, np.array(beitraege) * 100, color='skyblue')
-    for bar in bars_att:
-        width = bar.get_width()
-        ax_att.text(width, bar.get_y() + bar.get_height()/2, 
-                    f' {width:.1f}%', 
-                    va='center', fontweight='bold', fontsize=11)
-
-    ax_att.set_yticks(y_pos_att)
-    ax_att.set_yticklabels(verfuegbare)
-    ax_att.invert_yaxis()
-    ax_att.set_xlabel('Beitrag zur Gesamtrendite (%)')
-    ax_att.grid(axis='x', linestyle='--', alpha=0.7)
-    st.pyplot(fig_att)
+        beitraege.append(einzel_ret * gewicht * 100)
+    df_att = pd.DataFrame({
+        'Ticker': verfuegbare,
+        'Name': [ticker_namen.get(t, t) for t in verfuegbare],
+        'Beitrag': beitraege
+    }).sort_values('Beitrag', ascending=True)
+    colors_att = ['#39FF14' if x > 0 else '#FF3131' for x in df_att['Beitrag']]
+    fig_att = px.bar(
+        df_att, 
+        x='Beitrag', 
+        y='Ticker',
+        orientation='h',
+        hover_data={'Name': True, 'Ticker': False, 'Beitrag': ':.2f'},
+        text='Beitrag'
+    )
+    fig_att.update_traces(
+        marker_color=colors_att,
+        texttemplate='%{text:.1f}%', 
+        textposition='outside',
+        cliponaxis=False 
+    )
+    fig_att.update_layout(
+        template='plotly_dark',
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        margin=dict(l=0, r=40, t=20, b=0), 
+        xaxis=dict(gridcolor='rgba(255,255,255,0.05)', ticksuffix='%', title=""),
+        yaxis=dict(showgrid=False, title=""),
+        height=350
+    )
+    st.plotly_chart(fig_att, use_container_width=True)
 
 st.markdown("---")
 
