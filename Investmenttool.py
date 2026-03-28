@@ -521,38 +521,7 @@ with tab_allg:
     st.markdown("---")
 
 # 2. Spalten für Rendite-Check und Regionen-Verteilung
-col_rendite, col_regionen = st.columns([1, 1])
-
-with col_rendite:
-    st.subheader("💰 Rendite-Analyse", help="Jährliche Renditen und die kumulierte Rendite über feste Zeiträume.")
-    yearly_ret = port_rendite.groupby(port_rendite.index.year).apply(lambda x: (1 + x).prod() - 1) * 100
-    periods = {"1Y": 252, "3Y": 756, "5Y": 1260, "10Y": 2520, "20Y": 5040}
-    period_rets = {label: ((1 + port_rendite.iloc[-days:]).prod() - 1) * 100 
-                   for label, days in periods.items() if len(port_rendite) >= days}
-    colors_y = ['#39FF14' if x > 0 else '#FF3131' for x in yearly_ret.values]
-    colors_p = ['#39FF14' if x > 0 else '#FF3131' for x in period_rets.values()]
-    fig_yearly = px.bar(
-        x=yearly_ret.index.astype(str), 
-        y=yearly_ret.values,
-        labels={'x': 'Jahr', 'y': 'Rendite (%)'}
-    )
-    fig_yearly.update_traces(marker_color=colors_y)
-    fig_periods = px.bar(
-        x=list(period_rets.keys()), 
-        y=list(period_rets.values()),
-        labels={'x': 'Zeitraum', 'y': 'Kumuliert (%)'}
-    )
-    fig_periods.update_traces(marker_color=colors_p)
-    for fig in [fig_yearly, fig_periods]:
-        fig.update_layout(
-            template='plotly_dark', 
-            plot_bgcolor='rgba(0,0,0,0)', 
-            paper_bgcolor='rgba(0,0,0,0)',
-            margin=dict(l=0, r=0, t=30, b=0),
-            height=250
-        )
-        st.plotly_chart(fig, use_container_width=True)
-with col_regionen:
+with tab_allg:
     st.subheader("🌎 Regionale Verteilung", help="Geografische Gewichtung des Portfolios.")
     reg_labels = ['Nordamerika', 'Südamerika', 'Europa', 'Asien-Pazifik', 'Afrika']
     reg_values = [total_na, total_sa, total_eu, total_ap, total_af]
@@ -560,6 +529,7 @@ with col_regionen:
     labels_f = [l for l, v in zip(reg_labels, reg_values) if v > 0]
     values_f = [v for v in reg_values if v > 0]
     colors_f = [c for c, v in zip(reg_colors, reg_values) if v > 0]
+    
     if sum(values_f) > 0:
         fig_donut = go.Figure(data=[go.Pie(
             labels=labels_f, 
@@ -588,8 +558,38 @@ with col_regionen:
         st.plotly_chart(fig_donut, use_container_width=True)
     else:
         st.info("Daten in Sidebar eintragen.")
+    st.markdown("---")
 
-st.markdown("---")
+with tab_rend:
+    st.subheader("💰 Rendite-Analyse", help="Jährliche Renditen und die kumulierte Rendite über feste Zeiträume.")
+    yearly_ret = port_rendite.groupby(port_rendite.index.year).apply(lambda x: (1 + x).prod() - 1) * 100
+    periods = {"1Y": 252, "3Y": 756, "5Y": 1260, "10Y": 2520, "20Y": 5040}
+    period_rets = {label: ((1 + port_rendite.iloc[-days:]).prod() - 1) * 100 
+                   for label, days in periods.items() if len(port_rendite) >= days}
+    colors_y = ['#39FF14' if x > 0 else '#FF3131' for x in yearly_ret.values]
+    colors_p = ['#39FF14' if x > 0 else '#FF3131' for x in period_rets.values()]
+    fig_yearly = px.bar(
+        x=yearly_ret.index.astype(str), 
+        y=yearly_ret.values,
+        labels={'x': 'Jahr', 'y': 'Rendite (%)'}
+    )
+    fig_yearly.update_traces(marker_color=colors_y)
+    fig_periods = px.bar(
+        x=list(period_rets.keys()), 
+        y=list(period_rets.values()),
+        labels={'x': 'Zeitraum', 'y': 'Kumuliert (%)'}
+    )
+    fig_periods.update_traces(marker_color=colors_p)
+    for fig in [fig_yearly, fig_periods]:
+        fig.update_layout(
+            template='plotly_dark', 
+            plot_bgcolor='rgba(0,0,0,0)', 
+            paper_bgcolor='rgba(0,0,0,0)',
+            margin=dict(l=0, r=0, t=30, b=0),
+            height=250
+        )
+        st.plotly_chart(fig, use_container_width=True)
+    st.markdown("---")
 
 # Rolling Returns & Rendite Verteilung
 att_col1, att_col2 = st.columns(2)
