@@ -733,9 +733,6 @@ if len(verfuegbare) > 1:
     best_w = weights_record[max_sharpe_idx]
     opt_ret = results[0, max_sharpe_idx]
     opt_vol = results[1, max_sharpe_idx]
-    act_w = np.array(anteile)
-    test_vola = np.sqrt(np.dot(act_w.T, np.dot(cov, act_w)))
-    test_ret = np.sum(mu * act_w)
 
     opt_col1, opt_col2 = st.columns([2, 1], vertical_alignment="center")
 
@@ -752,8 +749,8 @@ if len(verfuegbare) > 1:
             opacity=0.4
         )
         fig_ef.add_trace(go.Scatter(
-            x=[test_vola], 
-            y=[test_ret], 
+            x=[vola], 
+            y=[capm_erwartung_pa], 
             mode='markers',
             marker=dict(
                 color='white', 
