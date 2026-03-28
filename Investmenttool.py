@@ -661,43 +661,59 @@ with tab_rend:
 
 # Dividendenkalender
 with tab_allg:
-    st.subheader("📅 Dividenden-Kalender", help="Zeigt, wann wie viele Ausschüttungen zu erwarten sind")
+    st.subheader("📅 Dividenden-Kalender", help="Zeigt die monatlich erwarteten Ausschüttungen, gestapelt nach Positionen.")
     if cal_data:
         df_cal = pd.DataFrame(cal_data)
-        div_per_month = df_cal.groupby('Monat_Nr')['Ausschüttung'].sum().reindex(range(1, 13), fill_value=0)
-        ticker_details = df_cal.groupby(['Monat_Nr', 'Ticker'])['Ausschüttung'].sum().reset_index()
         monats_namen = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
-        hover_texts = []
-        for i in range(1, 13):
-            details = ticker_details[ticker_details['Monat_Nr'] == i]
-            if not details.empty:
-                txt = "<br>".join([f"• {row['Ticker']}: {row['Ausschüttung']:.2f} €" for _, row in details.iterrows()])
-                hover_texts.append(f"<b>{monats_namen[i-1]}</b><br>{txt}<br><b>Gesamt: {div_per_month[i]:.2f} €</b>")
-            else:
-                hover_texts.append(f"<b>{monats_namen[i-1]}</b><br>Keine Ausschüttung")  
-        fig_div = go.Figure(data=go.Heatmap(
-            z=[div_per_month.values],
-            x=monats_namen,
-            y=['Dividende'],
-            colorscale=[[0, '#1E1E1E'], [0.0001, '#00E6FF'], [1, '#00E6FF']], 
-            showscale=False,
-            hoverinfo='text',
-            text=[hover_texts],
-            xgap=5, 
-            ygap=5
-        ))
+        df_div_plot = df_cal.groupby(['Monat_Nr', 'Ticker'])['Ausschüttung'].sum().reset_index()
+        df_div_plot['Monat'] = df_div_plot['Monat_Nr'].apply(lambda x: monats_namen[x-1])
+        fig_div = px.bar(
+            df_div_plot,
+            x='Monat',
+            y='Ausschüttung',
+            color='Ticker',
+            category_orders={"Monat": monats_namen},
+            color_discrete_sequence=px.colors.qualitative.G10, 
+            text_auto='.2f', 
+        )
         fig_div.update_layout(
             template='plotly_dark',
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
-            margin=dict(l=0, r=0, t=10, b=0),
-            height=180, 
-            xaxis=dict(side="bottom", fixedrange=True, showgrid=False),
-            yaxis=dict(visible=False, fixedrange=True) 
+            margin=dict(l=0, r=0, t=30, b=0),
+            height=350,
+            showlegend=True,
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1,
+                title=None
+            ),
+            xaxis=dict(
+                title=None, 
+                showgrid=False, 
+                fixedrange=True
+            ),
+            yaxis=dict(
+                title="Ausschüttung in €",
+                gridcolor='rgba(255,255,255,0.05)',
+                fixedrange=True,
+                ticksuffix=" €"
+            ),
+            hovermode="x unified",
+            bargap=0.3 
+        )
+        fig_div.update_traces(
+            marker_line_width=1, 
+            marker_line_color="rgba(0,0,0,0.5)",
+            hovertemplate="<b>%{fullData.name}</b>: %{y:.2f} €<extra></extra>"
         )
         st.plotly_chart(fig_div, use_container_width=True, config={'displayModeBar': False})
-        total_div = div_per_month.sum()
-        st.caption(f"💸 Erwartete Gesamt-Dividende: **{total_div:.2f} €**")
+        total_div = df_cal['Ausschüttung'].sum()
+        st.caption(f"💸 Erwartete Gesamt-Dividende (p.a.): **{total_div:.2f} €**")
+    
     else:
         st.info("Keine historischen Dividenden im gewählten Zeitraum gefunden.")
 
