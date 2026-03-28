@@ -696,7 +696,7 @@ if cal_data:
     )
     st.plotly_chart(fig_div, use_container_width=True, config={'displayModeBar': False})
     total_div = div_per_month.sum()
-    st.caption(f"💡 Erwartete Gesamt-Dividende p.a.: **{total_div:.2f} €**")
+    st.caption(f"💸 Erwartete Gesamt-Dividende: **{total_div:.2f} €**")
 else:
     st.info("Keine historischen Dividenden im gewählten Zeitraum gefunden.")
 
