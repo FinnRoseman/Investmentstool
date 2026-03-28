@@ -1034,7 +1034,7 @@ fig_mc_path.update_layout(
     title=dict(
         text=f"Simulation von {mc_pfade} Pfaden bei {mc_startkapital:,.0f}€ Startwert",
         font=dict(color='white', size=16),
-        x=0.5, y=0.95
+        x=0, y=0.95
     ),
     template='plotly_dark',
     plot_bgcolor='rgba(0,0,0,0)',
