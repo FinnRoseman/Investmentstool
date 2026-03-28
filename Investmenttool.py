@@ -1010,7 +1010,7 @@ fig_mc_path.add_trace(go.Scatter(
     x=zeit_achse,
     y=bottom_pfad,
     mode='lines',
-    name=f'Pessimistisch (5%)<br><i style="color:#9CA3AF;">CAGR: {mc_cagr_pessimist:.1%}</i>',
+    name=f'Pessimistisch (5%)<br><i style="color:#9CA3AF;",
     line=dict(color='#FF3131', width=2, dash='dash'), 
     hovertemplate="Jahr: %{x:.1f}<br>Wert: <b>%{y:,.0f} €</b><br>Szenario: Pessimistisch<extra></extra>"
 ))
