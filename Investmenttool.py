@@ -869,23 +869,18 @@ g_col1, g_col2 = st.columns(2)
 
 with g_col1:
     st.subheader("⛓️ Korrelationsmatrix", help="Zeigt, wie stark sich Assets gemeinsam bewegen. 1.0 = Gleichlaufend, 0 = kein Zusammenhang, -1.0 = Gegenlaufend.")
-    
     corr_matrix = renditen[verfuegbare].corr()
-    
-    # Wir bilden die 'RdYlGn_r' Palette in Plotly nach
     fig_corr = go.Figure(data=go.Heatmap(
         z=corr_matrix.values,
         x=corr_matrix.columns,
         y=corr_matrix.columns,
-        colorscale='RdYlGn', # RdYlGn in Plotly ist standardmäßig invertiert wie dein _r
+        colorscale='RdYlGn', 
         reversescale=True,
         zmin=-1, zmax=1,
         xgap=2, ygap=2,
         hovertemplate="Ticker A: %{x}<br>Ticker B: %{y}<br>Korrelation: <b>%{z:.2f}</b><extra></extra>",
         showscale=True
     ))
-
-    # Zahlen direkt in die Boxen schreiben (wie dein annot=True)
     for i, row in enumerate(corr_matrix.values):
         for j, value in enumerate(row):
             fig_corr.add_annotation(
@@ -893,7 +888,6 @@ with g_col1:
                 text=f"{value:.2f}", showarrow=False,
                 font=dict(color="white" if abs(value) > 0.7 else "black")
             )
-
     fig_corr.update_layout(
         template='plotly_dark',
         plot_bgcolor='rgba(0,0,0,0)',
@@ -904,32 +898,25 @@ with g_col1:
         yaxis=dict(fixedrange=True, autorange="reversed")
     )
     st.plotly_chart(fig_corr, use_container_width=True, config={'displayModeBar': False})
-
 with g_col2:
     st.subheader("🚨 Risiko-Verteilung", help="Gibt an, welche Position wie stark zur Gesamtvolatilität beiträgt")
-    
     risk_data = pd.DataFrame({
         'Ticker': verfuegbare,
         'Beitrag': rel_risk_contrib * 100
     }).sort_values('Beitrag', ascending=True)
-
-    # Farben basierend auf deinem Code: Violett für positiv, Grün für negativ
     risk_data['Farbe'] = risk_data['Beitrag'].apply(lambda x: '#9B51E0' if x > 0 else '#22a884')
-
     fig_bar = px.bar(
         risk_data, x='Beitrag', y='Ticker',
         orientation='h',
         text=risk_data['Beitrag'].apply(lambda x: f'{x:.1f}%'),
         template='plotly_dark'
     )
-
     fig_bar.update_traces(
         marker_color=risk_data['Farbe'],
         textposition='outside',
         hovertemplate="<b>%{y}</b><br>Risiko-Beitrag: %{x:.2f}%<extra></extra>",
         width=0.7
     )
-
     fig_bar.update_layout(
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
@@ -973,9 +960,6 @@ for m, v, e in zip(r_labels, r_vars, r_ess):
 st.markdown(f'<div class="r-grid">{cards_html}</div>', unsafe_allow_html=True)
 
 # Monte Carlo Pfadsimulation (10 Jahre)
-st.markdown("---")
-st.subheader("🎲 Monte Carlo Pfadsimulation (10 Jahre)", help="Simuliert 100 mögliche Zukunftsszenarien basierend auf der historischen Volatilität und Rendite.")
-
 mc_jahre = 10
 aktuelles_jahr = pd.Timestamp.now().year
 mc_tage = 252 * mc_jahre
@@ -986,28 +970,98 @@ sigma_daily = port_rendite.std()
 np.random.seed(42)
 rand_rets = np.random.normal(mu_daily, sigma_daily, (mc_tage, mc_pfade))
 mc_pfade_daten = mc_startkapital * (1 + rand_rets).cumprod(axis=0)
-
-fig_mc_path, ax_mc_path = plt.subplots(figsize=(12, 6))
-zeit_achse = np.linspace(aktuelles_jahr, aktuelles_jahr + mc_jahre, mc_tage)
-ax_mc_path.plot(zeit_achse, mc_pfade_daten, color='blue', alpha=0.05)
 median_pfad = np.percentile(mc_pfade_daten, 50, axis=1)
 top_pfad = np.percentile(mc_pfade_daten, 95, axis=1)
 bottom_pfad = np.percentile(mc_pfade_daten, 5, axis=1)
 mc_cagr_median = (median_pfad[-1] / mc_startkapital)**(1/mc_jahre) - 1
 mc_cagr_pessimist = (bottom_pfad[-1] / mc_startkapital)**(1/mc_jahre) - 1
 mc_cagr_optimist = (top_pfad[-1] / mc_startkapital)**(1/mc_jahre) - 1
-
-ax_mc_path.plot(zeit_achse, median_pfad, color='black', linewidth=2, label='Median (50%)')
-ax_mc_path.plot(zeit_achse, top_pfad, color='green', linestyle='--', label='Optimistisch (95%)')
-ax_mc_path.plot(zeit_achse, bottom_pfad, color='red', linestyle='--', label='Pessimistisch (5%)')
-
-ax_mc_path.set_title(f"Simulation von {mc_pfade} möglichen Verläufen bei {mc_startkapital:,.0f}€ Startwert")
-ax_mc_path.set_xlabel("Jahr")
-ax_mc_path.set_ylabel("Portfoliowert (€)")
-ax_mc_path.legend(loc='upper left')
-ax_mc_path.grid(True, alpha=0.2)
-
-st.pyplot(fig_mc_path)
+zeit_achse = np.linspace(aktuelles_jahr, aktuelles_jahr + mc_jahre, mc_tage)
+fig_mc_path = go.Figure()
+for i in range(mc_pfade):
+    fig_mc_path.add_trace(go.Scatter(
+        x=zeit_achse,
+        y=mc_pfade_daten[:, i],
+        mode='lines',
+        line=dict(color='rgba(135, 206, 250, 0.1)', width=1),
+        showlegend=False,
+        hoverinfo='skip' 
+    ))
+fig_mc_path.add_trace(go.Scatter(
+    x=zeit_achse,
+    y=top_pfad,
+    mode='lines',
+    line=dict(width=0),
+    showlegend=False,
+    hoverinfo='skip'
+))
+fig_mc_path.add_trace(go.Scatter(
+    x=zeit_achse,
+    y=bottom_pfad,
+    mode='lines',
+    fill='tonexty', 
+    fillcolor='rgba(255, 255, 255, 0.03)', 
+    line=dict(width=0),
+    showlegend=False,
+    hoverinfo='skip'
+))
+fig_mc_path.add_trace(go.Scatter(
+    x=zeit_achse,
+    y=bottom_pfad,
+    mode='lines',
+    name=f'Pessimistisch (5%)<br><i style="color:#9CA3AF;">CAGR: {mc_cagr_pessimist:.1%}</i>',
+    line=dict(color='#FF3131', width=2, dash='dash'), 
+    hovertemplate="Jahr: %{x:.1f}<br>Wert: <b>%{y:,.0f} €</b><br>Szenario: Pessimistisch<extra></extra>"
+))
+fig_mc_path.add_trace(go.Scatter(
+    x=zeit_achse,
+    y=top_pfad,
+    mode='lines',
+    name=f'Optimistisch (95%)<br><i style="color:#9CA3AF;">CAGR: {mc_cagr_optimist:.1%}</i>',
+    line=dict(color='#39FF14', width=2, dash='dash'), 
+    hovertemplate="Jahr: %{x:.1f}<br>Wert: <b>%{y:,.0f} €</b><br>Szenario: Optimistisch<extra></extra>"
+))
+fig_mc_path.add_trace(go.Scatter(
+    x=zeit_achse,
+    y=median_pfad,
+    mode='lines',
+    name=f'Median (50%)<br><i style="color:#9CA3AF;">CAGR: {mc_cagr_median:.1%}</i>',
+    line=dict(color='white', width=4),
+    hovertemplate="Jahr: %{x:.1f}<br>Wert: <b>%{y:,.0f} €</b><br>Szenario: Median<extra></extra>"
+))
+fig_mc_path.update_layout(
+    title=dict(
+        text=f"Simulation von {mc_pfade} Pfaden bei {mc_startkapital:,.0f}€ Startwert",
+        font=dict(color='white', size=16),
+        x=0.5, y=0.95
+    ),
+    template='plotly_dark',
+    plot_bgcolor='rgba(0,0,0,0)',
+    paper_bgcolor='rgba(0,0,0,0)',
+    margin=dict(l=0, r=0, t=50, b=0),
+    xaxis=dict(
+        title="Jahr",
+        gridcolor='rgba(255,255,255,0.05)',
+        fixedrange=True,
+        tickformat='.0f', 
+        dtick=2 
+    ),
+    yaxis=dict(
+        title="Portfoliowert (€)",
+        gridcolor='rgba(255,255,255,0.05)',
+        fixedrange=True,
+        ticksuffix=" €",
+        tickformat=',.0f' 
+    ),
+    legend=dict(
+        orientation="h",
+        yanchor="bottom", y=1.02,
+        xanchor="right", x=1,
+        bgcolor="rgba(0,0,0,0)"
+    ),
+    height=500
+)
+st.plotly_chart(fig_mc_path, use_container_width=True, config={'displayModeBar': False})
 
 st.markdown("""
 <style>
