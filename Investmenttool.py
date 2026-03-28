@@ -1027,7 +1027,7 @@ fig_mc_path.add_trace(go.Scatter(
     y=median_pfad,
     mode='lines',
     name='Median (50%)',
-    line=dict(color='white', width=4),
+    line=dict(color='#4A90E2', width=4),
     hovertemplate="Jahr: %{x:.1f}<br>Wert: <b>%{y:,.0f} €</b><br>Szenario: Median<extra></extra>"
 ))
 fig_mc_path.update_layout(
