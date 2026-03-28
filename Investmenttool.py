@@ -771,12 +771,14 @@ if len(verfuegbare) > 1:
             paper_bgcolor='rgba(0,0,0,0)',
             margin=dict(l=0, r=0, t=20, b=0),
             xaxis=dict(
-                gridcolor='rgba(255,255,255,0.05)', 
+                gridcolor='rgba(255,255,255,0.05)',
+                autorange=True,
                 tickformat='.0%', 
                 title="Risiko (Volatilität p.a.)"
             ),
             yaxis=dict(
-                gridcolor='rgba(255,255,255,0.05)', 
+                gridcolor='rgba(255,255,255,0.05)',
+                autorange=True,
                 tickformat='.0%', 
                 title="Erwartete Rendite p.a."
             ),
