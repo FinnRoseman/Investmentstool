@@ -516,37 +516,49 @@ st.markdown("---")
 
 # 2. Spalten für Rendite-Check und Regionen-Verteilung
 col_rendite, col_regionen = st.columns([1, 1])
+
 with col_rendite:
     st.subheader("💰 Rendite-Analyse", help="Jährliche Renditen und die kumulierte Rendite über feste Zeiträume.")
+    
+    # 1. Daten berechnen
     yearly_ret = port_rendite.groupby(port_rendite.index.year).apply(lambda x: (1 + x).prod() - 1) * 100
     periods = {"1Y": 252, "3Y": 756, "5Y": 1260, "10Y": 2520, "20Y": 5040}
     period_rets = {label: ((1 + port_rendite.iloc[-days:]).prod() - 1) * 100 
                    for label, days in periods.items() if len(port_rendite) >= days}
+    
+    # 2. Farblisten erstellen (KEIN Verlauf, nur Neon-Grün oder Neon-Rot)
+    colors_y = ['#39FF14' if x > 0 else '#FF3131' for x in yearly_ret.values]
+    colors_p = ['#39FF14' if x > 0 else '#FF3131' for x in period_rets.values()]
+
+    # 3. Jährliche Grafik (px.bar ohne 'color=' Parameter)
     fig_yearly = px.bar(
         x=yearly_ret.index.astype(str), 
         y=yearly_ret.values,
-        color=yearly_ret.values,
-        color_continuous_scale=['#EB5757', '#27AE60'],
         labels={'x': 'Jahr', 'y': 'Rendite (%)'}
     )
+    fig_yearly.update_traces(marker_color=colors_y) # Hier werden die harten Farben zugewiesen
+
+    # 4. Perioden Grafik (px.bar ohne 'color=' Parameter)
     fig_periods = px.bar(
         x=list(period_rets.keys()), 
         y=list(period_rets.values()),
-        color=list(period_rets.values()),
-        colors_y = ['#39FF14' if x > 0 else '#FF3131' for x in yearly_ret.values],
         labels={'x': 'Zeitraum', 'y': 'Kumuliert (%)'}
     )
+    fig_periods.update_traces(marker_color=colors_p) # Hier werden die harten Farben zugewiesen
+
+    # 5. Layout-Finish (Bleibt wie gewünscht)
     for fig in [fig_yearly, fig_periods]:
         fig.update_layout(
             template='plotly_dark', 
             plot_bgcolor='rgba(0,0,0,0)', 
             paper_bgcolor='rgba(0,0,0,0)',
             margin=dict(l=0, r=0, t=30, b=0),
-            coloraxis_showscale=False,
             height=250
         )
         st.plotly_chart(fig, use_container_width=True)
+
 with col_regionen:
+    # Dieser Teil bleibt exakt so, wie du ihn oben gepostet hast
     st.subheader("🌎 Regionale Verteilung", help="Geografische Gewichtung des Portfolios.")
     
     reg_labels = ['Nordamerika', 'Südamerika', 'Europa', 'Asien-Pazifik', 'Afrika']
