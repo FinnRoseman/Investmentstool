@@ -744,21 +744,16 @@ if len(verfuegbare) > 1:
         })
         fig_ef = px.scatter(
             df_sim, x='Volatilität', y='Rendite', color='Sharpe Ratio',
-            color_continuous_scale='Viridis', # Oder 'Plasma' für noch mehr Neon-Vibe
+            color_continuous_scale='Viridis',
             labels={'Volatilität': 'Volatilität p.a.', 'Rendite': 'Erwartete Rendite p.a.'},
             opacity=0.4
         )
-        fig_ef.add_trace(go.Scatter(
-            x=[vola], 
-            y=[capm_erwartung_pa],
+         fig_ef.add_trace(go.Scatter(
+            x=[opt_vol], 
+            y=[opt_ret], 
             mode='markers',
-            marker=dict(
-            color='white', 
-            size=18, 
-            line=dict(color='black', width=2)
-        ),
-            name='Aktuelles Portfolio',
-            hovertemplate="<b>Aktuelles Portfolio</b><br>Vola: %{x:.2%}<br>Rendite: %{y:.2%}<extra></extra>"
+            marker=dict(color='white', size=25, symbol='circle'),
+            name='Test Punkt'
         ))
         fig_ef.add_trace(go.Scatter(
             x=[opt_vol], y=[opt_ret],
