@@ -592,78 +592,77 @@ with tab_rend:
     st.markdown("---")
 
 # Rolling Returns & Rendite Verteilung
-att_col1, att_col2 = st.columns(2)
-with att_col1:
-    st.subheader("🔄 Rolling Returns (12 Monate)", help="Zeigt die Rendite eines Zeitpunktes im Vergleich zum Vorjahr.")
-    rolling_1y = port_rendite.rolling(window=252).apply(lambda x: (1 + x).prod() - 1) * 100
-    rolling_mean = rolling_1y.mean()
-    fig_roll = go.Figure()
-    fig_roll.add_trace(go.Scatter(
-        x=rolling_1y.index, y=rolling_1y,
-        mode='lines',
-        line=dict(color='#00E6FF', width=2),
-        name='Rolling Return',
-        fill='tozeroy',
-        fillcolor='rgba(0, 230, 255, 0.1)'
-    ))
-    fig_roll.add_trace(go.Scatter(
-        x=rolling_1y.index, y=[rolling_mean]*len(rolling_1y),
-        mode='lines',
-        line=dict(color='#FF3131', width=1.5, dash='dash'),
-        name=f'Schnitt ({rolling_mean:.1f}%)'
-    ))
-    fig_roll.update_layout(
-        template='plotly_dark',
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        margin=dict(l=0, r=0, t=20, b=0),
-        hovermode='x unified',
-        xaxis=dict(showgrid=False, title=""),
-        yaxis=dict(gridcolor='rgba(255,255,255,0.05)', ticksuffix='%', title=""),
-        showlegend=False,
-        height=350
-    )
-    st.plotly_chart(fig_roll, use_container_width=True)
-
-with att_col2:
-    st.subheader("📊 Rendite-Verteilung", help="Beitrag jeder Position zur Gesamtrendite.")
-    beitraege = []
-    for t in verfuegbare:
-        einzel_ret = (1 + renditen[t]).prod() - 1
-        gewicht = anteile[verfuegbare.index(t)]
-        beitraege.append(einzel_ret * gewicht * 100)
-    df_att = pd.DataFrame({
-        'Ticker': verfuegbare,
-        'Name': [ticker_namen.get(t, t) for t in verfuegbare],
-        'Beitrag': beitraege
-    }).sort_values('Beitrag', ascending=True)
-    colors_att = ['#39FF14' if x > 0 else '#FF3131' for x in df_att['Beitrag']]
-    fig_att = px.bar(
-        df_att, 
-        x='Beitrag', 
-        y='Ticker',
-        orientation='h',
-        hover_data={'Name': True, 'Ticker': False, 'Beitrag': ':.2f'},
-        text='Beitrag'
-    )
-    fig_att.update_traces(
-        marker_color=colors_att,
-        texttemplate='%{text:.1f}%', 
-        textposition='outside',
-        cliponaxis=False 
-    )
-    fig_att.update_layout(
-        template='plotly_dark',
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        margin=dict(l=0, r=40, t=20, b=0), 
-        xaxis=dict(gridcolor='rgba(255,255,255,0.05)', ticksuffix='%', title=""),
-        yaxis=dict(showgrid=False, title=""),
-        height=350
-    )
-    st.plotly_chart(fig_att, use_container_width=True)
-
-st.markdown("---")
+with tab_rend:
+    att_col1, att_col2 = st.columns(2)
+    with att_col1:
+        st.subheader("🔄 Rolling Returns (12 Monate)", help="Zeigt die Rendite eines Zeitpunktes im Vergleich zum Vorjahr.")
+        rolling_1y = port_rendite.rolling(window=252).apply(lambda x: (1 + x).prod() - 1) * 100
+        rolling_mean = rolling_1y.mean()
+        fig_roll = go.Figure()
+        fig_roll.add_trace(go.Scatter(
+            x=rolling_1y.index, y=rolling_1y,
+            mode='lines',
+            line=dict(color='#00E6FF', width=2),
+            name='Rolling Return',
+            fill='tozeroy',
+            fillcolor='rgba(0, 230, 255, 0.1)'
+        ))
+        fig_roll.add_trace(go.Scatter(
+            x=rolling_1y.index, y=[rolling_mean]*len(rolling_1y),
+            mode='lines',
+            line=dict(color='#FF3131', width=1.5, dash='dash'),
+            name=f'Schnitt ({rolling_mean:.1f}%)'
+        ))
+        fig_roll.update_layout(
+            template='plotly_dark',
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            margin=dict(l=0, r=0, t=20, b=0),
+            hovermode='x unified',
+            xaxis=dict(showgrid=False, title=""),
+            yaxis=dict(gridcolor='rgba(255,255,255,0.05)', ticksuffix='%', title=""),
+            showlegend=False,
+            height=350
+        )
+        st.plotly_chart(fig_roll, use_container_width=True)
+    with att_col2:
+        st.subheader("📊 Rendite-Verteilung", help="Beitrag jeder Position zur Gesamtrendite.")
+        beitraege = []
+        for t in verfuegbare:
+            einzel_ret = (1 + renditen[t]).prod() - 1
+            gewicht = anteile[verfuegbare.index(t)]
+            beitraege.append(einzel_ret * gewicht * 100)
+        df_att = pd.DataFrame({
+            'Ticker': verfuegbare,
+            'Name': [ticker_namen.get(t, t) for t in verfuegbare],
+            'Beitrag': beitraege
+        }).sort_values('Beitrag', ascending=True)
+        colors_att = ['#39FF14' if x > 0 else '#FF3131' for x in df_att['Beitrag']]
+        fig_att = px.bar(
+            df_att, 
+            x='Beitrag', 
+            y='Ticker',
+            orientation='h',
+            hover_data={'Name': True, 'Ticker': False, 'Beitrag': ':.2f'},
+            text='Beitrag'
+        )
+        fig_att.update_traces(
+            marker_color=colors_att,
+            texttemplate='%{text:.1f}%', 
+            textposition='outside',
+            cliponaxis=False 
+        )
+        fig_att.update_layout(
+            template='plotly_dark',
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            margin=dict(l=0, r=40, t=20, b=0), 
+            xaxis=dict(gridcolor='rgba(255,255,255,0.05)', ticksuffix='%', title=""),
+            yaxis=dict(showgrid=False, title=""),
+            height=350
+        )
+        st.plotly_chart(fig_att, use_container_width=True)
+    st.markdown("---")
 
 # Dividendenkalender
 st.subheader("📅 Dividenden-Kalender", help="Zeigt, wann wie viele Ausschüttungen zu erwarten sind")
