@@ -106,6 +106,8 @@ risk_free_rate = 0.02
 
 # --- 2. DESIGN ---
 st.sidebar.header("Benchmarkauswahl")
+
+# 1. Optionen definieren
 bench_options_list = [
     "100/0 (MSCI World)", 
     "80/20 (LifeStrategy 80% Equity)", 
@@ -115,6 +117,7 @@ bench_options_list = [
     "0/100 (Global Bonds)", 
     "Individuelle Benchmark"
 ]
+
 bench_mapping = {
     "100/0 (MSCI World)": "EUNL.DE",
     "80/20 (LifeStrategy 80% Equity)": "V80A.DE",
@@ -123,11 +126,21 @@ bench_mapping = {
     "20/80 (LifeStrategy 20% Equity)": "V20A.DE",
     "0/100 (Global Bonds)": "EUNA.DE"
 }
+
+# 2. Funktion zum Aufräumen (verhindert das Hängenbleiben)
+def reset_custom_bench():
+    if 'custom_input_field' in st.session_state:
+        st.session_state['custom_input_field'] = ""
+
+# 3. Selectbox mit on_change Trigger
 ausgewaehlter_name = st.sidebar.selectbox(
     "Vergleichs-Index", 
     options=bench_options_list,
-    key="benchmark_selector_final"
+    key="benchmark_selector_final",
+    on_change=reset_custom_bench # Leert das Feld, wenn man die Box ändert
 )
+
+# 4. Logik zur Zuweisung
 if ausgewaehlter_name == "Individuelle Benchmark":
     custom_ticker = st.sidebar.text_input(
         "Ticker eingeben (z.B. SPY):", 
@@ -135,7 +148,12 @@ if ausgewaehlter_name == "Individuelle Benchmark":
         placeholder="Hier tippen...",
         key="custom_input_field"
     ).strip().upper()
-    benchmark = custom_ticker if custom_ticker else "EUNL.DE"
+    
+    # Sicherheitscheck für leeres Feld
+    if custom_ticker:
+        benchmark = custom_ticker
+    else:
+        benchmark = "EUNL.DE" # Fallback auf MSCI World solange leer
 else:
     benchmark = bench_mapping.get(ausgewaehlter_name, "EUNL.DE")
 
