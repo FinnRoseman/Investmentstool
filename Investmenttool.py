@@ -737,6 +737,8 @@ if len(verfuegbare) > 1:
     test_vola = np.sqrt(np.dot(act_w.T, np.dot(cov, act_w)))
     test_ret = np.sum(mu * act_w)
 
+    st.write(f"Alt: {capm_erwartung_pa:.4f} | Neu: {act_ret:.4f}")
+
     opt_col1, opt_col2 = st.columns([2, 1], vertical_alignment="center")
 
     with opt_col1:
