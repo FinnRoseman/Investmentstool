@@ -1138,26 +1138,43 @@ st.markdown(mc_html, unsafe_allow_html=True)
 
 st.markdown("---")
 st.subheader("🧬 Faktorenanalyse", help="Diese Analyse zeigt, welche wissenschaftlichen Faktoren (Betas) dein Portfolio antreiben.")
-
 try:
     with st.spinner("Berechne Faktor-Exposures..."):
         factors = get_factor_loadings(port_rendite)
-        fig_fac, ax_fac = plt.subplots(figsize=(12, 6))
-        colors_fac = ['#4A90E2', '#27AE60', '#F2994A', '#9B51E0', '#D488FF']
-        factors.index = [
+        factor_names = [
             'Market', 
             'Size', 
             'Value', 
             'Quality I: Profitability', 
             'Quality II: Investmentbehavior'
         ]
-        factors.plot(kind='barh', color=colors_fac, ax=ax_fac)
-        ax_fac.axvline(0, color='black', linewidth=0.8, linestyle='--')
-        ax_fac.set_title("Faktorladungen", fontsize=14)
-        ax_fac.set_xlabel("Beta-Wert", fontsize=10)
-        ax_fac.grid(axis='x', alpha=0.3)
-        plt.tight_layout()
-        st.pyplot(fig_fac)
+        colors_fac = ['#4A90E2', '#27AE60', '#F2994A', '#9B51E0', '#D488FF']
+        fig_fac = go.Figure(go.Bar(
+            x=factors.values, 
+            y=factor_names,
+            orientation='h',
+            marker_color=colors_fac, 
+            hovertemplate="Faktor: <b>%{y}</b><br>Beta: <b>%{x:.3f}</b><extra></extra>",
+            width=0.6
+        ))
+        fig_fac.update_layout(
+            template='plotly_dark',
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            margin=dict(l=0, r=20, t=10, b=10),
+            height=350, 
+            xaxis=dict(
+                title="Beta-Wert", 
+                gridcolor='rgba(255,255,255,0.05)', 
+                zerolinecolor='white',
+                zerolinewidth=1
+            ),
+            yaxis=dict(
+                autorange="reversed", 
+                fixedrange=True
+            )
+        )
+        st.plotly_chart(fig_fac, use_container_width=True, config={'displayModeBar': False})
 
 except Exception as e:
     st.error(f"Faktoranalyse konnte nicht geladen werden: {e}")
