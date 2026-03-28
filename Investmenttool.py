@@ -1129,7 +1129,7 @@ with tab_sim:
         with sim_col2:
             st.markdown("### 🕹️ Benchmark-Sensitivität")
             eigener_schock = st.slider(
-                f"Bewegung {ausgewaehlter_name} (%):", 
+                f"Bewegung Benchmark (%):", 
                 -50.0, 50.0, 0.0, 1.0, 
                 help="Simuliert die Auswirkung einer Benchmark-Bewegung basierend auf dem Portfolio-Beta."
             )
