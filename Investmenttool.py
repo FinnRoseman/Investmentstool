@@ -107,7 +107,8 @@ risk_free_rate = 0.02
 # --- 2. DESIGN ---
 st.sidebar.header("Benchmarkauswahl")
 modus = st.sidebar.radio(
-    "Standardauswahl", "Individuelle Auswahl",
+    "Benchmark",
+    ["Standardauswahl", "Individuelle Auswahl"],
     key="bench_mode"
 )
 if modus == "Standardauswahl":
