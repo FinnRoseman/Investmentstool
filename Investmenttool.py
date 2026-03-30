@@ -1054,7 +1054,7 @@ with tab_sim:
     st.markdown("---")
 
 st.markdown("---")
-with tab_risk:
+with tab_allg:
     st.subheader("🧬 Faktorenanalyse", help="Diese Analyse zeigt, welche wissenschaftlichen Faktoren (Betas) dein Portfolio antreiben.")
     try:
         with st.spinner("Berechne Faktor-Exposures..."):
