@@ -734,8 +734,6 @@ with tab_allg:
     else:
         st.info("Keine historischen Dividenden im gewählten Zeitraum gefunden.")
 
-st.markdown("---")
-
 # Mean-Variance-Optimization
 with tab_sim:
     st.subheader("🎯 Mean-Variance-Optimization", help="10.000 Simulationen des Portfolios zur optimalen Gewichtung für das maximale Sharpe Ratio auf Basis der erwarteten Rendite.")
@@ -1055,6 +1053,7 @@ with tab_sim:
     st.markdown("---")
 
 with tab_allg:
+    st.markdown("---")
     st.subheader("🧬 Faktorenanalyse", help="Diese Analyse zeigt, welche wissenschaftlichen Faktoren (Betas) dein Portfolio antreiben.")
     try:
         with st.spinner("Berechne Faktor-Exposures..."):
