@@ -1045,9 +1045,9 @@ with tab_sim:
     mc_html = f"""
     <div style="margin-bottom: 10px; font-weight: bold; color: #4A90E2;">⏳ Ergebnis nach {mc_jahre} Jahren (Projektion):</div>
     <div class="mc-container">
-        <div class="mc-card optimist"><span class="mc-label">🚀 Optimistisch (95%)</span><div class="mc-value"><span class="mc-amount">{top_pfad[-1]:,.2f} €</span><span class="mc-cagr" style="color: #27AE60;">+{mc_cagr_optimist:.2%} p.a.</span></div></div>
-        <div class="mc-card median"><span class="mc-label">📈 Median (50%)</span><div class="mc-value"><span class="mc-amount">{median_pfad[-1]:,.2f} €</span><span class="mc-cagr">+{mc_cagr_median:.2%} p.a.</span></div></div>
-        <div class="mc-card pessimist"><span class="mc-label">📉 Pessimistisch (5%)</span><div class="mc-value"><span class="mc-amount">{bottom_pfad[-1]:,.2f} €</span><span class="mc-cagr" style="color: #E74C3C;">+{mc_cagr_pessimist:.2%} p.a.</span></div></div>
+        <div class="mc-card optimist"><span class="mc-label">🚀 Optimistisch (95%)</span><div class="mc-value"><span class="mc-amount">{top_pfad[-1]:,.2f} €</span><span class="mc-cagr" style="color: #27AE60;">{mc_cagr_optimist:.2%} p.a.</span></div></div>
+        <div class="mc-card median"><span class="mc-label">📈 Median (50%)</span><div class="mc-value"><span class="mc-amount">{median_pfad[-1]:,.2f} €</span><span class="mc-cagr">{mc_cagr_median:.2%} p.a.</span></div></div>
+        <div class="mc-card pessimist"><span class="mc-label">📉 Pessimistisch (5%)</span><div class="mc-value"><span class="mc-amount">{bottom_pfad[-1]:,.2f} €</span><span class="mc-cagr" style="color: #E74C3C;">{mc_cagr_pessimist:.2%} p.a.</span></div></div>
     </div>
     """
     st.markdown(mc_html, unsafe_allow_html=True)
