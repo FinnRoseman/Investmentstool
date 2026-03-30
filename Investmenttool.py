@@ -734,6 +734,8 @@ with tab_allg:
     else:
         st.info("Keine historischen Dividenden im gewählten Zeitraum gefunden.")
 
+st.markdown("---")
+
 # Mean-Variance-Optimization
 with tab_sim:
     st.subheader("🎯 Mean-Variance-Optimization", help="10.000 Simulationen des Portfolios zur optimalen Gewichtung für das maximale Sharpe Ratio auf Basis der erwarteten Rendite.")
@@ -980,7 +982,6 @@ with tab_risk:
         cards_html += f'<div class="r-row"><span class="r-lbl">VaR 95%</span><span class="r-val">{v:.2%}</span></div>'
         cards_html += f'<div class="r-row"><span class="r-lbl">Exp. Shortfall</span><span class="r-val">{e:.2%}</span></div></div>'
     st.markdown(f'<div class="r-grid">{cards_html}</div>', unsafe_allow_html=True)
-    st.markdown("---")
 
 # Monte Carlo Pfadsimulation (10 Jahre)
 with tab_sim:
