@@ -1147,5 +1147,5 @@ with tab_sim:
                 </div>
             """, unsafe_allow_html=True)
     render_simulation_area(factors, beta, endsumme)
-
+st.markdown("---")
 st.caption(f"Datenzeitraum: {daten.index[0].strftime('%d.%m.%Y')} bis {daten.index[-1].strftime('%d.%m.%Y')}")
