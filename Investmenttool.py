@@ -1054,7 +1054,6 @@ with tab_sim:
     st.markdown(mc_html, unsafe_allow_html=True)
     st.markdown("---")
 
-st.markdown("---")
 with tab_allg:
     st.subheader("🧬 Faktorenanalyse", help="Diese Analyse zeigt, welche wissenschaftlichen Faktoren (Betas) dein Portfolio antreiben.")
     try:
