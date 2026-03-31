@@ -511,7 +511,7 @@ st.markdown(f"""
 <div class="kpi-grid-5-row2">
     <div class="kpi-card"><p class="kpi-label">Sortino Ratio</p><p class="kpi-value">{sortino_ratio:.2f}</p></div>
     <div class="kpi-card"><p class="kpi-label">Treynor Ratio</p><p class="kpi-value">{treynor_ratio:.2f}</p></div>
-    <div class="kpi-card"><p class="kpi-label">Info Ratio</p><p class="kpi-value">{information_ratio:.2f}</p></div>
+    <div class="kpi-card"><p class="kpi-label">Information Ratio</p><p class="kpi-value">{information_ratio:.2f}</p></div>
     <div class="kpi-card"><p class="kpi-label">Upside Capture</p><p class="kpi-value">{upside_ratio:.1f}%</p></div>
     <div class="kpi-card"><p class="kpi-label">Downside Capture</p><p class="kpi-value">{downside_ratio:.1f}%</p></div>
 </div>
