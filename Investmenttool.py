@@ -270,7 +270,7 @@ port_rendite = (renditen[verfuegbare] * anteile).sum(axis=1)
 bench_rendite = renditen.loc[port_rendite.index, benchmark]
 diff_rendite = port_rendite - bench_rendite
 rf_daily = (1 + risk_free_rate)**(1/252) - 1
-downside_returns = port_rendite[port_rendite < rf_daily] - rf_daily
+downside_returns = np.minimum(port_rendite - rf_daily, 0)
 downside_deviation = np.sqrt((downside_returns**2).mean()) * np.sqrt(252)
 total_na, total_sa, total_eu, total_ap, total_af = 0.0, 0.0, 0.0, 0.0, 0.0
 for i, t in enumerate(verfuegbare):
