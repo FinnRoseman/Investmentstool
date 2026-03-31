@@ -269,6 +269,9 @@ anteile = [a/sum(anteile) for a in anteile]
 port_rendite = (renditen[verfuegbare] * anteile).sum(axis=1)
 bench_rendite = renditen.loc[port_rendite.index, benchmark]
 diff_rendite = port_rendite - bench_rendite
+rf_daily = (1 + risk_free_rate)**(1/252) - 1
+downside_returns = port_rendite[port_rendite < rf_daily] - rf_daily
+downside_deviation = np.sqrt((downside_returns**2).mean()) * np.sqrt(252)
 total_na, total_sa, total_eu, total_ap, total_af = 0.0, 0.0, 0.0, 0.0, 0.0
 for i, t in enumerate(verfuegbare):
     reg = st.session_state.regionen_daten.get(t, {"NA": 0.0, "SA": 0.0, "EU": 0.0, "AP": 0.0, "AF": 0.0})
@@ -287,10 +290,24 @@ max_drawdown = (((1 + port_rendite).cumprod() / (1 + port_rendite).cumprod().cum
 tracking_error = diff_rendite.std() * np.sqrt(252)
 
 sharpe_ratio = (cagr - risk_free_rate) / vola
+sortino_ratio = (cagr - risk_free_rate) / downside_deviation if downside_deviation != 0 else np.nan
 beta = port_rendite.cov(bench_rendite) / bench_rendite.var()
+treynor_ratio = (cagr - risk_free_rate) / beta if beta != 0 else np.nan
 bench_cagr = ((1 + bench_rendite).prod())**(1/jahre) - 1
 alpha = cagr - (risk_free_rate + beta * (bench_cagr - risk_free_rate))
 capm_erwartung_pa = risk_free_rate + beta * (bench_cagr - risk_free_rate)
+active_return = cagr - bench_cagr
+information_ratio = active_return / tracking_error if tracking_error != 0 else np.nan
+upside_mask = bench_rendite > 0
+downside_mask = bench_rendite < 0
+if upside_mask.any():
+    upside_ratio = (port_rendite[upside_mask].mean() / bench_rendite[upside_mask].mean()) * 100
+else:
+    upside_ratio = np.nan
+if downside_mask.any():
+    downside_ratio = (port_rendite[downside_mask].mean() / bench_rendite[downside_mask].mean()) * 100
+else:
+    downside_ratio = np.nan
 
 # Risikokennzahlen
 var_95_para = 1.645 * vola
@@ -487,6 +504,16 @@ st.markdown(f"""
     <div class="kpi-card"><p class="kpi-label">Beta</p><p class="kpi-value">{beta:.2f}</p></div>
     <div class="kpi-card"><p class="kpi-label">Tracking Error</p><p class="kpi-value">{tracking_error:.2%}</p></div>
     <div class="kpi-card"><p class="kpi-label">Yield on Cost</p><p class="kpi-value">{port_yoc:.2%}</p></div>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown(f"""
+<div class="kpi-grid-5-row2">
+    <div class="kpi-card"><p class="kpi-label">Sortino Ratio</p><p class="kpi-value">{sortino_ratio:.2f}</p></div>
+    <div class="kpi-card"><p class="kpi-label">Treynor Ratio</p><p class="kpi-value">{treynor_ratio:.2f}</p></div>
+    <div class="kpi-card"><p class="kpi-label">Info Ratio</p><p class="kpi-value">{information_ratio:.2f}</p></div>
+    <div class="kpi-card"><p class="kpi-label">Upside Capture</p><p class="kpi-value">{upside_ratio:.1f}%</p></div>
+    <div class="kpi-card"><p class="kpi-label">Downside Capture</p><p class="kpi-value">{downside_ratio:.1f}%</p></div>
 </div>
 """, unsafe_allow_html=True)
 
