@@ -28,7 +28,7 @@ def get_factor_loadings(portfolio_returns):
         
         # Index auf Datetime umstellen und Zeitzonen entfernen
         if 'date' in ff_data.columns:
-            ff_data['date'] = pd.to_datetime(ff_data['date']).dt.tz_localize(None)
+            ff_data['date'] = pd.to_datetime(ff_data['date']).tz_localize(None)
             ff_data.set_index('date', inplace=True)
         else:
             ff_data.index = pd.to_datetime(ff_data.index).dt.tz_localize(None)
