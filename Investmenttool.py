@@ -18,52 +18,58 @@ def get_factor_loadings(portfolio_returns):
     import pandas as pd
     
     try:
-        # 1. FF-Daten laden
+        # 1. Daten laden
         ff_dict = gff.famaFrench5Factor() 
         ff_data = pd.DataFrame(ff_dict)
-        
-        # Datums-Logik ohne .dt Fehler
+
+        # 2. Sofort-Check: Sind die Daten leer oder fehlerhaft?
+        if ff_data.empty or len(ff_data) < 2:
+            return "Die Fama-French Quelle liefert aktuell keine Daten. Bitte später versuchen."
+
+        # Datums-Konvertierung
         if 'date' in ff_data.columns:
             ff_data['date'] = pd.to_datetime(ff_data['date']).dt.tz_localize(None)
             ff_data.set_index('date', inplace=True)
         else:
-            # WICHTIG: Hier kein .dt nutzen!
             ff_data.index = pd.to_datetime(ff_data.index).tz_localize(None)
 
-        # 2. Portfolio-Daten vorbereiten
+        # 3. Sicherheits-Check gegen den 1970-Fehler
+        # Wenn das Jahr 1970 auftaucht, ist beim Parsen etwas schiefgelaufen
+        if ff_data.index.max().year < 2020:
+            return f"Fehler beim Datenabruf: Die Quelle liefert veraltete oder leere Daten (Max: {ff_data.index.max().year})."
+
+        # 4. Portfolio-Daten vorbereiten
         port_returns = portfolio_returns.copy()
         if hasattr(port_returns.index, 'tz') and port_returns.index.tz is not None:
             port_returns.index = port_returns.index.tz_localize(None)
-            
+        
         port_monthly = port_returns.resample('ME').apply(lambda x: (1 + x).prod() - 1)
 
-        # 3. Matching über Text-Format "YYYY-MM"
+        # 5. Matching über YYYY-MM
         ff_data.index = ff_data.index.strftime('%Y-%m')
         port_monthly.index = port_monthly.index.strftime('%Y-%m')
         
         ff_data = ff_data.groupby(level=0).mean()
         port_monthly = port_monthly.groupby(level=0).mean()
 
-        # 4. Zusammenführen
         combined = pd.concat([port_monthly, ff_data], axis=1).dropna()
         
-        # Diagnose-Info falls es nicht klappt
         if len(combined) < 5:
-            # Wir schauen nach, was das letzte Datum in der FF-Library ist
-            last_ff = ff_data.index.max() if not ff_data.empty else "N/A"
+            # Zeige dem User genau, wo es hakt
+            last_ff = ff_data.index.max()
             port_start = port_monthly.index.min()
-            return f"Kein Match: Portfolio startet {port_start}, aber FF-Daten enden bei {last_ff}."
+            return f"Keine Überschneidung: Portfolio startet {port_start}, FF-Daten enden {last_ff}."
 
-        # 5. Regression
+        # 6. Regression
         Y = combined.iloc[:, 0] - combined.get('RF', 0)
         X = combined[['Mkt-RF', 'SMB', 'HML', 'RMW', 'CMA']]
         X = sm.add_constant(X)
         
         model = sm.OLS(Y, X).fit()
-        return model.params[1:] 
+        return model.params[1:]
 
     except Exception as e:
-        return f"Fehler in der Faktor-Analyse: {e}"
+        return f"Technischer Fehler in der Analyse: {str(e)}"
 
 # --- STREAMLIT PAGE CONFIGURATION ---
 st.set_page_config(page_title="Portfolio Analyzer", layout="wide")
