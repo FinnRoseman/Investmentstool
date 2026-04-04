@@ -1177,7 +1177,7 @@ with tab_allg:
                         zerolinewidth=1
                     ),
                     yaxis=dict(
-                        autange="reversed", 
+                        autorange="reversed", 
                         fixedrange=True
                     )
                 )
