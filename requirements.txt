@@ -3,7 +3,7 @@ yfinance
 pandas
 matplotlib
 seaborn
-pandas_datareader
+getFamaFrenchFactors
 statsmodels
 setuptools
 plotly
