@@ -18,8 +18,11 @@ def get_factor_loadings(portfolio_returns):
     try:
         ff_dict = gff.famaFrench5Factor() 
         ff_data = pd.DataFrame(ff_dict)
-        ff_data['date'] = pd.to_datetime(ff_data['date'])
-        ff_data.set_index('date', inplace=True)
+        if 'date' in ff_data.columns:
+            ff_data['date'] = pd.to_datetime(ff_data['date'])
+            ff_data.set_index('date', inplace=True)
+        else:
+            ff_data.index = pd.to_datetime(ff_data.index)
         ff_data.index = ff_data.index.to_period('M')
         port_monthly = portfolio_returns.resample('M').apply(lambda x: (1 + x).prod() - 1)
         port_monthly.index = port_monthly.index.to_period('M')
