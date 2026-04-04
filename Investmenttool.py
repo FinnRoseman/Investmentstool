@@ -23,10 +23,10 @@ def get_factor_loadings(portfolio_returns):
             ff_data.set_index('date', inplace=True)
         else:
             ff_data.index = pd.to_datetime(ff_data.index)
-        ff_data.index = ff_data.index.to_period('M')
+        ff_data.index = pd.to_datetime(ff_data.index).strftime('%Y-%m')
         ff_data = ff_data.groupby(level=0).mean()
         port_monthly = portfolio_returns.resample('ME').apply(lambda x: (1 + x).prod() - 1)
-        port_monthly.index = port_monthly.index.to_period('M')
+        port_monthly.index = port_monthly.index.strftime('%Y-%m')
         port_monthly = port_monthly.groupby(level=0).mean()
         combined = pd.concat([port_monthly, ff_data], axis=1).dropna()
         if len(combined) < 5:
