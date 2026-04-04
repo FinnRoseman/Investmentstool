@@ -1100,7 +1100,7 @@ with tab_allg:
                 ]
                 colors_fac = ['#4A90E2', '#27AE60', '#F2994A', '#9B51E0', '#D488FF']
                 fig_fac = go.Figure(go.Bar(
-                    x=factors.values
+                    x=factors.values,
                     y=factor_names,
                     orientation='h',
                     marker_color=colors_fac, 
