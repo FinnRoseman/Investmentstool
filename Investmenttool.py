@@ -4,9 +4,9 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import streamlit as st
-import pandas_datareader.data as web
 import plotly.express as px
 import plotly.graph_objects as go
+import getFamaFrenchFactors as gff
 
 # --- CACHING FUNKTION ---
 @st.cache_data(show_spinner="Marktdaten werden geladen...")
@@ -15,19 +15,24 @@ def get_cached_data(ticker_tuple, period):
     return df
 def get_factor_loadings(portfolio_returns):
     import statsmodels.api as sm
-    ff_data = web.DataReader('F-F_Research_Data_5_Factors_2x3', 'famafrench', start='2010-01-01')[0]
-    ff_data = ff_data / 100
-    ff_data.index = ff_data.index.to_timestamp().to_period('M')
-    port_monthly = portfolio_returns.resample('M').apply(lambda x: (1 + x).prod() - 1)
-    port_monthly.index = port_monthly.index.to_period('M')
-    combined = pd.concat([port_monthly, ff_data], axis=1).dropna()
-    if len(combined) < 5:
-        raise ValueError(f"Überschneidung zu gering: Nur {len(combined)} Monate gefunden.")
-    Y = combined.iloc[:, 0] - combined['RF']
-    X = combined[['Mkt-RF', 'SMB', 'HML', 'RMW', 'CMA']]
-    X = sm.add_constant(X)
-    model = sm.OLS(Y, X).fit()
-    return model.params[1:]
+    try:
+        ff_dict = gff.fama_french_5_factors_monthly()
+        ff_data = ff_dict.copy()
+        ff_data['date'] = pd.to_datetime(ff_data['date'])
+        ff_data.set_index('date', inplace=True)
+        ff_data.index = ff_data.index.to_period('M')
+        port_monthly = portfolio_returns.resample('M').apply(lambda x: (1 + x).prod() - 1)
+        port_monthly.index = port_monthly.index.to_period('M')
+        combined = pd.concat([port_monthly, ff_data], axis=1).dropna()
+        if len(combined) < 5:
+            return "Nicht genügend Datenpunkte für Faktor-Analyse."
+        Y = combined.iloc[:, 0] - combined['RF']
+        X = combined[['Mkt-RF', 'SMB', 'HML', 'RMW', 'CMA']]
+        X = sm.add_constant(X)
+        model = sm.OLS(Y, X).fit()
+        return model.params[1:]
+    except Exception as e:
+        return f"Fehler in der Faktor-Analyse: {e}"
 
 # --- STREAMLIT PAGE CONFIGURATION ---
 st.set_page_config(page_title="Portfolio Analyzer", layout="wide")
