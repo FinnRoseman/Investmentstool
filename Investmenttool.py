@@ -29,7 +29,7 @@ def get_factor_loadings(portfolio_returns):
         port_monthly.index = port_monthly.index.to_period('M')
         port_monthly = port_monthly.groupby(level=0).mean()
         combined = pd.concat([port_monthly, ff_data], axis=1).dropna()
-        if len(combined) < 5:
+        if len(combined) < 2:
             return "Nicht genügend Datenpunkte für Faktor-Analyse."
         Y = combined.iloc[:, 0] - combined['RF']
         X = combined[['Mkt-RF', 'SMB', 'HML', 'RMW', 'CMA']]
