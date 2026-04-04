@@ -16,8 +16,8 @@ def get_cached_data(ticker_tuple, period):
 def get_factor_loadings(portfolio_returns):
     import statsmodels.api as sm
     try:
-        ff_dict = gff.fama_french_5_factors_monthly()
-        ff_data = ff_dict.copy()
+        ff_dict = gff.famaFrench5Factors(period='M') 
+        ff_data = pd.DataFrame(ff_dict)
         ff_data['date'] = pd.to_datetime(ff_data['date'])
         ff_data.set_index('date', inplace=True)
         ff_data.index = ff_data.index.to_period('M')
