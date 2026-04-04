@@ -6,7 +6,10 @@ import matplotlib.pyplot as plt
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
-import getFamaFrenchFactors as gff
+import requests
+import zipfile
+import io
+import statsmodels.api as sm
 
 # --- CACHING FUNKTION ---
 @st.cache_data(show_spinner="Marktdaten werden geladen...")
@@ -14,62 +17,40 @@ def get_cached_data(ticker_tuple, period):
     df = yf.download(list(ticker_tuple), period=period, progress=False)
     return df
 def get_factor_loadings(portfolio_returns):
-    import statsmodels.api as sm
-    import pandas as pd
-    
     try:
-        # 1. Daten laden
-        ff_dict = gff.famaFrench5Factor() 
-        ff_data = pd.DataFrame(ff_dict)
-
-        # 2. Sofort-Check: Sind die Daten leer oder fehlerhaft?
-        if ff_data.empty or len(ff_data) < 2:
-            return "Die Fama-French Quelle liefert aktuell keine Daten. Bitte später versuchen."
-
-        # Datums-Konvertierung
-        if 'date' in ff_data.columns:
-            ff_data['date'] = pd.to_datetime(ff_data['date']).dt.tz_localize(None)
-            ff_data.set_index('date', inplace=True)
-        else:
-            ff_data.index = pd.to_datetime(ff_data.index).tz_localize(None)
-
-        # 3. Sicherheits-Check gegen den 1970-Fehler
-        # Wenn das Jahr 1970 auftaucht, ist beim Parsen etwas schiefgelaufen
-        if ff_data.index.max().year < 2020:
-            return f"Fehler beim Datenabruf: Die Quelle liefert veraltete oder leere Daten (Max: {ff_data.index.max().year})."
-
-        # 4. Portfolio-Daten vorbereiten
+        url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_5_Factors_2x3_CSV.zip"
+        response = requests.get(url, timeout=10)
+        if response.status_code != 200:
+            return "Server von Kenneth French nicht erreichbar."
+        with zipfile.ZipFile(io.BytesIO(response.content)) as z:
+            with z.open(z.namelist()[0]) as f:
+                ff_data = pd.read_csv(f, skiprows=3, index_col=0)
+        if " Annual Factors: " in ff_data.index:
+            stop_idx = ff_data.index.get_loc(" Annual Factors: ")
+            ff_data = ff_data.iloc[:stop_idx]
+        ff_data.index = pd.to_datetime(ff_data.index, format='%Y%m', errors='coerce')
+        ff_data = ff_data.dropna()
+        ff_data = ff_data.astype(float) / 100
+        if ff_data.index.max().year < 2024:
+             return f"Warnung: Die Quelle liefert nur Daten bis {ff_data.index.max().year}."
         port_returns = portfolio_returns.copy()
-        if hasattr(port_returns.index, 'tz') and port_returns.index.tz is not None:
+        if hasattr(port_returns.index, 'tz'):
             port_returns.index = port_returns.index.tz_localize(None)
-        
         port_monthly = port_returns.resample('ME').apply(lambda x: (1 + x).prod() - 1)
-
-        # 5. Matching über YYYY-MM
         ff_data.index = ff_data.index.strftime('%Y-%m')
         port_monthly.index = port_monthly.index.strftime('%Y-%m')
-        
-        ff_data = ff_data.groupby(level=0).mean()
-        port_monthly = port_monthly.groupby(level=0).mean()
-
-        combined = pd.concat([port_monthly, ff_data], axis=1).dropna()
-        
+        ff_data = ff_data.groupby(level=0).last()
+        port_monthly = port_monthly.groupby(level=0).last()
+        combined = pd.concat([port_monthly, ff_data], axis=1).dropna() 
         if len(combined) < 5:
-            # Zeige dem User genau, wo es hakt
-            last_ff = ff_data.index.max()
-            port_start = port_monthly.index.min()
-            return f"Keine Überschneidung: Portfolio startet {port_start}, FF-Daten enden {last_ff}."
-
-        # 6. Regression
-        Y = combined.iloc[:, 0] - combined.get('RF', 0)
+            return f"Zu wenig Überschneidungen: Portfolio {port_monthly.index.min()} bis {port_monthly.index.max()}, FF-Daten bis {ff_data.index.max()}."
+        Y = combined.iloc[:, 0] - combined['RF']
         X = combined[['Mkt-RF', 'SMB', 'HML', 'RMW', 'CMA']]
         X = sm.add_constant(X)
-        
         model = sm.OLS(Y, X).fit()
         return model.params[1:]
-
     except Exception as e:
-        return f"Technischer Fehler in der Analyse: {str(e)}"
+        return f"Technischer Fehler: {str(e)}"
 
 # --- STREAMLIT PAGE CONFIGURATION ---
 st.set_page_config(page_title="Portfolio Analyzer", layout="wide")
