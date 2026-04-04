@@ -18,76 +18,39 @@ def get_cached_data(ticker_tuple, period):
     return df
 def get_factor_loadings(portfolio_returns):
     try:
-        # 1. Daten-Download (Fama-French 5 Factors Monthly)
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_5_Factors_2x3_CSV.zip"
         response = requests.get(url, timeout=15)
-        
         if response.status_code != 200:
             return "Fehler: Webseite von Kenneth French nicht erreichbar."
-
         with zipfile.ZipFile(io.BytesIO(response.content)) as z:
             with z.open(z.namelist()[0]) as f:
-                # Wir lesen die CSV ein. Kenneth French nutzt oft Zeile 3 als Header.
                 ff_data = pd.read_csv(f, skiprows=3, index_col=0)
-
-        # 2. Daten-Bereinigung (Der "String-to-Float" Fix)
-        # Leerzeichen in Spaltennamen entfernen
         ff_data.columns = ff_data.columns.str.strip()
-        
-        # Den jährlichen Teil am Ende der Datei abschneiden
         if " Annual Factors: " in ff_data.index:
             stop_idx = ff_data.index.get_loc(" Annual Factors: ")
             ff_data = ff_data.iloc[:stop_idx]
-
-        # WICHTIG: Alles in Zahlen umwandeln. Header-Strings in den Zeilen werden zu NaN.
         ff_data = ff_data.apply(pd.to_numeric, errors='coerce')
-        
-        # Zeilen mit NaN (z.B. falsch geparste Header-Zeilen) löschen
         ff_data = ff_data.dropna()
-
-        # Konvertierung des Index (YYYYMM) in Datum
         ff_data.index = pd.to_datetime(ff_data.index.astype(str), format='%Y%m', errors='coerce')
         ff_data = ff_data.dropna()
-        
-        # Werte von Prozent (z.B. 1.5) in Dezimal (0.015) umrechnen
         ff_data = ff_data / 100
-
-        # 3. Portfolio-Daten vorbereiten
         port_returns = portfolio_returns.copy()
         if hasattr(port_returns.index, 'tz'):
             port_returns.index = port_returns.index.tz_localize(None)
-        
-        # Auf Monatsende (ME) resamplen
         port_monthly = port_returns.resample('ME').apply(lambda x: (1 + x).prod() - 1)
-
-        # Matching über YYYY-MM Strings für Stabilität
         ff_data.index = ff_data.index.strftime('%Y-%m')
         port_monthly.index = port_monthly.index.strftime('%Y-%m')
-        
-        # Duplikate/Gruppierungen bereinigen
         ff_data = ff_data.groupby(level=0).last()
         port_monthly = port_monthly.groupby(level=0).last()
-
-        # Daten zusammenführen
         combined = pd.concat([port_monthly, ff_data], axis=1).dropna()
-        
         if len(combined) < 5:
             return f"Fehler: Zu wenig Datenüberschneidung ({len(combined)} Monate)."
-
-        # 4. Regression (CAPM / Fama-French)
-        # Y ist die Überrendite des Portfolios
         Y = combined.iloc[:, 0] - combined['RF']
-        
-        # X sind die 5 Faktoren
         factors = ['Mkt-RF', 'SMB', 'HML', 'RMW', 'CMA']
         X = combined[factors]
         X = sm.add_constant(X)
-        
         model = sm.OLS(Y, X).fit()
-        
-        # Gib die Koeffizienten zurück (ohne die Konstante/Alpha)
         return model.params[1:]
-
     except Exception as e:
         return f"Technischer Fehler in der Analyse: {str(e)}"
 
