@@ -1090,45 +1090,43 @@ with tab_allg:
     try:
         with st.spinner("Berechne Faktor-Exposures..."):
             factors = get_factor_loadings(port_rendite)
-            factor_names = [
-                'Market', 
-                'Size', 
-                'Value', 
-                'Quality I: Profitability', 
-                'Quality II: Investmentbehavior'
-            ]
-            colors_fac = ['#4A90E2', '#27AE60', '#F2994A', '#9B51E0', '#D488FF']
-            
-            fig_fac = go.Figure(go.Bar(
-                x=factors.values, 
-                y=factor_names,
-                orientation='h',
-                marker_color=colors_fac, 
-                hovertemplate="Faktor: <b>%{y}</b><br>Beta: <b>%{x:.3f}</b><extra></extra>",
-                width=0.6
-            ))
-            
-            fig_fac.update_layout(
-                template='plotly_dark',
-                plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(0,0,0,0)',
-                margin=dict(l=0, r=20, t=10, b=10),
-                height=350, 
-                xaxis=dict(
-                    title="Beta-Wert", 
-                    gridcolor='rgba(255,255,255,0.05)', 
-                    zerolinecolor='white',
-                    zerolinewidth=1
-                ),
-                yaxis=dict(
-                    autorange="reversed", 
-                    fixedrange=True
+            if isinstance(factors, pd.Series):
+                factor_names = [
+                    'Market', 
+                    'Size', 
+                    'Value', 
+                    'Quality I: Profitability', 
+                    'Quality II: Investmentbehavior'
+                ]
+                colors_fac = ['#4A90E2', '#27AE60', '#F2994A', '#9B51E0', '#D488FF']
+                fig_fac = go.Figure(go.Bar(
+                    x=factors.values
+                    y=factor_names,
+                    orientation='h',
+                    marker_color=colors_fac, 
+                    hovertemplate="Faktor: <b>%{y}</b><br>Beta: <b>%{x:.3f}</b><extra></extra>",
+                    width=0.6
+                ))
+                fig_fac.update_layout(
+                    template='plotly_dark',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    margin=dict(l=0, r=20, t=10, b=10),
+                    height=350, 
+                    xaxis=dict(
+                        title="Beta-Wert", 
+                        gridcolor='rgba(255,255,255,0.05)', 
+                        zerolinecolor='white',
+                        zerolinewidth=1
+                    ),
+                    yaxis=dict(
+                        autange="reversed", 
+                        fixedrange=True
+                    )
                 )
-            )
-            st.plotly_chart(fig_fac, use_container_width=True, config={'displayModeBar': False})
-
-    except Exception as e:
-        st.error(f"Faktoranalyse konnte nicht geladen werden: {e}")
+                st.plotly_chart(fig_fac, use_container_width=True, config={'displayModeBar': False})
+            else:
+                st.info(f"💡 {factors}")
 
 # --- INHALT FÜR TAB: SIMULATIONEN ---
 with tab_sim:
