@@ -3,7 +3,7 @@ yfinance
 pandas
 matplotlib
 seaborn
-pandas-datareader
+pandas_datareader
 statsmodels
 setuptools
 plotly
