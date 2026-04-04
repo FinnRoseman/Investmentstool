@@ -16,26 +16,55 @@ def get_cached_data(ticker_tuple, period):
 def get_factor_loadings(portfolio_returns):
     import statsmodels.api as sm
     try:
+        # 1. Daten laden
         ff_dict = gff.famaFrench5Factor() 
         ff_data = pd.DataFrame(ff_dict)
+        
+        # Zeitzonen entfernen und Index vereinheitlichen
         if 'date' in ff_data.columns:
-            ff_data['date'] = pd.to_datetime(ff_data['date'])
+            ff_data['date'] = pd.to_datetime(ff_data['date']).dt.tz_localize(None)
             ff_data.set_index('date', inplace=True)
         else:
-            ff_data.index = pd.to_datetime(ff_data.index)
-        ff_data.index = pd.to_datetime(ff_data.index).strftime('%Y-%m')
-        ff_data = ff_data.groupby(level=0).mean()
-        port_monthly = portfolio_returns.resample('ME').apply(lambda x: (1 + x).prod() - 1)
+            ff_data.index = pd.to_datetime(ff_data.index).tz_localize(None)
+
+        # 2. Portfolio-Daten vorbereiten (Zeitzonen entfernen!)
+        port_returns = portfolio_returns.copy()
+        if hasattr(port_returns.index, 'tz') and port_returns.index.tz is not None:
+            port_returns.index = port_returns.index.tz_localize(None)
+
+        port_monthly = port_returns.resample('ME').apply(lambda x: (1 + x).prod() - 1)
+
+        # 3. Den Match-Check machen (String-Format YYYY-MM)
+        ff_data.index = ff_data.index.strftime('%Y-%m')
         port_monthly.index = port_monthly.index.strftime('%Y-%m')
+        
+        ff_data = ff_data.groupby(level=0).mean()
         port_monthly = port_monthly.groupby(level=0).mean()
+
+        # Diagnose-Ausgabe (Nur zum Testen, danach löschen!)
+        # st.write("Portfolio Monate:", port_monthly.index.tolist()[:3])
+        # st.write("FF Monate:", ff_data.index.tolist()[:3])
+
         combined = pd.concat([port_monthly, ff_data], axis=1).dropna()
+        
         if len(combined) < 5:
-            return "Nicht genügend Datenpunkte für Faktor-Analyse."
-        Y = combined.iloc[:, 0] - combined['RF']
-        X = combined[['Mkt-RF', 'SMB', 'HML', 'RMW', 'CMA']]
+            # Hier geben wir jetzt Details aus, warum es nicht reicht
+            return f"Nicht genug Daten. Portfolio: {len(port_monthly)} Mon, FF: {len(ff_data)} Mon, Match: {len(combined)} Mon."
+
+        # 4. Regression (Spaltennamen-Check)
+        # Wir nutzen .filter, um Fehler bei Mkt-RF vs MKT-RF zu vermeiden
+        Y = combined.iloc[:, 0] - combined.get('RF', 0)
+        
+        # Sicherstellen, dass die Spalten exakt so heißen wie in der Library
+        X_cols = ['Mkt-RF', 'SMB', 'HML', 'RMW', 'CMA']
+        if not all(c in combined.columns for c in X_cols):
+            return f"Spalten fehlen! Gefunden wurden: {list(combined.columns)}"
+            
+        X = combined[X_cols]
         X = sm.add_constant(X)
         model = sm.OLS(Y, X).fit()
         return model.params[1:]
+
     except Exception as e:
         return f"Fehler in der Faktor-Analyse: {e}"
 
