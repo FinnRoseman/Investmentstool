@@ -24,7 +24,7 @@ def get_factor_loadings(portfolio_returns):
             return "Server von Kenneth French nicht erreichbar."
         with zipfile.ZipFile(io.BytesIO(response.content)) as z:
             with z.open(z.namelist()[0]) as f:
-                ff_data = pd.read_csv(f, skiprows=3, index_col=0)
+                ff_data = pd.read_csv(f, skiprows=3, header=0, index_col=0)
         if " Annual Factors: " in ff_data.index:
             stop_idx = ff_data.index.get_loc(" Annual Factors: ")
             ff_data = ff_data.iloc[:stop_idx]
