@@ -19,49 +19,53 @@ def get_factor_loadings(portfolio_returns):
     
     try:
         # 1. Dynamischen Startzeitpunkt aus deinem Portfolio ermitteln
-        # Wir nehmen das älteste Datum aus dem Index
-        portfolio_start_date = portfolio_returns.index.min().strftime('%Y-%m-%d')
+        # Wir nehmen das älteste Datum aus dem Index deines Portfolios
+        portfolio_start_date = portfolio_returns.index.min() #
         
-        # 2. Fama-French Daten genau ab diesem Startpunkt laden
-        # Die Library akzeptiert den 'start' Parameter
-        ff_dict = gff.famaFrench5Factor(start=portfolio_start_date) 
+        # 2. Fama-French Daten laden (die Library lädt hier alle verfügbaren Daten)
+        ff_dict = gff.famaFrench5Factor() 
         ff_data = pd.DataFrame(ff_dict)
         
-        # Zeitzonen entfernen (wichtig für den Vergleich mit XETRA/Yahoo Daten)
+        # Datums-Spalte/Index vorbereiten
         if 'date' in ff_data.columns:
             ff_data['date'] = pd.to_datetime(ff_data['date']).dt.tz_localize(None)
             ff_data.set_index('date', inplace=True)
         else:
             ff_data.index = pd.to_datetime(ff_data.index).tz_localize(None)
 
-        # 3. Portfolio-Daten vorbereiten (Monatsrenditen & Zeitzonen weg)
+        # 3. JETZT filtern wir die FF-Daten passend zu deinem Portfolio
+        ff_data = ff_data[ff_data.index >= portfolio_start_date] #
+
+        # 4. Portfolio-Daten vorbereiten (Zeitzonen entfernen für Vergleich)
         port_returns = portfolio_returns.copy()
         if hasattr(port_returns.index, 'tz') and port_returns.index.tz is not None:
             port_returns.index = port_returns.index.tz_localize(None)
             
+        # Monatliche Renditen berechnen (Pandas 2.2+ nutzt 'ME')
         port_monthly = port_returns.resample('ME').apply(lambda x: (1 + x).prod() - 1)
 
-        # 4. Beide Indizes auf das Text-Format "YYYY-MM" bringen für das Matching
+        # 5. Beide Indizes auf Text-Format "YYYY-MM" bringen für stabiles Matching
         ff_data.index = ff_data.index.strftime('%Y-%m')
         port_monthly.index = port_monthly.index.strftime('%Y-%m')
         
+        # Duplikate durch Gruppierung verhindern
         ff_data = ff_data.groupby(level=0).mean()
         port_monthly = port_monthly.groupby(level=0).mean()
 
-        # 5. Zusammenführen (Matching)
+        # 6. Zusammenführen (Matching)
         combined = pd.concat([port_monthly, ff_data], axis=1).dropna()
         
         if len(combined) < 5:
-            return f"Nicht genug Datenpunkte. Gefunden: {len(combined)} Monate."
+            return f"Match zu gering: {len(combined)} Mon. Portfolio Start: {portfolio_start_date.strftime('%Y-%m')}"
 
-        # 6. Die eigentliche Regression
+        # 7. Die eigentliche Regression
         Y = combined.iloc[:, 0] - combined.get('RF', 0)
         X_cols = ['Mkt-RF', 'SMB', 'HML', 'RMW', 'CMA']
         X = combined[X_cols]
         X = sm.add_constant(X)
         
         model = sm.OLS(Y, X).fit()
-        return model.params[1:] # Gibt Beta, SMB, HML, RMW, CMA zurück
+        return model.params[1:] 
 
     except Exception as e:
         return f"Fehler in der Faktor-Analyse: {e}"
