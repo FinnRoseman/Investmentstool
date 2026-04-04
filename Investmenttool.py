@@ -31,7 +31,7 @@ def get_factor_loadings(portfolio_returns):
             ff_data['date'] = pd.to_datetime(ff_data['date']).tz_localize(None)
             ff_data.set_index('date', inplace=True)
         else:
-            ff_data.index = pd.to_datetime(ff_data.index).dt.tz_localize(None)
+            ff_data.index = pd.to_datetime(ff_data.index).tz_localize(None)
 
         # 3. Filter: Nur Daten ab dem Portfolio-Start behalten
         ff_data = ff_data[ff_data.index >= portfolio_start_date] #
