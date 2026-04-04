@@ -1127,6 +1127,8 @@ with tab_allg:
                 st.plotly_chart(fig_fac, use_container_width=True, config={'displayModeBar': False})
             else:
                 st.info(f"💡 {factors}")
+    except Exception as e:
+        st.error(f"Faktoranalyse konnte nicht geladen werden: {e}")
 
 # --- INHALT FÜR TAB: SIMULATIONEN ---
 with tab_sim:
