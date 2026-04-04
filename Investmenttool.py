@@ -18,51 +18,45 @@ def get_factor_loadings(portfolio_returns):
     import pandas as pd
     
     try:
-        # 1. Dynamischen Startzeitpunkt ermitteln
-        # Wir finden das älteste Datum in deinem Portfolio
-        portfolio_start_date = portfolio_returns.index.min()
-        
-        # 2. Fama-French Daten laden (ohne 'start' Parameter)
+        # 1. FF-Daten laden
         ff_dict = gff.famaFrench5Factor() 
         ff_data = pd.DataFrame(ff_dict)
         
-        # Index auf Datetime umstellen und Zeitzonen entfernen
+        # Datums-Logik ohne .dt Fehler
         if 'date' in ff_data.columns:
-            ff_data['date'] = pd.to_datetime(ff_data['date']).tz_localize(None)
+            ff_data['date'] = pd.to_datetime(ff_data['date']).dt.tz_localize(None)
             ff_data.set_index('date', inplace=True)
         else:
+            # WICHTIG: Hier kein .dt nutzen!
             ff_data.index = pd.to_datetime(ff_data.index).tz_localize(None)
 
-        # 3. Filter: Nur Daten ab dem Portfolio-Start behalten
-        ff_data = ff_data[ff_data.index >= portfolio_start_date] #
-
-        # 4. Portfolio-Daten auf Monatsebene vorbereiten
+        # 2. Portfolio-Daten vorbereiten
         port_returns = portfolio_returns.copy()
         if hasattr(port_returns.index, 'tz') and port_returns.index.tz is not None:
             port_returns.index = port_returns.index.tz_localize(None)
             
-        # Monatliche Rendite berechnen (Nutze 'ME' für aktuelle Pandas-Versionen)
         port_monthly = port_returns.resample('ME').apply(lambda x: (1 + x).prod() - 1)
 
-        # 5. Matching über Text-Format "YYYY-MM" (macht es immun gegen exakte Tage)
+        # 3. Matching über Text-Format "YYYY-MM"
         ff_data.index = ff_data.index.strftime('%Y-%m')
         port_monthly.index = port_monthly.index.strftime('%Y-%m')
         
-        # Sicherstellen, dass pro Monat nur ein Wert existiert
         ff_data = ff_data.groupby(level=0).mean()
         port_monthly = port_monthly.groupby(level=0).mean()
 
-        # 6. Tabellen zusammenführen
+        # 4. Zusammenführen
         combined = pd.concat([port_monthly, ff_data], axis=1).dropna()
         
+        # Diagnose-Info falls es nicht klappt
         if len(combined) < 5:
-            start_str = portfolio_start_date.strftime('%Y-%m')
-            return f"Match zu gering: {len(combined)} Mon. Portfolio startet: {start_str}"
+            # Wir schauen nach, was das letzte Datum in der FF-Library ist
+            last_ff = ff_data.index.max() if not ff_data.empty else "N/A"
+            port_start = port_monthly.index.min()
+            return f"Kein Match: Portfolio startet {port_start}, aber FF-Daten enden bei {last_ff}."
 
-        # 7. Regression durchführen
+        # 5. Regression
         Y = combined.iloc[:, 0] - combined.get('RF', 0)
-        X_cols = ['Mkt-RF', 'SMB', 'HML', 'RMW', 'CMA']
-        X = combined[X_cols]
+        X = combined[['Mkt-RF', 'SMB', 'HML', 'RMW', 'CMA']]
         X = sm.add_constant(X)
         
         model = sm.OLS(Y, X).fit()
