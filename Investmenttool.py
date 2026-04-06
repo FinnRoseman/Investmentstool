@@ -43,7 +43,7 @@ def generate_full_report():
     hdr_cells = pos_table.rows[0].cells
     hdr_cells[0].text = 'Ticker / Name'
     hdr_cells[1].text = 'Gewichtung'
-    for t, w in tickers_f.items():
+    for t, w in zuordnung.items():
         row_cells = pos_table.add_row().cells
         row_cells[0].text = str(t)
         row_cells[1].text = f"{w:.2%}"
