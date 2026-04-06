@@ -239,11 +239,19 @@ for t in alle_ticker:
         st.error(f"⚠️ Keine Daten für {t}")
         st.stop()
     if t in fx_map:
+        # Lade die gesamte Historie des Wechselkurses
         fx_df = yf.download(fx_map[t], period=period_yf, progress=False)
         if not fx_df.empty:
-            fx = fx_df['Close'].iloc[:, 0] if isinstance(fx_df.columns, pd.MultiIndex) else fx_df['Close']
-            comb = pd.concat([price, fx], axis=1).ffill().dropna()
-            price = comb.iloc[:, 0] * comb.iloc[:, 1]
+            # Extrahiere die Close-Preise des FX-Paares
+            fx_prices = fx_df['Close'].iloc[:, 0] if isinstance(fx_df.columns, pd.MultiIndex) else fx_df['Close']
+            
+            # Bringe Aktienkurs und FX-Kurs auf den gleichen Index (Tagesgenau)
+            combined = pd.concat([price, fx_prices], axis=1)
+            # Vorwärtsfüllen, falls an einem Tag ein Kurs fehlt (z.B. Feiertage)
+            combined = combined.ffill().dropna()
+            
+            # WICHTIG: Historische Multiplikation (Preis_USD_t * FX_EURUSD_t)
+            price = combined.iloc[:, 0] * combined.iloc[:, 1]
             
     raw_data[t] = price
 
@@ -352,6 +360,10 @@ for i, t in enumerate(verfuegbare):
             fx_faktor = 1.0
         for date, amount in divs_in_period.items():
             stueckzahl_start = (startkapital * gewicht) / daten[t].iloc[0]
+            try:
+            actual_fx_at_date = fx_prices.asof(date) 
+            euro_zahlung_avg = (amount * actual_fx_at_date * stueckzahl_start) / anzahl_jahre
+            except:
             euro_zahlung_avg = (amount * fx_faktor * stueckzahl_start) / anzahl_jahre
             if euro_zahlung_avg > 0:
                 cal_data.append({
