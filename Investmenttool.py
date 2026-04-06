@@ -361,10 +361,10 @@ for i, t in enumerate(verfuegbare):
         for date, amount in divs_in_period.items():
             stueckzahl_start = (startkapital * gewicht) / daten[t].iloc[0]
             try:
-            actual_fx_at_date = fx_prices.asof(date) 
-            euro_zahlung_avg = (amount * actual_fx_at_date * stueckzahl_start) / anzahl_jahre
+                actual_fx_at_date = fx_prices.asof(date) 
+                euro_zahlung_avg = (amount * actual_fx_at_date * stueckzahl_start) / anzahl_jahre
             except:
-            euro_zahlung_avg = (amount * fx_faktor * stueckzahl_start) / anzahl_jahre
+                euro_zahlung_avg = (amount * fx_faktor * stueckzahl_start) / anzahl_jahre
             if euro_zahlung_avg > 0:
                 cal_data.append({
                     "Monat": date.strftime("%B"), "Monat_Nr": date.month,
