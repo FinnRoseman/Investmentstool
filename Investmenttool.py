@@ -239,18 +239,11 @@ for t in alle_ticker:
         st.error(f"⚠️ Keine Daten für {t}")
         st.stop()
     if t in fx_map:
-        # Lade die gesamte Historie des Wechselkurses
         fx_df = yf.download(fx_map[t], period=period_yf, progress=False)
         if not fx_df.empty:
-            # Extrahiere die Close-Preise des FX-Paares
             fx_prices = fx_df['Close'].iloc[:, 0] if isinstance(fx_df.columns, pd.MultiIndex) else fx_df['Close']
-            
-            # Bringe Aktienkurs und FX-Kurs auf den gleichen Index (Tagesgenau)
             combined = pd.concat([price, fx_prices], axis=1)
-            # Vorwärtsfüllen, falls an einem Tag ein Kurs fehlt (z.B. Feiertage)
             combined = combined.ffill().dropna()
-            
-            # WICHTIG: Historische Multiplikation (Preis_USD_t * FX_EURUSD_t)
             price = combined.iloc[:, 0] * combined.iloc[:, 1]
             
     raw_data[t] = price
