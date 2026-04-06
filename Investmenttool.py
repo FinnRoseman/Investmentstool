@@ -60,6 +60,8 @@ st.set_page_config(page_title="Portfolio Analyzer", layout="wide")
 
 # --- 1. SETUP ---
 st.sidebar.header("Portfolio Zusammenstellung")
+if 'widget_eingabe' not in st.session_state:
+    st.session_state.widget_eingabe = ""
 def clear_ticker_input():
     st.session_state.ticker_temp = st.session_state.widget_eingabe
     st.session_state.widget_eingabe = ""
