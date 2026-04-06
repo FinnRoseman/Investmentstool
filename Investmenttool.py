@@ -53,9 +53,9 @@ def generate_full_report():
     werte_data = [
         ("Fiktives Startinvestment", f"{startkapital:,.2f} €"),
         ("Endwert des Portfolios", f"{endsumme:,.2f} €"),
-        ("Gewinn/Verlust (Absolut)", f"{abs_gewinn:,.2f} €"),
-        ("Gewinn/Verlust (Relativ)", f"{rel_gewinn:.2%}"),
-        ("Ausschüttungen (letzte 12 Monate)", f"{total_div_12m:,.2f} €")
+        ("Gewinn/Verlust (Absolut)", f"{abs_anzeige:,.2f} €"),
+        ("Gewinn/Verlust (Relativ)", f"{rel_anzeige:.2%}"),
+        ("Ausschüttungen (letzte 12 Monate)", f"{div_anzeige:,.2f} €")
     ]
     for label, wert in werte_data:
         row = wert_table.add_row().cells
