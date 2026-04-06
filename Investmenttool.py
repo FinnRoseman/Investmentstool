@@ -16,6 +16,12 @@ import statsmodels.api as sm
 def get_cached_data(ticker_tuple, period):
     df = yf.download(list(ticker_tuple), period=period, progress=False)
     return df
+@st.cache_data(show_spinner=False)
+def get_ticker_name(t):
+    try:
+        return yf.Ticker(t).info.get('longName', t)
+    except:
+        return t
 def get_factor_loadings(portfolio_returns):
     try:
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_5_Factors_2x3_CSV.zip"
@@ -180,59 +186,33 @@ period_yf = zeitraum_optionen[ausgewaehlter_zeitraum]
 st.sidebar.header("Kapitalauswahl")
 startkapital = st.sidebar.number_input("Startkapital (€)", value=0, min_value=0, step=1000, key="mein_kapital")
 
+# --- OPTIMIERTER BEREICH ---
 zuordnung = dict(zip(ticker_liste, anteile_orig))
 
-ticker_namen = {}
-for t in ticker_liste:
-    try:
-        ticker_namen[t] = yf.Ticker(t).info.get('longName', t)
-    except:
-        ticker_namen[t] = t
-
 st.title("Portfolio Backtest Dashboard")
+
 with st.expander("Portfolio-Zusammensetzung (Name & Gewichtung)"):
     st.markdown("""
     <style>
-        .port-container {
-            background-color: rgba(100,100,100,0.05);
-            border-radius: 12px;
-            padding: 5px;
-            margin-bottom: 15px;
-        }
-        .port-row {
-            display: flex;
-            align-items: center;
-            padding: 10px 15px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            position: relative;
-            overflow: hidden;
-        }
+        .port-container { background-color: rgba(100,100,100,0.05); border-radius: 12px; padding: 5px; margin-bottom: 15px; }
+        .port-row { display: flex; align-items: center; padding: 10px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); position: relative; overflow: hidden; }
         .port-row:last-child { border-bottom: none; }
-        .port-bar {
-            position: absolute;
-            left: 0; top: 0; bottom: 0;
-            background-color: rgba(74, 144, 226, 0.15);
-            z-index: 0;
-        }
-        .port-ticker {
-            background-color: rgba(0,0,0,0.3);
-            color: #4A90E2;
-            padding: 2px 8px;
-            border-radius: 5px;
-            font-family: monospace;
-            font-size: 12px;
-            margin-right: 15px;
-            z-index: 1;
-            min-width: 80px;
-            text-align: center;
-        }
+        .port-bar { position: absolute; left: 0; top: 0; bottom: 0; background-color: rgba(74, 144, 226, 0.15); z-index: 0; }
+        .port-ticker { background-color: rgba(0,0,0,0.3); color: #4A90E2; padding: 2px 8px; border-radius: 5px; font-family: monospace; font-size: 12px; margin-right: 15px; z-index: 1; min-width: 80px; text-align: center; }
         .port-name { flex: 1; color: white; font-size: 14px; z-index: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .port-weight { font-weight: bold; color: white; margin-left: 10px; z-index: 1; min-width: 60px; text-align: right; }
     </style>
     """, unsafe_allow_html=True)
+    
     rows_html = ""
+    # Prüfen, ob die Analyse schon gestartet wurde
+    analysis_active = st.session_state.get("run_analysis", False)
+    
     for t in ticker_liste:
-        name = ticker_namen.get(t, t)
+        # PERFORMANCE-TRICK: Nur wenn 'Go' geklickt wurde, holen wir den langen Namen (gecached)
+        # Solange man noch editiert, zeigen wir nur den Ticker an (spart massiv Zeit)
+        name = get_ticker_name(t) if analysis_active else t
+        
         anteil_val = zuordnung.get(t, 0)
         anteil_pct = anteil_val * 100
         rows_html += f"""
@@ -242,24 +222,25 @@ with st.expander("Portfolio-Zusammensetzung (Name & Gewichtung)"):
             <div class="port-name">{name}</div>
             <div class="port-weight">{anteil_pct:.1f}%</div>
         </div>"""
+    
     st.markdown(f'<div class="port-container">{rows_html}</div>', unsafe_allow_html=True)
+    
     summe_anteile = sum(anteile_orig)
     if abs(summe_anteile - 1.0) > 0.001:
         st.warning(f"⚠️ Die Summe der Anteile liegt bei {summe_anteile*100:.1f}%.")
     else:
         st.success("✅ Die Anteile ergeben 100%.")
+
+# Erst STOPPEN, wenn kein 'Go' geklickt wurde
 if not ticker_liste:
     st.info("Das Portfolio ist gerade noch leer. Starte mit der Zusammenstellung.")
     st.stop()
-if "run_analysis" not in st.session_state:
-    st.session_state.run_analysis = False    
-if not st.session_state.run_analysis:
-    if ticker_liste:
-        st.warning("👈 Gewichtung einstellen und auf 'Go' klicken, um die Analyse zu starten.")
-    else:
-        st.info("Bitte füge Ticker in der Sidebar hinzu.")
+
+if not st.session_state.get("run_analysis", False):
+    st.warning("👈 Gewichtung einstellen und auf 'Go' klicken, um die Analyse zu starten.")
     st.stop()
 
+# Ab hier laufen die schweren Downloads (nur nach 'Go')
 alle_ticker = tuple(ticker_liste + [benchmark])
 data_full = get_cached_data(alle_ticker, period_yf)
 
