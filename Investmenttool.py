@@ -186,11 +186,8 @@ period_yf = zeitraum_optionen[ausgewaehlter_zeitraum]
 st.sidebar.header("Kapitalauswahl")
 startkapital = st.sidebar.number_input("Startkapital (€)", value=0, min_value=0, step=1000, key="mein_kapital")
 
-# --- OPTIMIERTER BEREICH ---
 zuordnung = dict(zip(ticker_liste, anteile_orig))
-
 st.title("Portfolio Backtest Dashboard")
-
 with st.expander("Portfolio-Zusammensetzung (Name & Gewichtung)"):
     st.markdown("""
     <style>
@@ -203,16 +200,10 @@ with st.expander("Portfolio-Zusammensetzung (Name & Gewichtung)"):
         .port-weight { font-weight: bold; color: white; margin-left: 10px; z-index: 1; min-width: 60px; text-align: right; }
     </style>
     """, unsafe_allow_html=True)
-    
     rows_html = ""
-    # Prüfen, ob die Analyse schon gestartet wurde
     analysis_active = st.session_state.get("run_analysis", False)
-    
     for t in ticker_liste:
-        # PERFORMANCE-TRICK: Nur wenn 'Go' geklickt wurde, holen wir den langen Namen (gecached)
-        # Solange man noch editiert, zeigen wir nur den Ticker an (spart massiv Zeit)
         name = get_ticker_name(t) if analysis_active else t
-        
         anteil_val = zuordnung.get(t, 0)
         anteil_pct = anteil_val * 100
         rows_html += f"""
@@ -222,25 +213,18 @@ with st.expander("Portfolio-Zusammensetzung (Name & Gewichtung)"):
             <div class="port-name">{name}</div>
             <div class="port-weight">{anteil_pct:.1f}%</div>
         </div>"""
-    
     st.markdown(f'<div class="port-container">{rows_html}</div>', unsafe_allow_html=True)
-    
     summe_anteile = sum(anteile_orig)
     if abs(summe_anteile - 1.0) > 0.001:
         st.warning(f"⚠️ Die Summe der Anteile liegt bei {summe_anteile*100:.1f}%.")
     else:
         st.success("✅ Die Anteile ergeben 100%.")
-
-# Erst STOPPEN, wenn kein 'Go' geklickt wurde
 if not ticker_liste:
     st.info("Das Portfolio ist gerade noch leer. Starte mit der Zusammenstellung.")
     st.stop()
-
 if not st.session_state.get("run_analysis", False):
     st.warning("👈 Gewichtung einstellen und auf 'Go' klicken, um die Analyse zu starten.")
     st.stop()
-
-# Ab hier laufen die schweren Downloads (nur nach 'Go')
 alle_ticker = tuple(ticker_liste + [benchmark])
 data_full = get_cached_data(alle_ticker, period_yf)
 
