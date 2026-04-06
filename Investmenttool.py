@@ -51,7 +51,7 @@ def generate_full_report():
     wert_table = doc.add_table(rows=1, cols=2)
     wert_table.style = 'Light List Accent 1'
     werte_data = [
-        ("Fiktives Startinvestment", f"{investment_summe:,.2f} €"),
+        ("Fiktives Startinvestment", f"{startkapital:,.2f} €"),
         ("Endwert des Portfolios", f"{endsumme:,.2f} €"),
         ("Gewinn/Verlust (Absolut)", f"{abs_gewinn:,.2f} €"),
         ("Gewinn/Verlust (Relativ)", f"{rel_gewinn:.2%}"),
