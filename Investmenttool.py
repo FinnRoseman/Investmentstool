@@ -10,6 +10,45 @@ import requests
 import zipfile
 import io
 import statsmodels.api as sm
+from docx import Document
+from docx.shared import Inches, Pt
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+# Worddokument
+def add_plot_to_word(doc, fig, width=6):
+    """Konvertiert eine Plotly-Figur in ein Bild und fügt es in Word ein"""
+    try:
+        img_bytes = fig.to_image(format="png", width=1000, height=500, scale=2)
+        doc.add_picture(io.BytesIO(img_bytes), width=Inches(width))
+    except Exception as e:
+        doc.add_paragraph(f"[Fehler beim Einfügen einer Grafik: {e}]")
+def generate_full_report():
+    doc = Document()
+    style = doc.styles['Normal']
+    style.font.name = 'Times New Roman'
+    style.font.size = Pt(10)
+    title = doc.add_heading('Portfolio Analyse & Risk Report', 0)
+    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.add_run(f"Analysezeitraum: {start_date.strftime('%d.%m.%Y')} - {end_date.strftime('%d.%m.%Y')}\n")
+    p.add_run(f"Erstellt am: {pd.Timestamp.now().strftime('%d.%m.%Y %H:%M')}")
+    doc.add_page_break()
+    return doc
+if st.session_state.get('run_analysis', False):
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("Bericht Exportieren")
+    if st.sidebar.button("📄 Word-Bericht generieren"):
+        with st.spinner("Erstelle Report..."):
+            final_doc = generate_full_report()
+            bio = io.BytesIO()
+            final_doc.save(bio)
+            st.sidebar.download_button(
+                label="📥 Jetzt herunterladen",
+                data=bio.getvalue(),
+                file_name="Portfolio_Analyse.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            )
 
 # --- CACHING FUNKTION ---
 @st.cache_data(show_spinner="Marktdaten werden geladen...")
