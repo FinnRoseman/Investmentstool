@@ -200,9 +200,11 @@ with st.expander("Portfolio-Zusammensetzung (Name & Gewichtung)"):
     </style>
     """, unsafe_allow_html=True)
     rows_html = ""
+    ticker_namen = {t: t for t in ticker_liste} # Erstellt eine Basis-Liste
     analysis_active = st.session_state.get("run_analysis", False)
     for t in ticker_liste:
         name = get_ticker_name(t) if analysis_active else t
+        ticker_namen[t] = name
         anteil_val = zuordnung.get(t, 0)
         anteil_pct = anteil_val * 100
         rows_html += f"""
