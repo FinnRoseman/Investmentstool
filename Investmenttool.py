@@ -29,9 +29,11 @@ def generate_full_report():
     style.font.size = Pt(10)
     title = doc.add_heading('Portfolio Analyse & Risk Report', 0)
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    analyse_start = daten.index[0].strftime('%d.%m.%Y')
+    analyse_ende = daten.index[-1].strftime('%d.%m.%Y')
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p.add_run(f"Analysezeitraum: {start_date.strftime('%d.%m.%Y')} - {end_date.strftime('%d.%m.%Y')}\n")
+    p.add_run(f"Analysezeitraum: {analyse_start} - {analyse_ende}\n")
     p.add_run(f"Erstellt am: {pd.Timestamp.now().strftime('%d.%m.%Y %H:%M')}")
     doc.add_page_break()
     doc.add_heading('1. Portfolio-Übersicht & Wertentwicklung', level=1)
@@ -211,7 +213,9 @@ def generate_full_report():
     doc.add_page_break()
     doc.add_heading('Haftungsausschluss (Disclaimer)', level=1)
     doc.add_paragraph("Diese Analyse wurde automatisiert erstellt. Historische Wertentwicklungen sind kein verlässlicher Indikator für zukünftige Ergebnisse. Alle Berechnungen basieren auf den vom Nutzer eingegebenen Daten und externen Marktdatenquellen (Yahoo Finance). Es wird keine Haftung für die Richtigkeit oder Vollständigkeit der Daten übernommen.")
-    return doc
+    target = io.BytesIO()
+    doc.save(target)
+    return target.getvalue()
 
 # --- CACHING FUNKTION ---
 @st.cache_data(show_spinner="Marktdaten werden geladen...")
@@ -1405,17 +1409,12 @@ st.markdown("---")
 st.caption(f"Datenzeitraum: {daten.index[0].strftime('%d.%m.%Y')} bis {daten.index[-1].strftime('%d.%m.%Y')}")
 
 # Download-Button Word
-if st.session_state.get('run_analysis', False):
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("Bericht Exportieren")
-    if st.sidebar.button("📄 Word-Bericht generieren"):
+if st.sidebar.button("📄 Analyse herunterladen"):
         with st.spinner("Erstelle Report..."):
-            final_doc = generate_full_report()
-            bio = io.BytesIO()
-            final_doc.save(bio)
+            report_data = generate_full_report()
             st.sidebar.download_button(
                 label="📥 Jetzt herunterladen",
-                data=bio.getvalue(),
+                data=report_data,
                 file_name="Portfolio_Analyse.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
