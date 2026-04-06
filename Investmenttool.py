@@ -377,13 +377,7 @@ for i, t in enumerate(verfuegbare):
             ticker_yield = last_year_divs_eur / daten[t].iloc[-1]
             port_current_yield += ticker_yield * gewicht
             price_at_start_eur = daten[t].iloc[0]
-            try:
-                start_date = daten.index[0]
-                price_orig_start = ticker_obj.history(start=start_date, end=start_date + pd.Timedelta(days=7))['Close'].iloc[0]
-            except:
-                price_orig_start = price_at_start_eur 
-            div_orig_ltm = last_year_divs_eur / fx_faktor if fx_faktor > 0 else last_year_divs_eur
-            ticker_yoc = div_orig_ltm / price_orig_start if price_orig_start > 0 else 0
+            ticker_yoc = last_year_divs_eur / price_at_start_eur if price_at_start_eur > 0 else 0
             port_yoc += ticker_yoc * gewicht
 avg_capital = (startkapital + endsumme) / 2
 st.subheader(f"Wertentwicklung bei {startkapital:,.0f} € Investment")
