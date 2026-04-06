@@ -7,3 +7,5 @@ requests
 statsmodels
 setuptools
 plotly
+python-docx
+kaleido==0.2.1
