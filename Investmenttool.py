@@ -63,7 +63,6 @@ def get_factor_loadings(portfolio_returns):
 # --- STREAMLIT PAGE CONFIGURATION ---
 st.set_page_config(page_title="Portfolio Analyzer", layout="wide")
 
-
 # --- 1. SETUP ---
 st.sidebar.header("Portfolio Zusammenstellung")
 if 'widget_eingabe' not in st.session_state:
