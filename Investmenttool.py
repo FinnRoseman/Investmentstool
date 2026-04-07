@@ -24,20 +24,21 @@ def get_ticker_name(t):
         return t
 def calculate_annual_rebalancing(returns_df, target_weights):
     """
-    Berechnet die Portfolio-Rendite mit jährlichem Rebalancing.
+    Berechnet die Portfolio-Rendite lückenlos mit jährlichem Rebalancing.
+    Berücksichtigt den Drift der Gewichte innerhalb des Jahres.
     """
-    years = returns_df.index.year.unique()
-    all_portfolio_returns = []
-    for year in years:
-        year_data = returns_df[returns_df.index.year == year]
+    weights = pd.DataFrame(index=returns_df.index, columns=returns_df.columns)
+    current_weights = np.array(target_weights)
+    portfolio_returns = pd.Series(index=returns_df.index, dtype=float)
+    for year, year_data in returns_df.groupby(returns_df.index.year):
         cumulative_growth = (1 + year_data).cumprod()
-        position_values = cumulative_growth * target_weights
-        total_portfolio_value = position_values.sum(axis=1)
-        year_portfolio_returns = total_portfolio_value.pct_change().fillna(
-            (year_data.iloc[0] * target_weights).sum()
-        )
-        all_portfolio_returns.append(year_portfolio_returns)
-    return pd.concat(all_portfolio_returns)
+        position_values = cumulative_growth * current_weights
+        total_value = position_values.sum(axis=1)
+        year_returns = total_value.pct_change()
+        first_day_idx = year_data.index[0]
+        year_returns.iloc[0] = (year_data.iloc[0] * current_weights).sum()        
+        portfolio_returns.update(year_returns)
+    return portfolio_returns
 def get_factor_loadings(portfolio_returns):
     try:
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_5_Factors_2x3_CSV.zip"
