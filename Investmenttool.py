@@ -279,18 +279,20 @@ for i, t in enumerate(verfuegbare):
 jahre = (daten.index[-1] - daten.index[0]).days / 365.25
 total_ret = (1 + port_rendite).prod() - 1
 cagr = (1 + total_ret)**(1/jahre) - 1
+bench_cagr = ((1 + bench_rendite).prod())**(1/jahre) - 1
+arith_mittel = port_rendite.mean() * 252
+bench_arith = bench_rendite.mean() * 252
 vola = port_rendite.std() * np.sqrt(252)
 max_drawdown = (((1 + port_rendite).cumprod() / (1 + port_rendite).cumprod().cummax()) - 1).min()
 tracking_error = diff_rendite.std() * np.sqrt(252)
 
-sharpe_ratio = (cagr - risk_free_rate) / vola
-sortino_ratio = (cagr - risk_free_rate) / downside_deviation if downside_deviation != 0 else np.nan
+sharpe_ratio = (arith_mittel - risk_free_rate) / vola
+sortino_ratio = (arith_mittel - risk_free_rate) / downside_deviation if downside_deviation != 0 else np.nan
 beta = port_rendite.cov(bench_rendite) / bench_rendite.var()
-treynor_ratio = (cagr - risk_free_rate) / beta if beta != 0 else np.nan
-bench_cagr = ((1 + bench_rendite).prod())**(1/jahre) - 1
-alpha = cagr - (risk_free_rate + beta * (bench_cagr - risk_free_rate))
-capm_erwartung_pa = risk_free_rate + beta * (bench_cagr - risk_free_rate)
-active_return = cagr - bench_cagr
+treynor_ratio = (arith_mittel - risk_free_rate) / beta if beta != 0 else np.nan
+capm_erwartung_pa = risk_free_rate + beta * (bench_arith - risk_free_rate)
+alpha = arith_mittel - capm_erwartung_pa
+active_return = arith_mittel - bench_arith
 information_ratio = active_return / tracking_error if tracking_error != 0 else np.nan
 upside_mask = bench_rendite > 0
 downside_mask = bench_rendite < 0
