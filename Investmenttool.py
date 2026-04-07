@@ -947,7 +947,7 @@ with tab_risk:
                 )
                 st.plotly_chart(fig_corr, use_container_width=True, config={'displayModeBar': False}, key="mx_plot")   
             else:
-                st.subheader("📈 Rollierende Korrelation", help="Zeigt die Korrelation des Portfolios zur Benchmark über ein 126-Tage-Fenster (6 Monate).")
+                st.subheader("🔁 Rollierende Korrelation", help="Zeigt die Korrelation des Portfolios zur Benchmark über ein 126-Tage-Fenster (6 Monate).")
                 window = 126
                 rolling_corr = port_rendite.rolling(window=window).corr(bench_rendite).dropna()
                 fig_roll = go.Figure()
