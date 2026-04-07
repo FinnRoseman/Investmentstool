@@ -41,7 +41,7 @@ def calculate_annual_rebalancing(returns_df, target_weights):
     return portfolio_returns
 def get_factor_loadings(portfolio_returns):
     try:
-        # --- 1. Daten laden (wie gehabt) ---
+        # --- 1. Daten laden ---
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_5_Factors_2x3_CSV.zip"
         response = requests.get(url, timeout=15)
         with zipfile.ZipFile(io.BytesIO(response.content)) as z:
@@ -49,19 +49,26 @@ def get_factor_loadings(portfolio_returns):
                 ff_data = pd.read_csv(f, skiprows=3, index_col=0)
         
         ff_data.columns = ff_data.columns.str.strip()
-        if " Annual Factors: " in ff_data.index:
-            stop_idx = ff_data.index.get_loc(" Annual Factors: ")
-            ff_data = ff_data.iloc[:stop_idx]
-            
+        
+        # --- FIX FÜR DEN DATUMSFEHLER ---
+        # Wir behalten nur Indizes, die wirklich 6 Ziffern haben (YYYYMM)
+        # Das filtert " Annual Factors" und reine Jahreszahlen wie "1964" zuverlässig aus.
+        ff_data.index = ff_data.index.astype(str).str.strip()
+        ff_data = ff_data[ff_data.index.str.len() == 6] 
+        
         ff_data = ff_data.apply(pd.to_numeric, errors='coerce').dropna()
-        ff_data.index = pd.to_datetime(ff_data.index.astype(str), format='%Y%m')
+        ff_data.index = pd.to_datetime(ff_data.index, format='%Y%m', errors='coerce')
+        ff_data = ff_data.dropna()
         ff_data = ff_data / 100
         
+        # --- Portfolio Daten aufbereiten ---
         port_returns = portfolio_returns.copy()
         if hasattr(port_returns.index, 'tz'):
             port_returns.index = port_returns.index.tz_localize(None)
             
         port_monthly = port_returns.resample('ME').apply(lambda x: (1 + x).prod() - 1)
+        
+        # Umwandlung für Merging (Perioden-Format ist sauberer)
         ff_data.index = ff_data.index.to_period('M')
         port_monthly.index = port_monthly.index.to_period('M')
         
@@ -76,38 +83,26 @@ def get_factor_loadings(portfolio_returns):
         loadings = model.params[1:]
         r_sq = model.rsquared
         p_values = model.pvalues[1:]
-        
-        # Signifikante Faktoren ermitteln
         sig_factors = p_values[p_values < 0.05].index.tolist()
         sig_text = ", ".join(sig_factors) if sig_factors else "Keine"
 
         # --- 3. Visualisierung ---
-        # Wir erstellen die Grafik und sorgen dafür, dass Platz für den Text ist
         plt.figure(figsize=(10, 6))
-        
-        # Balken plotten
         loadings.plot(kind='bar', color='skyblue', edgecolor='black', zorder=3)
         plt.axhline(0, color='black', linewidth=1, zorder=4)
         
-        # R-Quadrat oben in den Titel
         plt.title(f"Fama-French 5-Faktor Modell\nBestimmtheitsmaß (R²): {r_sq:.4f}", fontsize=14, pad=20)
+        plt.ylabel("Faktor Loading (Beta)")
         
-        plt.ylabel("Faktor Loading (Beta)", fontsize=12)
-        plt.xlabel("Faktoren", fontsize=12)
-        plt.grid(axis='y', linestyle='--', alpha=0.6, zorder=0)
-
-        # Die Signifikanz-Info schreiben wir jetzt direkt INS Diagramm am unteren Rand
-        # oder knapp unter die X-Achse mit 'xlabel' Ergänzung
+        # Signifikanz-Box
         info_str = f"Statistisch signifikant (p < 0.05): {sig_text}"
         plt.annotate(info_str, xy=(0.5, -0.2), xycoords='axes fraction', 
                      ha='center', fontsize=11, fontweight='bold',
                      bbox=dict(boxstyle="round,pad=0.5", fc="orange", alpha=0.1))
         
-        # Vergrößert den unteren Rand automatisch, damit der Text sichtbar ist
-        plt.tight_layout(rect=[0, 0.05, 1, 1]) 
+        plt.tight_layout(rect=[0, 0.05, 1, 1])
         plt.show()
 
-        # --- 4. Rückgabe ---
         return loadings
 
     except Exception as e:
