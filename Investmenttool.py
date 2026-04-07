@@ -41,7 +41,7 @@ def calculate_annual_rebalancing(returns_df, target_weights):
     return portfolio_returns
 def get_factor_loadings(portfolio_returns):
     try:
-        # --- DATENABRUF & BERECHNUNG (wie vorher) ---
+        # --- 1. Daten laden (wie gehabt) ---
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_5_Factors_2x3_CSV.zip"
         response = requests.get(url, timeout=15)
         with zipfile.ZipFile(io.BytesIO(response.content)) as z:
@@ -67,40 +67,39 @@ def get_factor_loadings(portfolio_returns):
         
         combined = pd.concat([port_monthly, ff_data], axis=1).dropna()
         
+        # --- 2. Berechnung ---
         Y = combined.iloc[:, 0] - combined['RF']
         factors = ['Mkt-RF', 'SMB', 'HML', 'RMW', 'CMA']
         X = sm.add_constant(combined[factors])
-        
-        # --- ANALYSE ---
         model = sm.OLS(Y, X).fit()
+        
         loadings = model.params[1:]
         r_sq = model.rsquared
         p_values = model.pvalues[1:]
-        
-        # Identifiziere signifikante Faktoren
         sig_factors = p_values[p_values < 0.05].index.tolist()
         sig_text = ", ".join(sig_factors) if sig_factors else "Keine"
 
-        # --- VISUALISIERUNG ---
-        plt.figure(figsize=(10, 6))
-        colors = ['red' if (p < 0.05) else 'skyblue' for p in p_values]
-        loadings.plot(kind='bar', color=colors)
-        
+        # --- 3. Visualisierung direkt hier ---
+        plt.figure(figsize=(10, 5))
+        loadings.plot(kind='bar', color='skyblue', edgecolor='black')
         plt.axhline(0, color='black', linewidth=0.8)
-        plt.title(f"Fama-French 5-Faktor Analyse\nBestimmtheitsmaß (R²): {r_sq:.4f}", fontsize=14)
-        plt.ylabel("Factor Loading (Beta)")
-        plt.xlabel("Faktoren")
-        plt.grid(axis='y', linestyle='--', alpha=0.7)
-
-        # Text unter der Grafik hinzufügen
-        plt.figtext(0.5, -0.05, f"Signifikante Faktoren (p < 0.05): {sig_text}", 
-                    ha="center", fontsize=12, bbox={"facecolor":"orange", "alpha":0.2, "pad":5})
+        
+        # Titel mit R^2
+        plt.title(f"Fama-French Faktor-Loadings\nBestimmtheitsmaß (R²): {r_sq:.4f}")
+        plt.ylabel("Beta")
+        
+        # Text unter der Grafik
+        plt.figtext(0.5, -0.1, f"Signifikante Werte (p < 0.05): {sig_text}", 
+                    ha="center", fontsize=10, bbox={"facecolor":"orange", "alpha":0.2})
         
         plt.tight_layout()
-        plt.show()
+        plt.show() # Das öffnet das Fenster mit der Grafik
+
+        # --- 4. Rückgabe der Koeffizienten (damit kein 'None' erscheint) ---
+        return loadings
 
     except Exception as e:
-        print(f"Fehler: {str(e)}")
+        return f"Fehler: {str(e)}"
 
 # --- STREAMLIT PAGE CONFIGURATION ---
 st.set_page_config(page_title="Portfolio Analyzer", layout="wide")
