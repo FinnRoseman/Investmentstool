@@ -72,11 +72,14 @@ def get_factor_loadings(portfolio_returns):
         X = combined[factors]
         X = sm.add_constant(X)
         model = sm.OLS(Y, X).fit()
+        monthly_alpha = model.params[0] 
+        annualized_alpha = (1 + monthly_alpha)**12 - 1
         return {
+            "annualized_alpha": annualized_alpha, 
             "loadings": model.params[1:],
             "r_squared": model.rsquared,
-            "p_values": model.pvalues[1:]
-        }   
+            "p_values": model.pvalues
+        } 
     except Exception as e:
         return f"Technischer Fehler in der Analyse: {str(e)}"
 
