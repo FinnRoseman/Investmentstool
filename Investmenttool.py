@@ -912,20 +912,14 @@ with tab_risk:
     g_col1, g_col2 = st.columns(2)
     
     with g_col1:
-        # Wir definieren ein Fragment. Alles darin lädt autark neu.
         @st.fragment
         def render_correlation_section():
-            # 1. Erstmal den Platzhalter für den Modus initialisieren (intern)
-            # Wir nutzen hier eine Variable, die wir erst unten durch den Radio-Button füllen
-            # Da Streamlit den Code von oben nach unten liest, definieren wir den Radio-Button
-            # unten, aber nutzen den Wert für die Anzeige oben. 
-            # Der Trick: Wir setzen den Radio-Button einfach ans Ende des Fragments.
+            # Initialisierung des Modus im Session State, falls nicht vorhanden
+            if "corr_mode_state" not in st.session_state:
+                st.session_state.corr_mode_state = "Matrix (Statisch)"
 
-            # Damit das funktioniert, ohne Fehler zu werfen, schauen wir erst, 
-            # was im Key gespeichert ist (Streamlit merkt sich das im Hintergrund)
-            current_mode = st.session_state.get("corr_toggle_button", "Matrix (Statisch)")
-
-            if current_mode == "Matrix (Statisch)":
+            # Anzeige basierend auf dem State
+            if st.session_state.corr_mode_state == "Matrix (Statisch)":
                 st.subheader("⛓️ Korrelationsmatrix", help="Zeigt, wie stark sich Assets gemeinsam bewegen.")
                 corr_matrix = renditen[verfuegbare].corr()
                 fig_corr = go.Figure(data=go.Heatmap(
@@ -955,13 +949,12 @@ with tab_risk:
                     xaxis=dict(fixedrange=True, side="bottom"),
                     yaxis=dict(fixedrange=True, autorange="reversed")
                 )
-                st.plotly_chart(fig_corr, use_container_width=True, config={'displayModeBar': False})
-
+                st.plotly_chart(fig_corr, use_container_width=True, config={'displayModeBar': False}, key="mx_plot")
+            
             else:
                 st.subheader("📈 Rollierende Korrelation", help="Zeigt die Korrelation des Portfolios zur Benchmark über ein 126-Tage-Fenster (6 Monate).")
                 window = 126
                 rolling_corr = port_rendite.rolling(window=window).corr(bench_rendite).dropna()
-                
                 fig_roll = go.Figure()
                 fig_roll.add_trace(go.Scatter(
                     x=rolling_corr.index,
@@ -981,19 +974,18 @@ with tab_risk:
                     height=450,
                     margin=dict(l=0, r=0, t=10, b=0)
                 )
-                st.plotly_chart(fig_roll, use_container_width=True, config={'displayModeBar': False})
+                st.plotly_chart(fig_roll, use_container_width=True, config={'displayModeBar': False}, key="roll_plot")
 
-            # --- Auswahl-Button JETZT UNTEN ---
-           st.write("") # Kleiner Abstandshalter
-            st.radio(
-                "Korrelations-Modus wählen:",
-                ["Matrix (Statisch)", "Zeitverlauf (Rollierend)"],
-                horizontal=True,
-                label_visibility="collapsed",
-                key="corr_toggle_button" 
-            )
+            # --- Buttons unter der Grafik ---
+            st.write("---") # Trennlinie für optische Abgrenzung
+            c1, c2 = st.columns(2)
+            if c1.button("📊 Matrix", use_container_width=True):
+                st.session_state.corr_mode_state = "Matrix (Statisch)"
+                st.rerun(scope="fragment")
+            if c2.button("📈 Rollierend", use_container_width=True):
+                st.session_state.corr_mode_state = "Zeitverlauf (Rollierend)"
+                st.rerun(scope="fragment")
 
-        # Jetzt führen wir das Fragment innerhalb der Spalte 1 aus
         render_correlation_section()
     with g_col2:
         st.subheader("🚨 Risiko-Verteilung", help="Gibt an, welche Position wie stark zur Gesamtvolatilität beiträgt")
