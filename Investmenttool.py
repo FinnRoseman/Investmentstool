@@ -41,107 +41,39 @@ def calculate_annual_rebalancing(returns_df, target_weights):
     return portfolio_returns
 def get_factor_loadings(portfolio_returns):
     try:
-        # 1. Daten-Download
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_5_Factors_2x3_CSV.zip"
         response = requests.get(url, timeout=15)
         if response.status_code != 200:
             return "Fehler: Webseite von Kenneth French nicht erreichbar."
-            
         with zipfile.ZipFile(io.BytesIO(response.content)) as z:
             with z.open(z.namelist()[0]) as f:
                 ff_data = pd.read_csv(f, skiprows=3, index_col=0)
-        
-        # 2. Datenbereinigung
         ff_data.columns = ff_data.columns.str.strip()
         if " Annual Factors: " in ff_data.index:
             stop_idx = ff_data.index.get_loc(" Annual Factors: ")
             ff_data = ff_data.iloc[:stop_idx]
-        
         ff_data = ff_data.apply(pd.to_numeric, errors='coerce')
         ff_data = ff_data.dropna()
-        
-        # Datums-Index sauber konvertieren
         ff_data.index = pd.to_datetime(ff_data.index.astype(str), format='%Y%m', errors='coerce')
         ff_data = ff_data.dropna()
         ff_data = ff_data / 100
-        
-        # --- FIX FÜR DUPLIKATE ---
-        # Wir stellen sicher, dass jeder Monat im FF-Datensatz nur EINMAL vorkommt
-        ff_data.index = ff_data.index.to_period('M')
-        ff_data = ff_data[~ff_data.index.duplicated(keep='last')]
-        
-        # 3. Portfolio-Renditen vorbereiten
         port_returns = portfolio_returns.copy()
         if hasattr(port_returns.index, 'tz'):
             port_returns.index = port_returns.index.tz_localize(None)
-            
-        # Monatliche Aggregation
         port_monthly = port_returns.resample('ME').apply(lambda x: (1 + x).prod() - 1)
-        port_monthly.index = port_monthly.index.to_period('M')
-        
-        # Sicherstellen, dass auch hier keine Duplikate durch das Resampling entstehen
-        port_monthly = port_monthly[~port_monthly.index.duplicated(keep='last')]
-        
-        # 4. Zusammenführen (Dank .to_period('M') jetzt absolut sicher gegen Reindexing-Errors)
+        ff_data.index = ff_data.index.strftime('%Y-%m')
+        port_monthly.index = port_monthly.index.strftime('%Y-%m')
+        ff_data = ff_data.groupby(level=0).last()
+        port_monthly = port_monthly.groupby(level=0).last()
         combined = pd.concat([port_monthly, ff_data], axis=1).dropna()
-        
         if len(combined) < 5:
             return f"Fehler: Zu wenig Datenüberschneidung ({len(combined)} Monate)."
-            
-        # Zurückkonvertieren für statsmodels
-        combined.index = combined.index.to_timestamp()
-            
-        # 5. Regression (OLS)
         Y = combined.iloc[:, 0] - combined['RF']
         factors = ['Mkt-RF', 'SMB', 'HML', 'RMW', 'CMA']
         X = combined[factors]
         X = sm.add_constant(X)
-        
         model = sm.OLS(Y, X).fit()
-        
-        # --- AB HIER VISUALISIERUNG (wie zuvor) ---
-        def get_stars(p):
-            if p < 0.01: return "***"
-            if p < 0.05: return "**"
-            if p < 0.1: return "*"
-            return ""
-
-        monthly_alpha = model.params['const']
-        annualized_alpha = (1 + monthly_alpha)**12 - 1
-        
-        # ... (dein restlicher Code oben bleibt gleich) ...
-
-        # --- VISUALISIERUNG TEIL ---
-        fig, ax = plt.subplots(figsize=(12, 7))
-        coeffs = [model.params[f] for f in factors]
-        p_stars = [get_stars(model.pvalues[f]) for f in factors]
-        colors = ['#2c3e50' if c >= 0 else '#e74c3c' for c in coeffs]
-        
-        bars = ax.bar(factors, coeffs, color=colors, alpha=0.85, edgecolor='black')
-        ax.axhline(0, color='black', linewidth=1, alpha=0.7)
-        
-        # Sternchen-Logik
-        for bar, star in zip(bars, p_stars):
-            height = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width()/2., height + (0.01 if height > 0 else -0.04),
-                    star, ha='center', va='bottom' if height > 0 else 'top', fontsize=14)
-
-        ax.set_title("Fama-French 5-Factor Analysis", fontsize=15, fontweight='bold')
-        
-        # Infobox im Chart
-        info_box = f"Annualized Alpha: {annualized_alpha:.2%}{get_stars(model.pvalues['const'])}\nR-Squared: {model.rsquared:.4f}"
-        ax.text(0.02, 0.95, info_box, transform=ax.transAxes, bbox=dict(facecolor='white', alpha=0.8), family='monospace')
-
-        plt.tight_layout()
-        
-        # WICHTIG: Explizites Zeichnen
-        plt.draw() 
-        plt.show(block=False) # block=False verhindert, dass das Programm pausiert
-        plt.pause(0.1)        # Gibt dem System Zeit, das Fenster zu rendern
-
-        # Die Rückgabe ans Hauptprogramm
-        return {"Alpha": f"{annualized_alpha:.2%}", "R2": f"{model.rsquared:.4f}"}
-
+        return model.params[1:]
     except Exception as e:
         return f"Technischer Fehler in der Analyse: {str(e)}"
 
