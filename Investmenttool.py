@@ -41,7 +41,7 @@ def calculate_annual_rebalancing(returns_df, target_weights):
     return portfolio_returns
 def get_factor_loadings(portfolio_returns):
     try:
-        # --- 1. Daten laden & Fehlerkorrektur (YYYYMM) ---
+        # 1. Daten laden & Fix für "1964" Fehler
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_5_Factors_2x3_CSV.zip"
         response = requests.get(url, timeout=15)
         with zipfile.ZipFile(io.BytesIO(response.content)) as z:
@@ -49,23 +49,21 @@ def get_factor_loadings(portfolio_returns):
                 ff_data = pd.read_csv(f, skiprows=3, index_col=0)
         
         ff_data.index = ff_data.index.astype(str).str.strip()
-        ff_data = ff_data[ff_data.index.str.len() == 6] # Nur Monate behalten
+        ff_data = ff_data[ff_data.index.str.len() == 6] 
         ff_data = ff_data.apply(pd.to_numeric, errors='coerce').dropna()
         ff_data.index = pd.to_datetime(ff_data.index, format='%Y%m')
         ff_data = ff_data / 100
         
-        # Portfolio-Daten angleichen
         port_returns = portfolio_returns.copy()
         if hasattr(port_returns.index, 'tz'):
             port_returns.index = port_returns.index.tz_localize(None)
         port_monthly = port_returns.resample('ME').apply(lambda x: (1 + x).prod() - 1)
         
-        # Mergen
         ff_data.index = ff_data.index.to_period('M')
         port_monthly.index = port_monthly.index.to_period('M')
         combined = pd.concat([port_monthly, ff_data], axis=1).dropna()
         
-        # --- 2. Regression & Statistik ---
+        # 2. Regression & Statistik
         Y = combined.iloc[:, 0] - combined['RF']
         factors = ['Mkt-RF', 'SMB', 'HML', 'RMW', 'CMA']
         X = sm.add_constant(combined[factors])
@@ -74,42 +72,41 @@ def get_factor_loadings(portfolio_returns):
         loadings = model.params[1:]
         r_sq = model.rsquared
         p_values = model.pvalues[1:]
-        sig_factors = p_values[p_values < 0.05].index.tolist()
-        sig_text = ", ".join(sig_factors) if sig_factors else "Keine"
+        
+        # Sternchen-Logik: *** p<0.01, ** p<0.05, * p<0.1
+        def get_stars(p):
+            if p < 0.01: return "***"
+            if p < 0.05: return "**"
+            if p < 0.1: return "*"
+            return ""
 
-        # --- 3. Interaktive Visualisierung mit Plotly ---
+        labels_with_stars = [f"{idx} {get_stars(p)}" for idx, p in p_values.items()]
+
+        # 3. Interaktive Visualisierung
         fig = go.Figure()
 
         fig.add_trace(go.Bar(
-            x=loadings.index,
+            x=labels_with_stars, # Faktoren mit Sternchen an der X-Achse
             y=loadings.values,
-            marker_color='skyblue',
-            name='Factor Loading',
-            hovertemplate='Faktor: %{x}<br>Beta: %{y:.4f}<extra></extra>' # Wert beim Drüberfahren
+            marker_color=['rgba(0, 123, 255, 0.8)' if p < 0.05 else 'rgba(200, 200, 200, 0.5)' for p in p_values],
+            hovertemplate='<b>Faktor:</b> %{x}<br><b>Beta:</b> %{y:.4f}<br><b>p-Wert:</b> %{customdata:.4f}<extra></extra>',
+            customdata=p_values.values
         ))
 
-        # Layout mit R² und Signifikanz unten als "Annotation"
         fig.update_layout(
-            title="Fama-French 5-Faktor Analyse (Interaktiv)",
+            title=f"Fama-French Analyse | Bestimmtheitsmaß (R²): {r_sq:.4f}",
+            title_x=0.5,
             yaxis_title="Beta (Loading)",
+            xaxis_title="Faktoren (* p<0.1, ** p<0.05, *** p<0.01)",
             template="plotly_white",
-            annotations=[
-                dict(
-                    x=0.5, y=-0.25, # Position unter der Grafik
-                    showarrow=False,
-                    text=f"Bestimmtheitsmaß (R²): {r_sq:.4f}  |  Signifikant (p < 0.05): {sig_text}",
-                    xref="paper", yref="paper",
-                    font=dict(size=12, color="black"),
-                    bgcolor="rgba(255, 165, 0, 0.1)",
-                    bordercolor="orange",
-                    borderwidth=1
-                )
-            ],
-            margin=dict(b=100) # Platz unten für den Text schaffen
+            annotations=[dict(
+                x=0, y=-0.2, xref="paper", yref="paper",
+                text=f"<b>Modell-Güte (R²):</b> {r_sq:.4f}<br>Signifikante Faktoren sind farblich hervorgehoben.",
+                showarrow=False, align="left"
+            )]
         )
 
         fig.show()
-
         return loadings
 
     except Exception as e:
