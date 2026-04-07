@@ -109,26 +109,37 @@ def get_factor_loadings(portfolio_returns):
         monthly_alpha = model.params['const']
         annualized_alpha = (1 + monthly_alpha)**12 - 1
         
+        # ... (dein restlicher Code oben bleibt gleich) ...
+
+        # --- VISUALISIERUNG TEIL ---
         fig, ax = plt.subplots(figsize=(12, 7))
         coeffs = [model.params[f] for f in factors]
         p_stars = [get_stars(model.pvalues[f]) for f in factors]
         colors = ['#2c3e50' if c >= 0 else '#e74c3c' for c in coeffs]
         
-        bars = ax.bar(factors, coeffs, color=colors, alpha=0.85, edgecolor='black', linewidth=0.5)
+        bars = ax.bar(factors, coeffs, color=colors, alpha=0.85, edgecolor='black')
         ax.axhline(0, color='black', linewidth=1, alpha=0.7)
         
+        # Sternchen-Logik
         for bar, star in zip(bars, p_stars):
             height = bar.get_height()
             ax.text(bar.get_x() + bar.get_width()/2., height + (0.01 if height > 0 else -0.04),
                     star, ha='center', va='bottom' if height > 0 else 'top', fontsize=14)
 
         ax.set_title("Fama-French 5-Factor Analysis", fontsize=15, fontweight='bold')
+        
+        # Infobox im Chart
         info_box = f"Annualized Alpha: {annualized_alpha:.2%}{get_stars(model.pvalues['const'])}\nR-Squared: {model.rsquared:.4f}"
         ax.text(0.02, 0.95, info_box, transform=ax.transAxes, bbox=dict(facecolor='white', alpha=0.8), family='monospace')
 
         plt.tight_layout()
-        plt.show()
+        
+        # WICHTIG: Explizites Zeichnen
+        plt.draw() 
+        plt.show(block=False) # block=False verhindert, dass das Programm pausiert
+        plt.pause(0.1)        # Gibt dem System Zeit, das Fenster zu rendern
 
+        # Die Rückgabe ans Hauptprogramm
         return {"Alpha": f"{annualized_alpha:.2%}", "R2": f"{model.rsquared:.4f}"}
 
     except Exception as e:
