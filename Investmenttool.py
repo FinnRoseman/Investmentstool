@@ -1168,7 +1168,7 @@ with tab_allg:
                     orientation='h',
                     marker_color=colors_fac, 
                     hovertemplate="Faktor: <b>%{y}</b><br>Beta: <b>%{x:.3f}</b><extra></extra>",
-                    width=0.6
+                    width=0.6,
                     text=bar_labels,        
                     textposition='outside',   
                     cliponaxis=False
