@@ -1197,7 +1197,7 @@ with tab_allg:
                     )
                 )
                 st.plotly_chart(fig_fac, use_container_width=True, config={'displayModeBar': False})
-                st.markdown(f"**Alpha (annualisiert): {alpha_val:.2%} {get_stars(alpha_p)}** | **R²: {r_sq:.4f}**")
+                st.markdown(f"**Alpha:** {alpha_val:.2%} {get_stars(alpha_p)} | **R²:** {r_sq:.4f}")
                 st.caption("p-Wert: * < 0.1, ** < 0.05, *** < 0.01")            
             else:
                 st.info(f"💡 {result}")          
