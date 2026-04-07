@@ -39,7 +39,7 @@ def calculate_annual_rebalancing(returns_df, target_weights):
         year_returns.iloc[0] = (year_data.iloc[0] * current_weights).sum()        
         portfolio_returns.update(year_returns)
     return portfolio_returns
-def plot_fama_french_analysis(portfolio_returns):
+def get_factor_loadings(portfolio_returns):
     try:
         # --- DATENABRUF & BERECHNUNG (wie vorher) ---
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_5_Factors_2x3_CSV.zip"
