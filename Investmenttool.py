@@ -39,73 +39,68 @@ def calculate_annual_rebalancing(returns_df, target_weights):
         year_returns.iloc[0] = (year_data.iloc[0] * current_weights).sum()        
         portfolio_returns.update(year_returns)
     return portfolio_returns
-def get_factor_loadings(portfolio_returns):
+def plot_fama_french_analysis(portfolio_returns):
     try:
+        # --- DATENABRUF & BERECHNUNG (wie vorher) ---
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_5_Factors_2x3_CSV.zip"
         response = requests.get(url, timeout=15)
-        if response.status_code != 200:
-            return "Fehler: Webseite von Kenneth French nicht erreichbar."
-            
         with zipfile.ZipFile(io.BytesIO(response.content)) as z:
             with z.open(z.namelist()[0]) as f:
                 ff_data = pd.read_csv(f, skiprows=3, index_col=0)
         
         ff_data.columns = ff_data.columns.str.strip()
-        
         if " Annual Factors: " in ff_data.index:
             stop_idx = ff_data.index.get_loc(" Annual Factors: ")
             ff_data = ff_data.iloc[:stop_idx]
             
-        ff_data = ff_data.apply(pd.to_numeric, errors='coerce')
-        ff_data = ff_data.dropna()
-        ff_data.index = pd.to_datetime(ff_data.index.astype(str), format='%Y%m', errors='coerce')
-        ff_data = ff_data.dropna()
+        ff_data = ff_data.apply(pd.to_numeric, errors='coerce').dropna()
+        ff_data.index = pd.to_datetime(ff_data.index.astype(str), format='%Y%m')
         ff_data = ff_data / 100
         
         port_returns = portfolio_returns.copy()
         if hasattr(port_returns.index, 'tz'):
             port_returns.index = port_returns.index.tz_localize(None)
             
-        # Monatliche Renditen berechnen
         port_monthly = port_returns.resample('ME').apply(lambda x: (1 + x).prod() - 1)
-        
-        ff_data.index = ff_data.index.strftime('%Y-%m')
-        port_monthly.index = port_monthly.index.strftime('%Y-%m')
-        
-        ff_data = ff_data.groupby(level=0).last()
-        port_monthly = port_monthly.groupby(level=0).last()
+        ff_data.index = ff_data.index.to_period('M')
+        port_monthly.index = port_monthly.index.to_period('M')
         
         combined = pd.concat([port_monthly, ff_data], axis=1).dropna()
         
-        if len(combined) < 5:
-            return f"Fehler: Zu wenig Datenüberschneidung ({len(combined)} Monate)."
-            
         Y = combined.iloc[:, 0] - combined['RF']
         factors = ['Mkt-RF', 'SMB', 'HML', 'RMW', 'CMA']
-        X = combined[factors]
-        X = sm.add_constant(X)
+        X = sm.add_constant(combined[factors])
         
-        # Regression fitten
+        # --- ANALYSE ---
         model = sm.OLS(Y, X).fit()
+        loadings = model.params[1:]
+        r_sq = model.rsquared
+        p_values = model.pvalues[1:]
         
-        # Ergebnisse extrahieren
-        loadings = model.params[1:]  # Ohne Konstante
-        r_squared = model.rsquared
-        p_values = model.pvalues[1:] # Ohne Konstante
+        # Identifiziere signifikante Faktoren
+        sig_factors = p_values[p_values < 0.05].index.tolist()
+        sig_text = ", ".join(sig_factors) if sig_factors else "Keine"
+
+        # --- VISUALISIERUNG ---
+        plt.figure(figsize=(10, 6))
+        colors = ['red' if (p < 0.05) else 'skyblue' for p in p_values]
+        loadings.plot(kind='bar', color=colors)
         
-        # Signifikante Faktoren identifizieren (p < 0.05)
-        significant_factors = p_values[p_values < 0.05].index.tolist()
+        plt.axhline(0, color='black', linewidth=0.8)
+        plt.title(f"Fama-French 5-Faktor Analyse\nBestimmtheitsmaß (R²): {r_sq:.4f}", fontsize=14)
+        plt.ylabel("Factor Loading (Beta)")
+        plt.xlabel("Faktoren")
+        plt.grid(axis='y', linestyle='--', alpha=0.7)
+
+        # Text unter der Grafik hinzufügen
+        plt.figtext(0.5, -0.05, f"Signifikante Faktoren (p < 0.05): {sig_text}", 
+                    ha="center", fontsize=12, bbox={"facecolor":"orange", "alpha":0.2, "pad":5})
         
-        # Rückgabe als strukturiertes Dictionary für die Visualisierung
-        return {
-            "loadings": loadings,
-            "r_squared": r_squared,
-            "significant_factors": significant_factors,
-            "p_values": p_values
-        }
-        
+        plt.tight_layout()
+        plt.show()
+
     except Exception as e:
-        return f"Technischer Fehler in der Analyse: {str(e)}"
+        print(f"Fehler: {str(e)}")
 
 # --- STREAMLIT PAGE CONFIGURATION ---
 st.set_page_config(page_title="Portfolio Analyzer", layout="wide")
