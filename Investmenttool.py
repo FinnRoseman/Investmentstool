@@ -909,16 +909,12 @@ with tab_sim:
 
 # Korrelationsmatrix und Risikoverteilung
 with tab_risk:
-    g_col1, g_col2 = st.columns(2)
-    
+    g_col1, g_col2 = st.columns(2)   
     with g_col1:
         @st.fragment
         def render_correlation_section():
-            # Initialisierung des Modus im Session State, falls nicht vorhanden
             if "corr_mode_state" not in st.session_state:
                 st.session_state.corr_mode_state = "Matrix (Statisch)"
-
-            # Anzeige basierend auf dem State
             if st.session_state.corr_mode_state == "Matrix (Statisch)":
                 st.subheader("⛓️ Korrelationsmatrix", help="Zeigt, wie stark sich Assets gemeinsam bewegen.")
                 corr_matrix = renditen[verfuegbare].corr()
@@ -949,8 +945,7 @@ with tab_risk:
                     xaxis=dict(fixedrange=True, side="bottom"),
                     yaxis=dict(fixedrange=True, autorange="reversed")
                 )
-                st.plotly_chart(fig_corr, use_container_width=True, config={'displayModeBar': False}, key="mx_plot")
-            
+                st.plotly_chart(fig_corr, use_container_width=True, config={'displayModeBar': False}, key="mx_plot")   
             else:
                 st.subheader("📈 Rollierende Korrelation", help="Zeigt die Korrelation des Portfolios zur Benchmark über ein 126-Tage-Fenster (6 Monate).")
                 window = 126
@@ -975,9 +970,6 @@ with tab_risk:
                     margin=dict(l=0, r=0, t=10, b=0)
                 )
                 st.plotly_chart(fig_roll, use_container_width=True, config={'displayModeBar': False}, key="roll_plot")
-
-            # --- Buttons unter der Grafik ---
-            st.write("---") # Trennlinie für optische Abgrenzung
             c1, c2 = st.columns(2)
             if c1.button("📊 Matrix", use_container_width=True):
                 st.session_state.corr_mode_state = "Matrix (Statisch)"
@@ -985,7 +977,6 @@ with tab_risk:
             if c2.button("📈 Rollierend", use_container_width=True):
                 st.session_state.corr_mode_state = "Zeitverlauf (Rollierend)"
                 st.rerun(scope="fragment")
-
         render_correlation_section()
     with g_col2:
         st.subheader("🚨 Risiko-Verteilung", help="Gibt an, welche Position wie stark zur Gesamtvolatilität beiträgt")
