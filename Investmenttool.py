@@ -25,19 +25,21 @@ def get_ticker_name(t):
 def calculate_annual_rebalancing(returns_df, target_weights):
     """
     Berechnet die Portfolio-Rendite lückenlos mit jährlichem Rebalancing.
-    Berücksichtigt den Drift der Gewichte innerhalb des Jahres.
+    Verhindert Datenverlust an Jahresübergängen und berücksichtigt Weight Drift.
     """
-    weights = pd.DataFrame(index=returns_df.index, columns=returns_df.columns)
-    current_weights = np.array(target_weights)
+    n_assets = len(target_weights)
+    target_weights = np.array(target_weights)
     portfolio_returns = pd.Series(index=returns_df.index, dtype=float)
-    for year, year_data in returns_df.groupby(returns_df.index.year):
-        cumulative_growth = (1 + year_data).cumprod()
-        position_values = cumulative_growth * current_weights
-        total_value = position_values.sum(axis=1)
-        year_returns = total_value.pct_change()
-        first_day_idx = year_data.index[0]
-        year_returns.iloc[0] = (year_data.iloc[0] * current_weights).sum()        
-        portfolio_returns.update(year_returns)
+    current_weights = target_weights.copy()
+    for i in range(len(returns_df)):
+        daily_asset_returns = returns_df.iloc[i].values
+        day_return = np.sum(current_weights * daily_asset_returns)
+        portfolio_returns.iloc[i] = day_return
+        drifted_weights = current_weights * (1 + daily_asset_returns)
+        current_weights = drifted_weights / np.sum(drifted_weights)
+        if i + 1 < len(returns_df):
+            if returns_df.index[i+1].year > returns_df.index[i].year:
+                current_weights = target_weights.copy()              
     return portfolio_returns
 def get_factor_loadings(portfolio_returns):
     try:
