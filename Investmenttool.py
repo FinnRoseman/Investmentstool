@@ -911,8 +911,8 @@ with tab_sim:
 with tab_risk:
     g_col1, g_col2 = st.columns(2)
     with g_col1:
-    @st.fragment
-    def render_correlation_with_toggle():
+        @st.fragment
+        def render_correlation_with_toggle():
         # 1. Initialisiere den Modus
         if 'corr_mode' not in st.session_state:
             st.session_state.corr_mode = "Matrix (Statisch)"
