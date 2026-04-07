@@ -41,40 +41,31 @@ def calculate_annual_rebalancing(returns_df, target_weights):
     return portfolio_returns
 def get_factor_loadings(portfolio_returns):
     try:
-        # --- 1. Daten laden ---
+        # --- 1. Daten laden & Fehlerkorrektur (YYYYMM) ---
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_5_Factors_2x3_CSV.zip"
         response = requests.get(url, timeout=15)
         with zipfile.ZipFile(io.BytesIO(response.content)) as z:
             with z.open(z.namelist()[0]) as f:
                 ff_data = pd.read_csv(f, skiprows=3, index_col=0)
         
-        ff_data.columns = ff_data.columns.str.strip()
-        
-        # --- FIX FÜR DEN DATUMSFEHLER ---
-        # Wir behalten nur Indizes, die wirklich 6 Ziffern haben (YYYYMM)
-        # Das filtert " Annual Factors" und reine Jahreszahlen wie "1964" zuverlässig aus.
         ff_data.index = ff_data.index.astype(str).str.strip()
-        ff_data = ff_data[ff_data.index.str.len() == 6] 
-        
+        ff_data = ff_data[ff_data.index.str.len() == 6] # Nur Monate behalten
         ff_data = ff_data.apply(pd.to_numeric, errors='coerce').dropna()
-        ff_data.index = pd.to_datetime(ff_data.index, format='%Y%m', errors='coerce')
-        ff_data = ff_data.dropna()
+        ff_data.index = pd.to_datetime(ff_data.index, format='%Y%m')
         ff_data = ff_data / 100
         
-        # --- Portfolio Daten aufbereiten ---
+        # Portfolio-Daten angleichen
         port_returns = portfolio_returns.copy()
         if hasattr(port_returns.index, 'tz'):
             port_returns.index = port_returns.index.tz_localize(None)
-            
         port_monthly = port_returns.resample('ME').apply(lambda x: (1 + x).prod() - 1)
         
-        # Umwandlung für Merging (Perioden-Format ist sauberer)
+        # Mergen
         ff_data.index = ff_data.index.to_period('M')
         port_monthly.index = port_monthly.index.to_period('M')
-        
         combined = pd.concat([port_monthly, ff_data], axis=1).dropna()
         
-        # --- 2. Berechnung ---
+        # --- 2. Regression & Statistik ---
         Y = combined.iloc[:, 0] - combined['RF']
         factors = ['Mkt-RF', 'SMB', 'HML', 'RMW', 'CMA']
         X = sm.add_constant(combined[factors])
@@ -86,22 +77,38 @@ def get_factor_loadings(portfolio_returns):
         sig_factors = p_values[p_values < 0.05].index.tolist()
         sig_text = ", ".join(sig_factors) if sig_factors else "Keine"
 
-        # --- 3. Visualisierung ---
-        plt.figure(figsize=(10, 6))
-        loadings.plot(kind='bar', color='skyblue', edgecolor='black', zorder=3)
-        plt.axhline(0, color='black', linewidth=1, zorder=4)
-        
-        plt.title(f"Fama-French 5-Faktor Modell\nBestimmtheitsmaß (R²): {r_sq:.4f}", fontsize=14, pad=20)
-        plt.ylabel("Faktor Loading (Beta)")
-        
-        # Signifikanz-Box
-        info_str = f"Statistisch signifikant (p < 0.05): {sig_text}"
-        plt.annotate(info_str, xy=(0.5, -0.2), xycoords='axes fraction', 
-                     ha='center', fontsize=11, fontweight='bold',
-                     bbox=dict(boxstyle="round,pad=0.5", fc="orange", alpha=0.1))
-        
-        plt.tight_layout(rect=[0, 0.05, 1, 1])
-        plt.show()
+        # --- 3. Interaktive Visualisierung mit Plotly ---
+        fig = go.Figure()
+
+        fig.add_trace(go.Bar(
+            x=loadings.index,
+            y=loadings.values,
+            marker_color='skyblue',
+            name='Factor Loading',
+            hovertemplate='Faktor: %{x}<br>Beta: %{y:.4f}<extra></extra>' # Wert beim Drüberfahren
+        ))
+
+        # Layout mit R² und Signifikanz unten als "Annotation"
+        fig.update_layout(
+            title="Fama-French 5-Faktor Analyse (Interaktiv)",
+            yaxis_title="Beta (Loading)",
+            template="plotly_white",
+            annotations=[
+                dict(
+                    x=0.5, y=-0.25, # Position unter der Grafik
+                    showarrow=False,
+                    text=f"Bestimmtheitsmaß (R²): {r_sq:.4f}  |  Signifikant (p < 0.05): {sig_text}",
+                    xref="paper", yref="paper",
+                    font=dict(size=12, color="black"),
+                    bgcolor="rgba(255, 165, 0, 0.1)",
+                    bordercolor="orange",
+                    borderwidth=1
+                )
+            ],
+            margin=dict(b=100) # Platz unten für den Text schaffen
+        )
+
+        fig.show()
 
         return loadings
 
