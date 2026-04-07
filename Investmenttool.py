@@ -1180,7 +1180,7 @@ with tab_allg:
                     margin=dict(l=0, r=20, t=10, b=10),
                     height=350, 
                     xaxis=dict(
-                        title="Beta-Wert", 
+                        title="Factor-Betas", 
                         gridcolor='rgba(255,255,255,0.05)', 
                         zerolinecolor='white',
                         zerolinewidth=1
