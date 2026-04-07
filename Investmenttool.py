@@ -160,7 +160,15 @@ go_button = st.sidebar.button("Go", use_container_width=True)
 if go_button:
     st.session_state.run_analysis = True
 
-risk_free_rate = 0.02
+def get_rf_rate():
+    try:
+        ticker = yf.Ticker("^ESTRON")
+        current_val = ticker.history(period="1d")['Close'].iloc[-1]
+        return current_val / 100
+    except:
+        return 0.035
+        
+risk_free_rate = get_rf_rate()
 
 # --- 2. DESIGN ---
 st.sidebar.header("Benchmarkauswahl")
