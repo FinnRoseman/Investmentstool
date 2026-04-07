@@ -1159,10 +1159,8 @@ with tab_allg:
                     'RMW': 'Quality I: Profitability',
                     'CMA': 'Quality II: Investmentbehavior'
                 }          
-                factor_names_with_stars = [
-                    f"{display_map[idx]} {get_stars(p_values[idx])}" 
-                    for idx in loadings.index
-                ]
+                factor_names_with_stars = [display_map[idx] for idx in loadings.index]
+                bar_labels = [f"{val:.3f} {get_stars(p_values[idx])}" for idx, val in loadings.items()]
                 colors_fac = ['#4A90E2', '#27AE60', '#F2994A', '#9B51E0', '#D488FF']         
                 fig_fac = go.Figure(go.Bar(
                     x=loadings.values,
@@ -1171,6 +1169,9 @@ with tab_allg:
                     marker_color=colors_fac, 
                     hovertemplate="Faktor: <b>%{y}</b><br>Beta: <b>%{x:.3f}</b><extra></extra>",
                     width=0.6
+                    text=bar_labels,        
+                    textposition='outside',   
+                    cliponaxis=False
                 ))             
                 fig_fac.update_layout(
                     template='plotly_dark',
