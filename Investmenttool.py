@@ -280,9 +280,9 @@ anteile = [anteile_orig[ticker_liste.index(t)] for t in verfuegbare]
 anteile = [a/sum(anteile) for a in anteile]
 
 if not rebalance_active:
-    port_rendite = (renditen[verfuegbare] * weights).sum(axis=1)
+    port_rendite = (renditen[verfuegbare] * anteile).sum(axis=1)
 else:
-    port_rendite = calculate_annual_rebalancing(renditen[verfuegbare], weights)
+    port_rendite = calculate_annual_rebalancing(renditen[verfuegbare], anteile)
 bench_rendite = renditen.loc[port_rendite.index, benchmark]
 diff_rendite = port_rendite - bench_rendite
 rf_daily = (1 + risk_free_rate)**(1/252) - 1
