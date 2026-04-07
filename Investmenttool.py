@@ -793,7 +793,7 @@ with tab_allg:
         )
         st.plotly_chart(fig_div, use_container_width=True, config={'displayModeBar': False})
         total_div = df_cal['Ausschüttung'].sum()
-        st.caption(f"💸 Erwartete Gesamt-Dividende (p.a.): **{total_div:.2f} €**")
+        st.caption(f"💸 Summe: **{total_div:.2f} €**")
     
     else:
         st.info("Keine historischen Dividenden im gewählten Zeitraum gefunden.")
