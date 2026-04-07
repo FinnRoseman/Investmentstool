@@ -44,57 +44,39 @@ def get_factor_loadings(portfolio_returns):
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_5_Factors_2x3_CSV.zip"
         response = requests.get(url, timeout=15)
         if response.status_code != 200:
-            return "Fehler: Webseite von Kenneth French nicht erreichbar."
-            
+            return "Fehler: Webseite von Kenneth French nicht erreichbar."           
         with zipfile.ZipFile(io.BytesIO(response.content)) as z:
             with z.open(z.namelist()[0]) as f:
-                ff_data = pd.read_csv(f, skiprows=3, index_col=0)
-        
+                ff_data = pd.read_csv(f, skiprows=3, index_col=0)   
         ff_data.columns = ff_data.columns.str.strip()
-        
-        # Filter für monatliche Daten (Fix für den '1964' Fehler)
         ff_data.index = ff_data.index.astype(str).str.strip()
-        ff_data = ff_data[ff_data.index.str.len() == 6]
-        
+        ff_data = ff_data[ff_data.index.str.len() == 6]       
         ff_data = ff_data.apply(pd.to_numeric, errors='coerce')
         ff_data = ff_data.dropna()
         ff_data.index = pd.to_datetime(ff_data.index, format='%Y%m', errors='coerce')
         ff_data = ff_data.dropna()
-        ff_data = ff_data / 100
-        
+        ff_data = ff_data / 100    
         port_returns = portfolio_returns.copy()
         if hasattr(port_returns.index, 'tz'):
-            port_returns.index = port_returns.index.tz_localize(None)
-            
+            port_returns.index = port_returns.index.tz_localize(None)      
         port_monthly = port_returns.resample('ME').apply(lambda x: (1 + x).prod() - 1)
-        
-        # Angleichen der Indizes für den Merge
         ff_data.index = ff_data.index.strftime('%Y-%m')
-        port_monthly.index = port_monthly.index.strftime('%Y-%m')
-        
+        port_monthly.index = port_monthly.index.strftime('%Y-%m')   
         ff_data = ff_data.groupby(level=0).last()
-        port_monthly = port_monthly.groupby(level=0).last()
-        
-        combined = pd.concat([port_monthly, ff_data], axis=1).dropna()
-        
+        port_monthly = port_monthly.groupby(level=0).last() 
+        combined = pd.concat([port_monthly, ff_data], axis=1).dropna()    
         if len(combined) < 5:
-            return f"Fehler: Zu wenig Datenüberschneidung ({len(combined)} Monate)."
-            
+            return f"Fehler: Zu wenig Datenüberschneidung ({len(combined)} Monate)."          
         Y = combined.iloc[:, 0] - combined['RF']
         factors = ['Mkt-RF', 'SMB', 'HML', 'RMW', 'CMA']
         X = combined[factors]
         X = sm.add_constant(X)
-        
-        # Regression berechnen
         model = sm.OLS(Y, X).fit()
-        
-        # WICHTIG: Rückgabe als Dictionary, damit R² und p-Werte für die Anzeige verfügbar sind
         return {
             "loadings": model.params[1:],
             "r_squared": model.rsquared,
             "p_values": model.pvalues[1:]
-        }
-        
+        }   
     except Exception as e:
         return f"Technischer Fehler in der Analyse: {str(e)}"
 
@@ -1159,48 +1141,37 @@ with tab_allg:
     st.subheader("🧬 Faktorenanalyse", help="Diese Analyse zeigt, welche wissenschaftlichen Faktoren (Betas) dein Portfolio antreiben.")
     try:
         with st.spinner("Berechne Faktor-Exposures..."):
-            # 'factors' ist jetzt das Dictionary aus der neuen Funktion
-            result = get_factor_loadings(port_rendite)
-            
+            result = get_factor_loadings(port_rendite)          
             if isinstance(result, dict):
                 loadings = result['loadings']
                 factors = loadings
                 p_values = result['p_values']
                 r_sq = result['r_squared']
-
-                # Hilfsfunktion für Sternchen basierend auf p-Werten
                 def get_stars(p):
                     if p < 0.01: return "***"
                     if p < 0.05: return "**"
                     if p < 0.1: return "*"
                     return ""
-
-                # Faktor-Namen mit Sternchen ergänzen
-                # Wir mappen die internen Namen (Mkt-RF, SMB...) auf deine Anzeigenamen
                 display_map = {
                     'Mkt-RF': 'Market',
                     'SMB': 'Size',
                     'HML': 'Value',
                     'RMW': 'Quality I: Profitability',
                     'CMA': 'Quality II: Investmentbehavior'
-                }
-                
+                }          
                 factor_names_with_stars = [
                     f"{display_map[idx]} {get_stars(p_values[idx])}" 
                     for idx in loadings.index
                 ]
-
-                colors_fac = ['#4A90E2', '#27AE60', '#F2994A', '#9B51E0', '#D488FF']
-                
+                colors_fac = ['#4A90E2', '#27AE60', '#F2994A', '#9B51E0', '#D488FF']         
                 fig_fac = go.Figure(go.Bar(
                     x=loadings.values,
-                    y=factor_names_with_stars, # Hier die Namen mit Sternchen
+                    y=factor_names_with_stars, 
                     orientation='h',
                     marker_color=colors_fac, 
                     hovertemplate="Faktor: <b>%{y}</b><br>Beta: <b>%{x:.3f}</b><extra></extra>",
                     width=0.6
-                ))
-                
+                ))             
                 fig_fac.update_layout(
                     template='plotly_dark',
                     plot_bgcolor='rgba(0,0,0,0)',
@@ -1218,18 +1189,11 @@ with tab_allg:
                         fixedrange=True
                     )
                 )
-                
-                # Grafik anzeigen
                 st.plotly_chart(fig_fac, use_container_width=True, config={'displayModeBar': False})
-                
-                # R^2 und Legende direkt unter der Grafik
-                st.markdown(f"**Bestimmtheitsmaß (R²): {r_sq:.4f}**")
-                st.caption("Signifikanz-Level: * p<0.1, ** p<0.05, *** p<0.01")
-                
+                st.markdown(f"R²"): {r_sq:.4f}**")
+                st.caption("p-Wert: * < 0.1, ** < 0.05, *** < 0.01")            
             else:
-                # Falls die Funktion eine Fehlermeldung als String zurückgibt
-                st.info(f"💡 {result}")
-                
+                st.info(f"💡 {result}")          
     except Exception as e:
         st.error(f"Faktoranalyse konnte nicht geladen werden: {e}")
 
