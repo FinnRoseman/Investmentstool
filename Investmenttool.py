@@ -41,76 +41,41 @@ def calculate_annual_rebalancing(returns_df, target_weights):
     return portfolio_returns
 def get_factor_loadings(portfolio_returns):
     try:
-        # 1. Daten laden & Fix für "1964" Fehler
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_5_Factors_2x3_CSV.zip"
         response = requests.get(url, timeout=15)
+        if response.status_code != 200:
+            return "Fehler: Webseite von Kenneth French nicht erreichbar."
         with zipfile.ZipFile(io.BytesIO(response.content)) as z:
             with z.open(z.namelist()[0]) as f:
                 ff_data = pd.read_csv(f, skiprows=3, index_col=0)
-        
-        ff_data.index = ff_data.index.astype(str).str.strip()
-        ff_data = ff_data[ff_data.index.str.len() == 6] 
-        ff_data = ff_data.apply(pd.to_numeric, errors='coerce').dropna()
-        ff_data.index = pd.to_datetime(ff_data.index, format='%Y%m')
+        ff_data.columns = ff_data.columns.str.strip()
+        if " Annual Factors: " in ff_data.index:
+            stop_idx = ff_data.index.get_loc(" Annual Factors: ")
+            ff_data = ff_data.iloc[:stop_idx]
+        ff_data = ff_data.apply(pd.to_numeric, errors='coerce')
+        ff_data = ff_data.dropna()
+        ff_data.index = pd.to_datetime(ff_data.index.astype(str), format='%Y%m', errors='coerce')
+        ff_data = ff_data.dropna()
         ff_data = ff_data / 100
-        
         port_returns = portfolio_returns.copy()
         if hasattr(port_returns.index, 'tz'):
             port_returns.index = port_returns.index.tz_localize(None)
         port_monthly = port_returns.resample('ME').apply(lambda x: (1 + x).prod() - 1)
-        
-        ff_data.index = ff_data.index.to_period('M')
-        port_monthly.index = port_monthly.index.to_period('M')
+        ff_data.index = ff_data.index.strftime('%Y-%m')
+        port_monthly.index = port_monthly.index.strftime('%Y-%m')
+        ff_data = ff_data.groupby(level=0).last()
+        port_monthly = port_monthly.groupby(level=0).last()
         combined = pd.concat([port_monthly, ff_data], axis=1).dropna()
-        
-        # 2. Regression & Statistik
+        if len(combined) < 5:
+            return f"Fehler: Zu wenig Datenüberschneidung ({len(combined)} Monate)."
         Y = combined.iloc[:, 0] - combined['RF']
         factors = ['Mkt-RF', 'SMB', 'HML', 'RMW', 'CMA']
-        X = sm.add_constant(combined[factors])
+        X = combined[factors]
+        X = sm.add_constant(X)
         model = sm.OLS(Y, X).fit()
-        
-        loadings = model.params[1:]
-        r_sq = model.rsquared
-        p_values = model.pvalues[1:]
-        
-        # Sternchen-Logik: *** p<0.01, ** p<0.05, * p<0.1
-        def get_stars(p):
-            if p < 0.01: return "***"
-            if p < 0.05: return "**"
-            if p < 0.1: return "*"
-            return ""
-
-        labels_with_stars = [f"{idx} {get_stars(p)}" for idx, p in p_values.items()]
-
-        # 3. Interaktive Visualisierung
-        fig = go.Figure()
-
-        fig.add_trace(go.Bar(
-            x=labels_with_stars, # Faktoren mit Sternchen an der X-Achse
-            y=loadings.values,
-            marker_color=['rgba(0, 123, 255, 0.8)' if p < 0.05 else 'rgba(200, 200, 200, 0.5)' for p in p_values],
-            hovertemplate='<b>Faktor:</b> %{x}<br><b>Beta:</b> %{y:.4f}<br><b>p-Wert:</b> %{customdata:.4f}<extra></extra>',
-            customdata=p_values.values
-        ))
-
-        fig.update_layout(
-            title=f"Fama-French Analyse | Bestimmtheitsmaß (R²): {r_sq:.4f}",
-            title_x=0.5,
-            yaxis_title="Beta (Loading)",
-            xaxis_title="Faktoren (* p<0.1, ** p<0.05, *** p<0.01)",
-            template="plotly_white",
-            annotations=[dict(
-                x=0, y=-0.2, xref="paper", yref="paper",
-                text=f"<b>Modell-Güte (R²):</b> {r_sq:.4f}<br>Signifikante Faktoren sind farblich hervorgehoben.",
-                showarrow=False, align="left"
-            )]
-        )
-
-        fig.show()
-        return loadings
-
+        return model.params[1:]
     except Exception as e:
-        return f"Fehler: {str(e)}"
+        return f"Technischer Fehler in der Analyse: {str(e)}"
 
 # --- STREAMLIT PAGE CONFIGURATION ---
 st.set_page_config(page_title="Portfolio Analyzer", layout="wide")
