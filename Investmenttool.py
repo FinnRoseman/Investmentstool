@@ -1164,6 +1164,7 @@ with tab_allg:
             
             if isinstance(result, dict):
                 loadings = result['loadings']
+                factors = loadings
                 p_values = result['p_values']
                 r_sq = result['r_squared']
 
