@@ -22,6 +22,22 @@ def get_ticker_name(t):
         return yf.Ticker(t).info.get('longName', t)
     except:
         return t
+def calculate_annual_rebalancing(returns_df, target_weights):
+    """
+    Berechnet die Portfolio-Rendite mit jährlichem Rebalancing.
+    """
+    years = returns_df.index.year.unique()
+    all_portfolio_returns = []
+    for year in years:
+        year_data = returns_df[returns_df.index.year == year]
+        cumulative_growth = (1 + year_data).cumprod()
+        position_values = cumulative_growth * target_weights
+        total_portfolio_value = position_values.sum(axis=1)
+        year_portfolio_returns = total_portfolio_value.pct_change().fillna(
+            (year_data.iloc[0] * target_weights).sum()
+        )
+        all_portfolio_returns.append(year_portfolio_returns)
+    return pd.concat(all_portfolio_returns)
 def get_factor_loadings(portfolio_returns):
     try:
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_5_Factors_2x3_CSV.zip"
@@ -185,6 +201,9 @@ period_yf = zeitraum_optionen[ausgewaehlter_zeitraum]
 st.sidebar.header("Kapitalauswahl")
 startkapital = st.sidebar.number_input("Startkapital (€)", value=0, min_value=0, step=1000, key="mein_kapital")
 
+st.sidebar.header("Rebalancing")
+rebalance_active = st.sidebar.checkbox("Jährliches Rebalancing aktivieren", value=False)
+
 zuordnung = dict(zip(ticker_liste, anteile_orig))
 st.title("Portfolio Backtest Dashboard")
 with st.expander("Portfolio-Zusammensetzung (Name & Gewichtung)"):
@@ -260,7 +279,10 @@ if summe_anteile_input <= 0:
 anteile = [anteile_orig[ticker_liste.index(t)] for t in verfuegbare]
 anteile = [a/sum(anteile) for a in anteile]
 
-port_rendite = (renditen[verfuegbare] * anteile).sum(axis=1)
+if not rebalance_active:
+    port_rendite = (renditen[verfuegbare] * weights).sum(axis=1)
+else:
+    port_rendite = calculate_annual_rebalancing(renditen[verfuegbare], weights)
 bench_rendite = renditen.loc[port_rendite.index, benchmark]
 diff_rendite = port_rendite - bench_rendite
 rf_daily = (1 + risk_free_rate)**(1/252) - 1
