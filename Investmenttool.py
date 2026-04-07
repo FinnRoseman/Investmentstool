@@ -45,35 +45,65 @@ def get_factor_loadings(portfolio_returns):
         response = requests.get(url, timeout=15)
         if response.status_code != 200:
             return "Fehler: Webseite von Kenneth French nicht erreichbar."
+            
         with zipfile.ZipFile(io.BytesIO(response.content)) as z:
             with z.open(z.namelist()[0]) as f:
                 ff_data = pd.read_csv(f, skiprows=3, index_col=0)
+        
         ff_data.columns = ff_data.columns.str.strip()
+        
         if " Annual Factors: " in ff_data.index:
             stop_idx = ff_data.index.get_loc(" Annual Factors: ")
             ff_data = ff_data.iloc[:stop_idx]
+            
         ff_data = ff_data.apply(pd.to_numeric, errors='coerce')
         ff_data = ff_data.dropna()
         ff_data.index = pd.to_datetime(ff_data.index.astype(str), format='%Y%m', errors='coerce')
         ff_data = ff_data.dropna()
         ff_data = ff_data / 100
+        
         port_returns = portfolio_returns.copy()
         if hasattr(port_returns.index, 'tz'):
             port_returns.index = port_returns.index.tz_localize(None)
+            
+        # Monatliche Renditen berechnen
         port_monthly = port_returns.resample('ME').apply(lambda x: (1 + x).prod() - 1)
+        
         ff_data.index = ff_data.index.strftime('%Y-%m')
         port_monthly.index = port_monthly.index.strftime('%Y-%m')
+        
         ff_data = ff_data.groupby(level=0).last()
         port_monthly = port_monthly.groupby(level=0).last()
+        
         combined = pd.concat([port_monthly, ff_data], axis=1).dropna()
+        
         if len(combined) < 5:
             return f"Fehler: Zu wenig Datenüberschneidung ({len(combined)} Monate)."
+            
         Y = combined.iloc[:, 0] - combined['RF']
         factors = ['Mkt-RF', 'SMB', 'HML', 'RMW', 'CMA']
         X = combined[factors]
         X = sm.add_constant(X)
+        
+        # Regression fitten
         model = sm.OLS(Y, X).fit()
-        return model.params[1:]
+        
+        # Ergebnisse extrahieren
+        loadings = model.params[1:]  # Ohne Konstante
+        r_squared = model.rsquared
+        p_values = model.pvalues[1:] # Ohne Konstante
+        
+        # Signifikante Faktoren identifizieren (p < 0.05)
+        significant_factors = p_values[p_values < 0.05].index.tolist()
+        
+        # Rückgabe als strukturiertes Dictionary für die Visualisierung
+        return {
+            "loadings": loadings,
+            "r_squared": r_squared,
+            "significant_factors": significant_factors,
+            "p_values": p_values
+        }
+        
     except Exception as e:
         return f"Technischer Fehler in der Analyse: {str(e)}"
 
