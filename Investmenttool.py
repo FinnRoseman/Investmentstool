@@ -984,14 +984,14 @@ with tab_risk:
                 st.plotly_chart(fig_roll, use_container_width=True, config={'displayModeBar': False})
 
             # --- Auswahl-Button JETZT UNTEN ---
-           st.write("---") # Trennlinie für optische Abgrenzung
-            c1, c2 = st.columns(2)
-            if c1.button("📊 Matrix", use_container_width=True):
-                st.session_state.corr_mode = "Matrix (Statisch)"
-                st.rerun() # Rerun triggert nur das Fragment neu
-            if c2.button("📈 Rollierend", use_container_width=True):
-                st.session_state.corr_mode = "Zeitverlauf (Rollierend)"
-                st.rerun()
+           st.write("") # Kleiner Abstandshalter
+            st.radio(
+                "Korrelations-Modus wählen:",
+                ["Matrix (Statisch)", "Zeitverlauf (Rollierend)"],
+                horizontal=True,
+                label_visibility="collapsed",
+                key="corr_toggle_button" 
+            )
 
         # Jetzt führen wir das Fragment innerhalb der Spalte 1 aus
         render_correlation_section()
