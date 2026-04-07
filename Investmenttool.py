@@ -971,10 +971,10 @@ with tab_risk:
                 )
                 st.plotly_chart(fig_roll, use_container_width=True, config={'displayModeBar': False}, key="roll_plot")
             c1, c2 = st.columns(2)
-            if c1.button("📊 Matrix", use_container_width=True):
+            if c1.button("⛓️ Matrix", use_container_width=True):
                 st.session_state.corr_mode_state = "Matrix (Statisch)"
                 st.rerun(scope="fragment")
-            if c2.button("📈 Rollierend", use_container_width=True):
+            if c2.button("🔁 Rollierend", use_container_width=True):
                 st.session_state.corr_mode_state = "Zeitverlauf (Rollierend)"
                 st.rerun(scope="fragment")
         render_correlation_section()
