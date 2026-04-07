@@ -41,7 +41,6 @@ def calculate_annual_rebalancing(returns_df, target_weights):
     return portfolio_returns
 def get_factor_loadings(portfolio_returns):
     try:
-        # --- 1. Daten laden (wie gehabt) ---
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_5_Factors_2x3_CSV.zip"
         response = requests.get(url, timeout=15)
         with zipfile.ZipFile(io.BytesIO(response.content)) as z:
@@ -49,12 +48,13 @@ def get_factor_loadings(portfolio_returns):
                 ff_data = pd.read_csv(f, skiprows=3, index_col=0)
         
         ff_data.columns = ff_data.columns.str.strip()
-        if " Annual Factors: " in ff_data.index:
-            stop_idx = ff_data.index.get_loc(" Annual Factors: ")
-            ff_data = ff_data.iloc[:stop_idx]
-            
+        
+        # WICHTIG: Nur Zeilen behalten, die ein 6-stelliges Monatsformat haben (YYYYMM)
+        # Das filtert die jährlichen Daten am Ende der Datei (" 1964") automatisch raus.
+        ff_data = ff_data[ff_data.index.astype(str).str.strip().str.len() == 6]
+        
         ff_data = ff_data.apply(pd.to_numeric, errors='coerce').dropna()
-        ff_data.index = pd.to_datetime(ff_data.index.astype(str), format='%Y%m')
+        ff_data.index = pd.to_datetime(ff_data.index.astype(str).str.strip(), format='%Y%m')
         ff_data = ff_data / 100
         
         port_returns = portfolio_returns.copy()
@@ -62,15 +62,20 @@ def get_factor_loadings(portfolio_returns):
             port_returns.index = port_returns.index.tz_localize(None)
             
         port_monthly = port_returns.resample('ME').apply(lambda x: (1 + x).prod() - 1)
+        
+        # Umwandlung für den Join
         ff_data.index = ff_data.index.to_period('M')
         port_monthly.index = port_monthly.index.to_period('M')
         
         combined = pd.concat([port_monthly, ff_data], axis=1).dropna()
         
-        # --- 2. Berechnung ---
+        if combined.empty:
+            return "Fehler: Keine Datenüberschneidung nach der Filterung gefunden."
+
         Y = combined.iloc[:, 0] - combined['RF']
         factors = ['Mkt-RF', 'SMB', 'HML', 'RMW', 'CMA']
         X = sm.add_constant(combined[factors])
+        
         model = sm.OLS(Y, X).fit()
         
         loadings = model.params[1:]
@@ -79,27 +84,25 @@ def get_factor_loadings(portfolio_returns):
         sig_factors = p_values[p_values < 0.05].index.tolist()
         sig_text = ", ".join(sig_factors) if sig_factors else "Keine"
 
-        # --- 3. Visualisierung direkt hier ---
+        # --- Visualisierung ---
         plt.figure(figsize=(10, 5))
         loadings.plot(kind='bar', color='skyblue', edgecolor='black')
         plt.axhline(0, color='black', linewidth=0.8)
         
-        # Titel mit R^2
         plt.title(f"Fama-French Faktor-Loadings\nBestimmtheitsmaß (R²): {r_sq:.4f}")
-        plt.ylabel("Beta")
+        plt.ylabel("Beta (Faktor-Sensitivität)")
         
-        # Text unter der Grafik
-        plt.figtext(0.5, -0.1, f"Signifikante Werte (p < 0.05): {sig_text}", 
-                    ha="center", fontsize=10, bbox={"facecolor":"orange", "alpha":0.2})
+        # Textbox unter der Grafik
+        plt.figtext(0.5, -0.1, f"Statistisch signifikante Faktoren (p < 0.05): {sig_text}", 
+                    ha="center", fontsize=10, bbox={"facecolor":"orange", "alpha":0.2, "pad":5})
         
         plt.tight_layout()
-        plt.show() # Das öffnet das Fenster mit der Grafik
+        plt.show()
 
-        # --- 4. Rückgabe der Koeffizienten (damit kein 'None' erscheint) ---
         return loadings
 
     except Exception as e:
-        return f"Fehler: {str(e)}"
+        return f"Fehler in der Analyse: {str(e)}"
 
 # --- STREAMLIT PAGE CONFIGURATION ---
 st.set_page_config(page_title="Portfolio Analyzer", layout="wide")
