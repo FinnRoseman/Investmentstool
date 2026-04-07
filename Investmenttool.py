@@ -325,10 +325,11 @@ bench_arith = bench_rendite.mean() * 252
 vola = port_rendite.std() * np.sqrt(252)
 max_drawdown = (((1 + port_rendite).cumprod() / (1 + port_rendite).cumprod().cummax()) - 1).min()
 tracking_error = diff_rendite.std() * np.sqrt(252)
-
+port_excess = port_rendite - rf_daily
+bench_excess = bench_rendite - rf_daily
 sharpe_ratio = (arith_mittel - risk_free_rate) / vola
 sortino_ratio = (arith_mittel - risk_free_rate) / downside_deviation if downside_deviation != 0 else np.nan
-beta = port_rendite.cov(bench_rendite) / bench_rendite.var()
+beta = port_excess.cov(bench_excess) / bench_excess.var()
 treynor_ratio = (arith_mittel - risk_free_rate) / beta if beta != 0 else np.nan
 capm_erwartung_pa = risk_free_rate + beta * (bench_arith - risk_free_rate)
 alpha = arith_mittel - capm_erwartung_pa
@@ -395,18 +396,20 @@ for i, t in enumerate(verfuegbare):
             fx_faktor = 1.0
         for date, amount in divs_in_period.items():
             stueckzahl_start = (startkapital * gewicht) / daten[t].iloc[0]
+            stueckzahl_ende = (endsumme * gewicht) / daten[t].iloc[-1]
+            stueckzahl_avg = (stueckzahl_start + stueckzahl_ende) / 2
             try:
                 actual_fx_at_date = fx_prices.asof(date) 
-                euro_zahlung_avg = (amount * actual_fx_at_date * stueckzahl_start) / anzahl_jahre
+                euro_zahlung_avg = (amount * actual_fx_at_date * stueckzahl_avg) / anzahl_jahre
             except:
-                euro_zahlung_avg = (amount * fx_faktor * stueckzahl_start) / anzahl_jahre
+                euro_zahlung_avg = (amount * fx_faktor * stueckzahl_avg) / anzahl_jahre
             if euro_zahlung_avg > 0:
                 cal_data.append({
                     "Monat": date.strftime("%B"), "Monat_Nr": date.month,
                     "Ticker": t, "Ausschüttung": euro_zahlung_avg
                 })
         last_year_divs_eur = div_history[divs_clean > (pd.Timestamp.now() - pd.Timedelta(days=365))].sum() * fx_faktor
-        stueckzahl_heute = (startkapital * gewicht) / daten[t].iloc[0]
+        stueckzahl_heute = (endsumme * gewicht) / daten[t].iloc[-1]
         total_div_euro += (last_year_divs_eur * stueckzahl_heute)
         if daten[t].iloc[-1] > 0:
             ticker_yield = last_year_divs_eur / daten[t].iloc[-1]
