@@ -347,9 +347,10 @@ else:
     downside_ratio = np.nan
 
 # Risikokennzahlen
-var_95_para = 1.645 * vola
-var_95_hist = abs(port_rendite.quantile(0.05)) * np.sqrt(252)
-es_95_para = 2.06 * (port_rendite.std() * np.sqrt(252))
+var_95_para = -(arith_mittel - 1.645 * vola)
+rolling_1y_rets = port_rendite.rolling(252).apply(lambda x: (1 + x).prod() - 1)
+var_95_hist = abs(rolling_1y_rets.dropna().quantile(0.05))
+es_95_para = -(arith_mittel - 2.063 * vola)
 es_95_tag_hist = port_rendite[port_rendite <= port_rendite.quantile(0.05)].mean()
 es_95_hist = abs(es_95_tag_hist) * np.sqrt(252)
 
@@ -357,8 +358,7 @@ es_95_hist = abs(es_95_tag_hist) * np.sqrt(252)
 simulations = 10000
 tage = 252
 daily_rets = port_rendite.dropna()
-centered_rets = daily_rets - daily_rets.mean()
-sim_returns = np.random.choice(centered_rets, size=(tage, simulations), replace=True)
+sim_returns = np.random.choice(daily_rets, size=(tage, simulations), replace=True)
 paths = np.prod(1 + sim_returns, axis=0) - 1
 schwellenwert = np.percentile(paths, 5)
 mc_var_95_jahr = schwellenwert * -1
@@ -807,7 +807,7 @@ with tab_sim:
         mu_list = []
         for t in verfuegbare:
             asset_beta = renditen[t].cov(bench_rendite) / bench_rendite.var()
-            expected_ret = risk_free_rate + asset_beta * (bench_cagr - risk_free_rate)
+            expected_ret = risk_free_rate + asset_beta * (bench_arith - risk_free_rate)
             mu_list.append(expected_ret)
         mu = np.array(mu_list)
         cov = renditen[verfuegbare].cov() * 252  
@@ -1239,7 +1239,7 @@ with tab_sim:
             )
             schocks = szenarien[auswahl]
             verlust_pro_faktor = factors.values * schocks
-            gesamt_sz_ret = np.sum(verlust_pro_faktor)
+            gesamt_sz_ret = np.sum(verlust_pro_faktor) + risk_free_rate
             verlust_sz_euro = endsumme * gesamt_sz_ret
             farbe_sz = "#EB5757" if gesamt_sz_ret < 0 else "#27AE60"
             st.markdown(f"""
