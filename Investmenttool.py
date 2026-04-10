@@ -1355,7 +1355,7 @@ with tab_sim:
                                      "details": rohstoff})
         return gesamt_beitrag, detail_liste
     @st.fragment
-    def render_simulation_area(factors, beta, endsumme):
+    def render_simulation_area(factors, beta, endsumme, szenario_gewichte):
         szenarien = {
             "Stagflation": [-0.35, -0.05, +0.15, +0.08, +0.05], 
             "Inflation": [-0.20, 0.00, 0.10, 0.12, 0.05],
@@ -1420,14 +1420,14 @@ with tab_sim:
             _multi_schocks = szenarien_multi[auswahl]
             # --- FIX: FF5 nur anwenden wenn tatsächlich Aktien im Portfolio ---
             _equity_weight = sum(
-                anteile[i] for i, t in enumerate(verfuegbare)
+                szenario_gewichte[i] for i, t in enumerate(verfuegbare)
                 if _asset_typen.get(t, {}).get("typ", "Aktie") == "Aktie"
             )
             if _equity_weight == 0:
                 # Kein Aktienanteil → FF5-Ergebnis komplett ignorieren
                 gesamt_aktien_ret = 0.0
             nicht_aktien_ret, nicht_aktien_details = berechne_nicht_aktien_beitrag(
-                verfuegbare, anteile, _asset_typen, _multi_schocks
+                verfuegbare, szenario_gewichte, _asset_typen, _multi_schocks
             )
             gesamt_sz_ret  = gesamt_aktien_ret + nicht_aktien_ret
             verlust_sz_euro = endsumme * gesamt_sz_ret
@@ -1456,6 +1456,6 @@ with tab_sim:
                     <p style="margin:0; font-weight:bold;">{verlust_sens_euro:,.2f} €</p>
                 </div>
             """, unsafe_allow_html=True)
-    render_simulation_area(factors, beta, endsumme)
+    render_simulation_area(factors, beta, endsumme, aktuelle_gewichte if not rebalance_active else anteile)
 st.markdown("---")
 st.caption(f"Datenzeitraum: {daten.index[0].strftime('%d.%m.%Y')} bis {daten.index[-1].strftime('%d.%m.%Y')}")
