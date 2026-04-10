@@ -1390,26 +1390,6 @@ with tab_sim:
                     <p style="margin:0; font-weight:bold;">{verlust_sz_euro:,.2f} €</p>
                 </div>
             """, unsafe_allow_html=True)
-            # --- MULTI-ASSET ERWEITERUNG: Aufschlüsselung Aktien vs. andere ---
-            if nicht_aktien_details:
-                st.markdown("##### Beitragsaufschlüsselung")
-                _farbe_aktien = "#EB5757" if gesamt_aktien_ret < 0 else "#27AE60"
-                st.markdown(f"""
-                    <div style="background:rgba(100,100,100,0.07); border-radius:8px; padding:10px 14px; margin-top:8px;">
-                        <span style="color:gray; font-size:13px;">📊 Aktien-Anteil (FF5-Modell)</span><br>
-                        <span style="color:{_farbe_aktien}; font-weight:bold;">{gesamt_aktien_ret:.2%}</span>
-                    </div>
-                """, unsafe_allow_html=True)
-                for d in nicht_aktien_details:
-                    _icon  = "🏦" if d["typ"] == "Anleihe" else "🪙"
-                    _farbe = "#EB5757" if d["beitrag"] < 0 else "#27AE60"
-                    st.markdown(f"""
-                        <div style="background:rgba(100,100,100,0.07); border-radius:8px; padding:10px 14px; margin-top:6px;">
-                            <span style="color:gray; font-size:13px;">{_icon} {d['ticker']} &nbsp;·&nbsp; {d['details']}</span><br>
-                            <span style="color:{_farbe}; font-weight:bold;">{d['beitrag']:+.2%}</span>
-                            <span style="color:gray; font-size:12px;"> Beitrag &nbsp;|&nbsp; {d['rendite']:+.2%} Position</span>
-                        </div>
-                    """, unsafe_allow_html=True)
         with sim_col2:
             st.markdown("### 🕹️ Benchmark-Sensitivität")
             eigener_schock = st.slider(
