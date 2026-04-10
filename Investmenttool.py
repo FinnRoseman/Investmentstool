@@ -1245,9 +1245,7 @@ with tab_allg:
     except Exception as e:
         st.error(f"Faktoranalyse konnte nicht geladen werden: {e}")
 
-# --- INHALT FÜR TAB: SIMULATIONEN ---
 with tab_sim:
-    # --- MULTI-ASSET ERWEITERUNG: Hilfsfunktion für Anleihen & Rohstoffe ---
     def berechne_nicht_aktien_beitrag(verfuegbare, anteile, asset_typen, szenario_schocks):
         """
         Berechnet den Rendite-Beitrag aller Nicht-Aktien-Positionen (Anleihen,
@@ -1255,14 +1253,12 @@ with tab_sim:
         Aktien werden hier bewusst übersprungen – ihr Beitrag kommt weiterhin
         aus dem FF5-Modell in der bestehenden Logik.
         """
-        # Credit-Spread- und Liquiditätsbetas je Anleihen-Typ
         _BOND_BETAS = {
             "Staatsanleihe":             {"credit_spread": 0.0,  "liquidity": 0.0 },
             "Unternehmensanleihe (IG)":  {"credit_spread": 0.5,  "liquidity": 0.10},
             "Unternehmensanleihe (HY)":  {"credit_spread": 1.5,  "liquidity": 0.30},
             "Emerging Markets":          {"credit_spread": 1.2,  "liquidity": 0.40},
         }
-        # Spot-, USD- und Roll-Yield-Betas je Rohstoff-Typ
         _COMMODITY_BETAS = {
             "Gold":           {"spot": 1.0, "usd": -0.85, "roll":  0.00},
             "Silber":         {"spot": 1.0, "usd": -0.70, "roll":  0.00},
@@ -1282,7 +1278,6 @@ with tab_sim:
                 duration   = info.get("duration", 5.0)
                 bond_type  = info.get("bond_type", "Staatsanleihe")
                 cb         = _BOND_BETAS.get(bond_type, _BOND_BETAS["Staatsanleihe"])
-                # Duration-Effekt: Kursänderung ≈ −Duration × ΔYield
                 yield_ret  = -duration * szenario_schocks.get("yield_change", 0.0)
                 spread_ret = -cb["credit_spread"] * szenario_schocks.get("credit_spread", 0.0)
                 liq_ret    = -cb["liquidity"]     * szenario_schocks.get("liquidity",     0.0)
@@ -1305,7 +1300,6 @@ with tab_sim:
                                      "rendite": pos_ret, "beitrag": beitrag,
                                      "details": rohstoff})
         return gesamt_beitrag, detail_liste
-
     @st.fragment
     def render_simulation_area(factors, beta, endsumme):
         szenarien = {
@@ -1315,34 +1309,29 @@ with tab_sim:
             "Tech-Blase": [-0.40, -0.05, +0.35, +0.15, +0.00],
             "Small Cap Rallye": [+0.15, +0.20, +0.05, -0.05, -0.05]
         }
-        # --- MULTI-ASSET ERWEITERUNG: Nicht-Aktien-Schocks je Szenario ---
-        # Schlüssel: yield_change (abs. Änderung, z.B. 0.01 = +100bp),
-        #            credit_spread (Spread-Ausweitung), liquidity (Liquiditätsprämie),
-        #            spot_return (Rohstoff-Spotpreis), usd_index (USD-Stärke/-Schwäche),
-        #            roll_yield  (Contango/Backwardation-Verschiebung)
         szenarien_multi = {
             "Stagflation": {
-                "yield_change":  +0.015,   # +150bp: Zinsanstieg durch Inflation
-                "credit_spread": +0.010,   # leichte Spread-Ausweitung
+                "yield_change":  +0.015,  
+                "credit_spread": +0.010,   
                 "liquidity":     +0.005,
-                "spot_return":   +0.15,    # Rohstoffe als Inflationsschutz
+                "spot_return":   +0.15,    
                 "usd_index":     +0.02,
                 "roll_yield":    -0.01,
             },
             "Inflation": {
-                "yield_change":  +0.020,   # +200bp
+                "yield_change":  +0.020,   
                 "credit_spread": +0.008,
                 "liquidity":     +0.002,
-                "spot_return":   +0.20,    # starker Rohstoff-Anstieg
+                "spot_return":   +0.20,    
                 "usd_index":     +0.03,
                 "roll_yield":    -0.005,
             },
             "Schwere Rezession": {
-                "yield_change":  -0.020,   # −200bp: Flucht in Staatsanleihen
-                "credit_spread": +0.040,   # starke Spread-Ausweitung
+                "yield_change":  -0.020,   
+                "credit_spread": +0.040,  
                 "liquidity":     +0.025,
-                "spot_return":   -0.22,    # Nachfragerückgang drückt Rohstoffe
-                "usd_index":     +0.05,    # USD-Stärke in Risk-Off
+                "spot_return":   -0.22,    
+                "usd_index":     +0.05,    
                 "roll_yield":    -0.02,
             },
             "Tech-Blase": {
@@ -1373,14 +1362,12 @@ with tab_sim:
             schocks = szenarien[auswahl]
             verlust_pro_faktor = factors.values * schocks
             gesamt_aktien_ret = np.sum(verlust_pro_faktor) + risk_free_rate
-            # --- MULTI-ASSET ERWEITERUNG: Anleihen & Rohstoffe hinzuaddieren ---
             _asset_typen = st.session_state.get("asset_typen", {})
             _multi_schocks = szenarien_multi[auswahl]
             nicht_aktien_ret, nicht_aktien_details = berechne_nicht_aktien_beitrag(
                 verfuegbare, anteile, _asset_typen, _multi_schocks
             )
             gesamt_sz_ret  = gesamt_aktien_ret + nicht_aktien_ret
-            # ---------------------------------------------------------------
             verlust_sz_euro = endsumme * gesamt_sz_ret
             farbe_sz = "#EB5757" if gesamt_sz_ret < 0 else "#27AE60"
             st.markdown(f"""
