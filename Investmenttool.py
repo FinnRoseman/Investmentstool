@@ -41,6 +41,29 @@ def calculate_annual_rebalancing(returns_df, target_weights):
             if returns_df.index[i+1].year > returns_df.index[i].year:
                 current_weights = target_weights.copy()              
     return portfolio_returns
+
+def calculate_buy_and_hold(returns_df, start_weights):
+    """
+    Berechnet Portfolio-Rendite bei reinem Buy & Hold.
+    Startgewichte gelten nur am ersten Tag — danach driften die Positionen
+    frei je nach ihrer individuellen Kursentwicklung, ohne Rebalancing.
+    Gibt die täglichen Portfolio-Renditen und die finalen gedrifteten Gewichte zurück.
+    """
+    weights = np.array(start_weights)
+    # Kumulierter Preisindex ab Tag 1 (Start = 1.0)
+    cum_returns = (1 + returns_df).cumprod()
+    # Positionswert im Zeitverlauf: Startgewicht × kumulierter Preisindex
+    position_values = cum_returns.multiply(weights, axis=1)
+    port_value = position_values.sum(axis=1)
+    # Tägliche Portfolio-Renditen aus Portfoliowert ableiten
+    port_returns = pd.Series(index=returns_df.index, dtype=float)
+    port_returns.iloc[0] = (returns_df.iloc[0].values * weights).sum()
+    if len(returns_df) > 1:
+        port_returns.iloc[1:] = (port_value.iloc[1:].values / port_value.iloc[:-1].values) - 1
+    # Aktuelle (gedriftete) Gewichte am letzten Tag
+    final_weights = (position_values.iloc[-1] / port_value.iloc[-1]).values
+    return port_returns, final_weights
+
 def get_factor_loadings(portfolio_returns):
     try:
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_5_Factors_2x3_CSV.zip"
@@ -251,7 +274,8 @@ rebalance_active = st.sidebar.checkbox("Jährliches Rebalancing aktivieren", val
 
 zuordnung = dict(zip(ticker_liste, anteile_orig))
 st.title("Portfolio Backtest Dashboard")
-with st.expander("Portfolio-Zusammensetzung (Name & Gewichtung)"):
+with st.expander("Portfolio-Zusammensetzung — Zielgewichtung (Eingabe)"):
+    st.caption("Die hier gezeigten Gewichte sind deine eingegebenen Startwerte. Die tatsächliche Gewichtung nach Drift findest du weiter unten nach den KPIs.")
     st.markdown("""
     <style>
         .port-container { background-color: rgba(100,100,100,0.05); border-radius: 12px; padding: 5px; margin-bottom: 15px; }
@@ -325,9 +349,12 @@ anteile = [anteile_orig[ticker_liste.index(t)] for t in verfuegbare]
 anteile = [a/sum(anteile) for a in anteile]
 
 if not rebalance_active:
-    port_rendite = (renditen[verfuegbare] * anteile).sum(axis=1)
+    # Buy & Hold: Gewichte nur am Starttag, danach freier Drift
+    port_rendite, aktuelle_gewichte = calculate_buy_and_hold(renditen[verfuegbare], anteile)
 else:
+    # Jährliches Rebalancing: Gewichte werden einmal pro Jahr zurückgesetzt
     port_rendite = calculate_annual_rebalancing(renditen[verfuegbare], anteile)
+    aktuelle_gewichte = list(anteile)  # nach Rebalancing ≈ Zielgewichte
 bench_rendite = renditen.loc[port_rendite.index, benchmark]
 diff_rendite = port_rendite - bench_rendite
 rf_daily = (1 + risk_free_rate)**(1/252) - 1
@@ -580,6 +607,41 @@ st.markdown(f"""
     <div class="kpi-card"><p class="kpi-label">Downside Capture</p><p class="kpi-value">{downside_ratio:.1f}%</p></div>
 </div>
 """, unsafe_allow_html=True)
+
+# --- BUY & HOLD ERWEITERUNG: Aktuelle Gewichtung nach Drift ---
+_drift_label = "Aktuelle Gewichtung (nach Drift, Buy & Hold)" if not rebalance_active else "Aktuelle Gewichtung (nach jährlichem Rebalancing)"
+with st.expander(_drift_label):
+    if rebalance_active:
+        st.caption("Jährliches Rebalancing aktiv — die Gewichte entsprechen näherungsweise deinen Zielwerten.")
+    else:
+        st.caption("Buy & Hold aktiv — die Gewichte haben sich seit dem Startzeitpunkt frei verschoben.")
+    _drift_rows = ""
+    for i, t in enumerate(verfuegbare):
+        _name        = ticker_namen.get(t, t)
+        _ziel_pct    = anteile[i] * 100
+        _aktuell_pct = aktuelle_gewichte[i] * 100
+        _drift_pct   = _aktuell_pct - _ziel_pct
+        _drift_farbe = "#27AE60" if _drift_pct >= 0 else "#EB5757"
+        _drift_pfeil = "▲" if _drift_pct > 0.05 else ("▼" if _drift_pct < -0.05 else "●")
+        _drift_rows += f"""
+        <div class="port-row">
+            <div class="port-bar" style="width: {_aktuell_pct}%;"></div>
+            <div class="port-ticker">{t}</div>
+            <div class="port-name">{_name}</div>
+            <div style="color:#9CA3AF; font-size:12px; margin-left:10px; z-index:1; min-width:55px; text-align:right;">Ziel: {_ziel_pct:.1f}%</div>
+            <div style="font-weight:bold; color:white; margin-left:10px; z-index:1; min-width:65px; text-align:right;">{_aktuell_pct:.1f}%</div>
+            <div style="color:{_drift_farbe}; font-size:12px; margin-left:8px; z-index:1; min-width:55px; text-align:right;">{_drift_pfeil} {_drift_pct:+.1f}%</div>
+        </div>"""
+    st.markdown(f'<div class="port-container">{_drift_rows}</div>', unsafe_allow_html=True)
+    if not rebalance_active:
+        _max_over  = max(range(len(verfuegbare)), key=lambda i: aktuelle_gewichte[i] - anteile[i])
+        _max_under = min(range(len(verfuegbare)), key=lambda i: aktuelle_gewichte[i] - anteile[i])
+        _over_t  = verfuegbare[_max_over]
+        _under_t = verfuegbare[_max_under]
+        _over_d  = (aktuelle_gewichte[_max_over]  - anteile[_max_over])  * 100
+        _under_d = (aktuelle_gewichte[_max_under] - anteile[_max_under]) * 100
+        if abs(_over_d) > 0.5 or abs(_under_d) > 0.5:
+            st.caption(f"Stärkster Drift: **{_over_t}** +{_over_d:.1f}% übergewichtet · **{_under_t}** {_under_d:.1f}% untergewichtet")
 
 tab_allg, tab_rend, tab_risk, tab_sim = st.tabs([
     "🏠 Allgemein", 
