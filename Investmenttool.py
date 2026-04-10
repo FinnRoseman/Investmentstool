@@ -473,7 +473,21 @@ for i, t in enumerate(verfuegbare):
                 })
         one_year_ago = pd.Timestamp.now() - pd.Timedelta(days=365)
         last_year_divs = div_history[div_history.index > one_year_ago]
-        last_year_divs_eur = last_year_divs.sum() * fx_faktor if not last_year_divs.empty else 0.0
+        if not last_year_divs.empty and _ticker_fx is not None:
+            last_year_divs_eur = 0.0
+            for _div_date, _div_amt in last_year_divs.items():
+                try:
+                    _lookup = _div_date.tz_localize(None) if hasattr(_div_date, 'tz') and _div_date.tz is not None else _div_date
+                    _fx_at_div = _ticker_fx.asof(_lookup)
+                    if pd.isna(_fx_at_div):
+                        _fx_at_div = fx_faktor
+                except:
+                    _fx_at_div = fx_faktor
+                last_year_divs_eur += _div_amt * _fx_at_div
+        elif not last_year_divs.empty:
+            last_year_divs_eur = last_year_divs.sum() * fx_faktor
+        else:
+            last_year_divs_eur = 0.0
         stueckzahl_heute = (endsumme * gewicht) / daten[t].iloc[-1]
         total_div_euro += (last_year_divs_eur * stueckzahl_heute)
         if daten[t].iloc[-1] > 0:
