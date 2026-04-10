@@ -50,17 +50,13 @@ def calculate_buy_and_hold(returns_df, start_weights):
     Gibt die täglichen Portfolio-Renditen und die finalen gedrifteten Gewichte zurück.
     """
     weights = np.array(start_weights)
-    # Kumulierter Preisindex ab Tag 1 (Start = 1.0)
     cum_returns = (1 + returns_df).cumprod()
-    # Positionswert im Zeitverlauf: Startgewicht × kumulierter Preisindex
     position_values = cum_returns.multiply(weights, axis=1)
     port_value = position_values.sum(axis=1)
-    # Tägliche Portfolio-Renditen aus Portfoliowert ableiten
     port_returns = pd.Series(index=returns_df.index, dtype=float)
     port_returns.iloc[0] = (returns_df.iloc[0].values * weights).sum()
     if len(returns_df) > 1:
         port_returns.iloc[1:] = (port_value.iloc[1:].values / port_value.iloc[:-1].values) - 1
-    # Aktuelle (gedriftete) Gewichte am letzten Tag
     final_weights = (position_values.iloc[-1] / port_value.iloc[-1]).values
     return port_returns, final_weights
 
@@ -349,12 +345,10 @@ anteile = [anteile_orig[ticker_liste.index(t)] for t in verfuegbare]
 anteile = [a/sum(anteile) for a in anteile]
 
 if not rebalance_active:
-    # Buy & Hold: Gewichte nur am Starttag, danach freier Drift
     port_rendite, aktuelle_gewichte = calculate_buy_and_hold(renditen[verfuegbare], anteile)
 else:
-    # Jährliches Rebalancing: Gewichte werden einmal pro Jahr zurückgesetzt
     port_rendite = calculate_annual_rebalancing(renditen[verfuegbare], anteile)
-    aktuelle_gewichte = list(anteile)  # nach Rebalancing ≈ Zielgewichte
+    aktuelle_gewichte = list(anteile)
 bench_rendite = renditen.loc[port_rendite.index, benchmark]
 diff_rendite = port_rendite - bench_rendite
 rf_daily = (1 + risk_free_rate)**(1/252) - 1
@@ -608,7 +602,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# --- BUY & HOLD ERWEITERUNG: Aktuelle Gewichtung nach Drift ---
+# --- BUY & HOLD: Aktuelle Gewichtung nach Drift ---
 _drift_label = "Aktuelle Gewichtung (nach Drift, Buy & Hold)" if not rebalance_active else "Aktuelle Gewichtung (nach jährlichem Rebalancing)"
 with st.expander(_drift_label):
     if rebalance_active:
@@ -633,15 +627,13 @@ with st.expander(_drift_label):
             <div style="color:{_drift_farbe}; font-size:12px; margin-left:8px; z-index:1; min-width:55px; text-align:right;">{_drift_pfeil} {_drift_pct:+.1f}%</div>
         </div>"""
     st.markdown(f'<div class="port-container">{_drift_rows}</div>', unsafe_allow_html=True)
-    if not rebalance_active:
+    if not rebalance_active and len(verfuegbare) > 1:
         _max_over  = max(range(len(verfuegbare)), key=lambda i: aktuelle_gewichte[i] - anteile[i])
         _max_under = min(range(len(verfuegbare)), key=lambda i: aktuelle_gewichte[i] - anteile[i])
-        _over_t  = verfuegbare[_max_over]
-        _under_t = verfuegbare[_max_under]
         _over_d  = (aktuelle_gewichte[_max_over]  - anteile[_max_over])  * 100
         _under_d = (aktuelle_gewichte[_max_under] - anteile[_max_under]) * 100
         if abs(_over_d) > 0.5 or abs(_under_d) > 0.5:
-            st.caption(f"Stärkster Drift: **{_over_t}** +{_over_d:.1f}% übergewichtet · **{_under_t}** {_under_d:.1f}% untergewichtet")
+            st.caption(f"Stärkster Drift: **{verfuegbare[_max_over]}** {_over_d:+.1f}% · **{verfuegbare[_max_under]}** {_under_d:+.1f}%")
 
 tab_allg, tab_rend, tab_risk, tab_sim = st.tabs([
     "🏠 Allgemein", 
@@ -1426,6 +1418,14 @@ with tab_sim:
             gesamt_aktien_ret = np.sum(verlust_pro_faktor) + risk_free_rate
             _asset_typen = st.session_state.get("asset_typen", {})
             _multi_schocks = szenarien_multi[auswahl]
+            # --- FIX: FF5 nur anwenden wenn tatsächlich Aktien im Portfolio ---
+            _equity_weight = sum(
+                anteile[i] for i, t in enumerate(verfuegbare)
+                if _asset_typen.get(t, {}).get("typ", "Aktie") == "Aktie"
+            )
+            if _equity_weight == 0:
+                # Kein Aktienanteil → FF5-Ergebnis komplett ignorieren
+                gesamt_aktien_ret = 0.0
             nicht_aktien_ret, nicht_aktien_details = berechne_nicht_aktien_beitrag(
                 verfuegbare, anteile, _asset_typen, _multi_schocks
             )
