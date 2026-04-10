@@ -312,6 +312,7 @@ alle_ticker = tuple(ticker_liste + [benchmark])
 data_full = get_cached_data(alle_ticker, period_yf)
 
 raw_data = {}
+fx_prices_map = {}
 for t in alle_ticker:
     if isinstance(data_full.columns, pd.MultiIndex):
         price = data_full['Close'][t].copy()
@@ -324,6 +325,7 @@ for t in alle_ticker:
         fx_df = yf.download(fx_map[t], period=period_yf, progress=False)
         if not fx_df.empty:
             fx_prices = fx_df['Close'].iloc[:, 0] if isinstance(fx_df.columns, pd.MultiIndex) else fx_df['Close']
+            fx_prices_map[t] = fx_prices
             combined = pd.concat([price, fx_prices], axis=1)
             combined = combined.ffill().dropna()
             price = combined.iloc[:, 0] * combined.iloc[:, 1]
@@ -432,8 +434,14 @@ for i, t in enumerate(verfuegbare):
     gewicht = anteile[i]
     div_history = ticker_obj.dividends
     if not div_history.empty:
-        divs_clean = div_history.index.tz_localize(None)
-        divs_in_period = div_history[divs_clean.isin(daten.index)]
+        div_dates = div_history.index
+        if hasattr(div_dates, 'tz') and div_dates.tz is not None:
+            div_dates = div_dates.tz_localize(None)
+        div_history = div_history.copy()
+        div_history.index = div_dates
+        period_start = daten.index[0]
+        period_end = daten.index[-1]
+        divs_in_period = div_history[(div_dates >= period_start) & (div_dates <= period_end)]
         anzahl_jahre = max(jahre, 1.0)
         try:
             last_date = daten.index[-1]
@@ -442,21 +450,30 @@ for i, t in enumerate(verfuegbare):
             fx_faktor = price_eur / price_raw
         except:
             fx_faktor = 1.0
+        _ticker_fx = fx_prices_map.get(t, None)
         for date, amount in divs_in_period.items():
             stueckzahl_start = (startkapital * gewicht) / daten[t].iloc[0]
             stueckzahl_ende = (endsumme * gewicht) / daten[t].iloc[-1]
             stueckzahl_avg = (stueckzahl_start + stueckzahl_ende) / 2
-            try:
-                actual_fx_at_date = fx_prices.asof(date) 
-                euro_zahlung_avg = (amount * actual_fx_at_date * stueckzahl_avg) / anzahl_jahre
-            except:
+            if _ticker_fx is not None:
+                try:
+                    _lookup_date = date.tz_localize(None) if hasattr(date, 'tz') and date.tz is not None else date
+                    actual_fx_at_date = _ticker_fx.asof(_lookup_date)
+                    if pd.isna(actual_fx_at_date):
+                        actual_fx_at_date = fx_faktor
+                    euro_zahlung_avg = (amount * actual_fx_at_date * stueckzahl_avg) / anzahl_jahre
+                except:
+                    euro_zahlung_avg = (amount * fx_faktor * stueckzahl_avg) / anzahl_jahre
+            else:
                 euro_zahlung_avg = (amount * fx_faktor * stueckzahl_avg) / anzahl_jahre
             if euro_zahlung_avg > 0:
                 cal_data.append({
                     "Monat": date.strftime("%B"), "Monat_Nr": date.month,
                     "Ticker": t, "Ausschüttung": euro_zahlung_avg
                 })
-        last_year_divs_eur = div_history[divs_clean > (pd.Timestamp.now() - pd.Timedelta(days=365))].sum() * fx_faktor
+        one_year_ago = pd.Timestamp.now() - pd.Timedelta(days=365)
+        last_year_divs = div_history[div_history.index > one_year_ago]
+        last_year_divs_eur = last_year_divs.sum() * fx_faktor if not last_year_divs.empty else 0.0
         stueckzahl_heute = (endsumme * gewicht) / daten[t].iloc[-1]
         total_div_euro += (last_year_divs_eur * stueckzahl_heute)
         if daten[t].iloc[-1] > 0:
