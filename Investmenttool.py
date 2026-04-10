@@ -1255,7 +1255,7 @@ with tab_allg:
     _asset_typen_fa = st.session_state.get("asset_typen", {})
     _equity_tickers = [t for t in verfuegbare if _asset_typen_fa.get(t, {}).get("typ", "Aktie") == "Aktie"]
     if not _equity_tickers:
-        st.info("📊 Die Fama-French-Faktorenanalyse wird angezeigt, sobald mindestens eine Aktienposition im Portfolio enthalten ist.")
+        st.info("Die Fama-French-Faktorenanalyse wird angezeigt, sobald mindestens eine Aktienposition im Portfolio enthalten ist.")
         factors = pd.Series(0.0, index=['Mkt-RF', 'SMB', 'HML', 'RMW', 'CMA'])
     else:
       try:
