@@ -119,7 +119,6 @@ if 'meine_ticker' not in st.session_state:
     st.session_state.meine_ticker = []
 if 'regionen_daten' not in st.session_state:
     st.session_state.regionen_daten = {}
-# --- MULTI-ASSET ERWEITERUNG: Asset-Typ Speicher ---
 if 'asset_typen' not in st.session_state:
     st.session_state.asset_typen = {}
 st.sidebar.text_input("Ticker-Symbol eingeben & Enter", key="widget_eingabe", on_change=clear_ticker_input)
@@ -176,7 +175,6 @@ for t in ticker_liste:
             with c4: ap = st.number_input("APAC", 0.0, 100.0, r_data["AP"], key=f"ap_{t}")
             with c5: af = st.number_input("Afrika", 0.0, 100.0, r_data["AF"], key=f"af_{t}")
             st.session_state.regionen_daten[t] = {"NA": na, "SA": sa, "EU": eu, "AP": ap, "AF": af}
-            # --- MULTI-ASSET ERWEITERUNG: Asset-Typ pro Position ---
             st.markdown("**Asset-Typ (für Szenario-Analyse)**")
             _atyp_optionen = ["Aktie", "Anleihe", "Rohstoff / Edelmetall"]
             _atyp_default  = st.session_state.asset_typen.get(t, {}).get("typ", "Aktie")
@@ -266,11 +264,11 @@ st.sidebar.header("Kapitalauswahl")
 startkapital = st.sidebar.number_input("Startkapital (€)", value=0, min_value=0, step=1000, key="mein_kapital")
 
 st.sidebar.header("Rebalancing")
-rebalance_active = st.sidebar.checkbox("Jährliches Rebalancing aktivieren", value=False)
+rebalance_active = st.sidebar.checkbox("Jährliches Rebalancing", value=False)
 
 zuordnung = dict(zip(ticker_liste, anteile_orig))
 st.title("Portfolio Backtest Dashboard")
-with st.expander("Portfolio-Zusammensetzung — Zielgewichtung (Eingabe)"):
+with st.expander("Portfoliozusammensetzung — Positionen & Startgewicht"):
     st.caption("Die hier gezeigten Gewichte sind deine eingegebenen Startwerte. Die tatsächliche Gewichtung nach Drift findest du weiter unten nach den KPIs.")
     st.markdown("""
     <style>
@@ -284,7 +282,7 @@ with st.expander("Portfolio-Zusammensetzung — Zielgewichtung (Eingabe)"):
     </style>
     """, unsafe_allow_html=True)
     rows_html = ""
-    ticker_namen = {t: t for t in ticker_liste} # Erstellt eine Basis-Liste
+    ticker_namen = {t: t for t in ticker_liste} 
     analysis_active = st.session_state.get("run_analysis", False)
     for t in ticker_liste:
         name = get_ticker_name(t) if analysis_active else t
@@ -602,8 +600,8 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# --- BUY & HOLD: Aktuelle Gewichtung nach Drift ---
-_drift_label = "Aktuelle Gewichtung (nach Drift, Buy & Hold)" if not rebalance_active else "Aktuelle Gewichtung (nach jährlichem Rebalancing)"
+st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
+_drift_label = "Aktuelle Gewichtung (ohne Rebalancing)" if not rebalance_active else "Aktuelle Gewichtung (mit Rebalancing)"
 with st.expander(_drift_label):
     if rebalance_active:
         st.caption("Jährliches Rebalancing aktiv — die Gewichte entsprechen näherungsweise deinen Zielwerten.")
@@ -1298,7 +1296,6 @@ with tab_allg:
                 st.info(f"💡 {result}")          
     except Exception as e:
         st.error(f"Faktoranalyse konnte nicht geladen werden: {e}")
-
 with tab_sim:
     def berechne_nicht_aktien_beitrag(verfuegbare, anteile, asset_typen, szenario_schocks):
         """
@@ -1397,11 +1394,11 @@ with tab_sim:
                 "roll_yield":     0.00,
             },
             "Small Cap Rallye": {
-                "yield_change":  +0.005,
-                "credit_spread": -0.005,
+                "yield_change":  +0.003,
+                "credit_spread": -0.002,
                 "liquidity":      0.000,
-                "spot_return":   +0.05,
-                "usd_index":     -0.01,
+                "spot_return":   +0.02,
+                "usd_index":     -0.005,
                 "roll_yield":    +0.005,
             },
         }
@@ -1418,13 +1415,11 @@ with tab_sim:
             gesamt_aktien_ret = np.sum(verlust_pro_faktor) + risk_free_rate
             _asset_typen = st.session_state.get("asset_typen", {})
             _multi_schocks = szenarien_multi[auswahl]
-            # --- FIX: FF5 nur anwenden wenn tatsächlich Aktien im Portfolio ---
             _equity_weight = sum(
                 szenario_gewichte[i] for i, t in enumerate(verfuegbare)
                 if _asset_typen.get(t, {}).get("typ", "Aktie") == "Aktie"
             )
             if _equity_weight == 0:
-                # Kein Aktienanteil → FF5-Ergebnis komplett ignorieren
                 gesamt_aktien_ret = 0.0
             nicht_aktien_ret, nicht_aktien_details = berechne_nicht_aktien_beitrag(
                 verfuegbare, szenario_gewichte, _asset_typen, _multi_schocks
