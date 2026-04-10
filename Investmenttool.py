@@ -269,7 +269,7 @@ rebalance_active = st.sidebar.checkbox("Jährliches Rebalancing", value=False)
 zuordnung = dict(zip(ticker_liste, anteile_orig))
 st.title("Portfolio Backtest Dashboard")
 with st.expander("Portfoliozusammensetzung — Positionen & Startgewicht"):
-    st.caption("Die hier gezeigten Gewichte sind deine eingegebenen Startwerte. Die tatsächliche Gewichtung nach Drift findest du weiter unten nach den KPIs.")
+    st.caption("Die hier gezeigten Gewichte sind die eingegebenen Startwerte. Die aktuelle Gewichtung (Rebalancing ja/nein) findet sich weiter unten.")
     st.markdown("""
     <style>
         .port-container { background-color: rgba(100,100,100,0.05); border-radius: 12px; padding: 5px; margin-bottom: 15px; }
@@ -601,12 +601,12 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
-_drift_label = "Aktuelle Gewichtung (ohne Rebalancing)" if not rebalance_active else "Aktuelle Gewichtung (mit Rebalancing)"
+_drift_label = "Portfoliozusammensetzung - Positionen & Aktuelle Gewichtung (ohne Rebalancing)" if not rebalance_active else "Portfoliozusammensetzung - Positionen & Aktuelle Gewichtung (mit Rebalancing)"
 with st.expander(_drift_label):
     if rebalance_active:
-        st.caption("Jährliches Rebalancing aktiv — die Gewichte entsprechen näherungsweise deinen Zielwerten.")
+        st.caption("Es findet ein jährliches Rebalancing auf die ursprüngliche Gewichtung (Startgewichtung) statt.")
     else:
-        st.caption("Buy & Hold aktiv — die Gewichte haben sich seit dem Startzeitpunkt frei verschoben.")
+        st.caption("Es findet kein jährliches Rebalancing statt, die Gewichtungen haben sich je nach Performance verändert (Buy & Hold).")
     _drift_rows = ""
     for i, t in enumerate(verfuegbare):
         _name        = ticker_namen.get(t, t)
