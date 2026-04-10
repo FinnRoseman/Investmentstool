@@ -100,6 +100,9 @@ if 'meine_ticker' not in st.session_state:
     st.session_state.meine_ticker = []
 if 'regionen_daten' not in st.session_state:
     st.session_state.regionen_daten = {}
+# --- MULTI-ASSET ERWEITERUNG: Asset-Typ Speicher ---
+if 'asset_typen' not in st.session_state:
+    st.session_state.asset_typen = {}
 st.sidebar.text_input("Ticker-Symbol eingeben & Enter", key="widget_eingabe", on_change=clear_ticker_input)
 ticker_input = st.session_state.get('ticker_temp', None)
 if ticker_input:
@@ -154,6 +157,30 @@ for t in ticker_liste:
             with c4: ap = st.number_input("APAC", 0.0, 100.0, r_data["AP"], key=f"ap_{t}")
             with c5: af = st.number_input("Afrika", 0.0, 100.0, r_data["AF"], key=f"af_{t}")
             st.session_state.regionen_daten[t] = {"NA": na, "SA": sa, "EU": eu, "AP": ap, "AF": af}
+            # --- MULTI-ASSET ERWEITERUNG: Asset-Typ pro Position ---
+            st.markdown("**Asset-Typ (für Szenario-Analyse)**")
+            _atyp_optionen = ["Aktie", "Anleihe", "Rohstoff / Edelmetall"]
+            _atyp_default  = st.session_state.asset_typen.get(t, {}).get("typ", "Aktie")
+            _atyp_idx      = _atyp_optionen.index(_atyp_default) if _atyp_default in _atyp_optionen else 0
+            _asset_typ     = st.selectbox("Typ", _atyp_optionen, index=_atyp_idx, key=f"atyp_{t}")
+            _asset_info    = {"typ": _asset_typ}
+            if _asset_typ == "Anleihe":
+                _dur_default  = st.session_state.asset_typen.get(t, {}).get("duration", 5.0)
+                _duration     = st.number_input("Duration (Jahre)", 0.0, 30.0, _dur_default, step=0.5, key=f"dur_{t}",
+                                                help="Modifizierte Duration der Anleihe / des Anleihen-ETFs.")
+                _btype_opts   = ["Staatsanleihe", "Unternehmensanleihe (IG)", "Unternehmensanleihe (HY)", "Emerging Markets"]
+                _btype_def    = st.session_state.asset_typen.get(t, {}).get("bond_type", "Staatsanleihe")
+                _btype_idx    = _btype_opts.index(_btype_def) if _btype_def in _btype_opts else 0
+                _bond_type    = st.selectbox("Anleihen-Typ", _btype_opts, index=_btype_idx, key=f"btype_{t}")
+                _asset_info["duration"]  = _duration
+                _asset_info["bond_type"] = _bond_type
+            elif _asset_typ == "Rohstoff / Edelmetall":
+                _rohstoff_opts = ["Gold", "Silber", "Rohöl (WTI)", "Rohöl (Brent)", "Erdgas", "Weizen", "Kupfer"]
+                _rohstoff_def  = st.session_state.asset_typen.get(t, {}).get("rohstoff", "Gold")
+                _rohstoff_idx  = _rohstoff_opts.index(_rohstoff_def) if _rohstoff_def in _rohstoff_opts else 0
+                _rohstoff      = st.selectbox("Rohstoff-Typ", _rohstoff_opts, index=_rohstoff_idx, key=f"rohst_{t}")
+                _asset_info["rohstoff"] = _rohstoff
+            st.session_state.asset_typen[t] = _asset_info
 
 st.sidebar.markdown("---")
 go_button = st.sidebar.button("Go", use_container_width=True)
@@ -1220,6 +1247,65 @@ with tab_allg:
 
 # --- INHALT FÜR TAB: SIMULATIONEN ---
 with tab_sim:
+    # --- MULTI-ASSET ERWEITERUNG: Hilfsfunktion für Anleihen & Rohstoffe ---
+    def berechne_nicht_aktien_beitrag(verfuegbare, anteile, asset_typen, szenario_schocks):
+        """
+        Berechnet den Rendite-Beitrag aller Nicht-Aktien-Positionen (Anleihen,
+        Rohstoffe) für ein gegebenes Szenario-Schock-Dict.
+        Aktien werden hier bewusst übersprungen – ihr Beitrag kommt weiterhin
+        aus dem FF5-Modell in der bestehenden Logik.
+        """
+        # Credit-Spread- und Liquiditätsbetas je Anleihen-Typ
+        _BOND_BETAS = {
+            "Staatsanleihe":             {"credit_spread": 0.0,  "liquidity": 0.0 },
+            "Unternehmensanleihe (IG)":  {"credit_spread": 0.5,  "liquidity": 0.10},
+            "Unternehmensanleihe (HY)":  {"credit_spread": 1.5,  "liquidity": 0.30},
+            "Emerging Markets":          {"credit_spread": 1.2,  "liquidity": 0.40},
+        }
+        # Spot-, USD- und Roll-Yield-Betas je Rohstoff-Typ
+        _COMMODITY_BETAS = {
+            "Gold":           {"spot": 1.0, "usd": -0.85, "roll":  0.00},
+            "Silber":         {"spot": 1.0, "usd": -0.70, "roll":  0.00},
+            "Rohöl (WTI)":   {"spot": 1.0, "usd": -0.65, "roll": -0.30},
+            "Rohöl (Brent)": {"spot": 1.0, "usd": -0.60, "roll": -0.25},
+            "Erdgas":         {"spot": 1.0, "usd": -0.30, "roll": -0.55},
+            "Weizen":         {"spot": 1.0, "usd": -0.45, "roll": -0.40},
+            "Kupfer":         {"spot": 1.0, "usd": -0.60, "roll": -0.20},
+        }
+        gesamt_beitrag  = 0.0
+        detail_liste    = []
+        for i, t in enumerate(verfuegbare):
+            info    = asset_typen.get(t, {"typ": "Aktie"})
+            typ     = info.get("typ", "Aktie")
+            gewicht = anteile[i]
+            if typ == "Anleihe":
+                duration   = info.get("duration", 5.0)
+                bond_type  = info.get("bond_type", "Staatsanleihe")
+                cb         = _BOND_BETAS.get(bond_type, _BOND_BETAS["Staatsanleihe"])
+                # Duration-Effekt: Kursänderung ≈ −Duration × ΔYield
+                yield_ret  = -duration * szenario_schocks.get("yield_change", 0.0)
+                spread_ret = -cb["credit_spread"] * szenario_schocks.get("credit_spread", 0.0)
+                liq_ret    = -cb["liquidity"]     * szenario_schocks.get("liquidity",     0.0)
+                pos_ret    = yield_ret + spread_ret + liq_ret
+                beitrag    = gewicht * pos_ret
+                gesamt_beitrag += beitrag
+                detail_liste.append({"ticker": t, "typ": typ,
+                                     "rendite": pos_ret, "beitrag": beitrag,
+                                     "details": f"Duration {duration:.1f}J | {bond_type}"})
+            elif typ == "Rohstoff / Edelmetall":
+                rohstoff = info.get("rohstoff", "Gold")
+                cb       = _COMMODITY_BETAS.get(rohstoff, _COMMODITY_BETAS["Gold"])
+                spot_ret = cb["spot"] * szenario_schocks.get("spot_return", 0.0)
+                usd_ret  = cb["usd"]  * szenario_schocks.get("usd_index",   0.0)
+                roll_ret = cb["roll"] * szenario_schocks.get("roll_yield",   0.0)
+                pos_ret  = spot_ret + usd_ret + roll_ret
+                beitrag  = gewicht * pos_ret
+                gesamt_beitrag += beitrag
+                detail_liste.append({"ticker": t, "typ": typ,
+                                     "rendite": pos_ret, "beitrag": beitrag,
+                                     "details": rohstoff})
+        return gesamt_beitrag, detail_liste
+
     @st.fragment
     def render_simulation_area(factors, beta, endsumme):
         szenarien = {
@@ -1228,6 +1314,53 @@ with tab_sim:
             "Schwere Rezession": [-0.45, -0.10, +0.05, +0.15, +0.10],
             "Tech-Blase": [-0.40, -0.05, +0.35, +0.15, +0.00],
             "Small Cap Rallye": [+0.15, +0.20, +0.05, -0.05, -0.05]
+        }
+        # --- MULTI-ASSET ERWEITERUNG: Nicht-Aktien-Schocks je Szenario ---
+        # Schlüssel: yield_change (abs. Änderung, z.B. 0.01 = +100bp),
+        #            credit_spread (Spread-Ausweitung), liquidity (Liquiditätsprämie),
+        #            spot_return (Rohstoff-Spotpreis), usd_index (USD-Stärke/-Schwäche),
+        #            roll_yield  (Contango/Backwardation-Verschiebung)
+        szenarien_multi = {
+            "Stagflation": {
+                "yield_change":  +0.015,   # +150bp: Zinsanstieg durch Inflation
+                "credit_spread": +0.010,   # leichte Spread-Ausweitung
+                "liquidity":     +0.005,
+                "spot_return":   +0.15,    # Rohstoffe als Inflationsschutz
+                "usd_index":     +0.02,
+                "roll_yield":    -0.01,
+            },
+            "Inflation": {
+                "yield_change":  +0.020,   # +200bp
+                "credit_spread": +0.008,
+                "liquidity":     +0.002,
+                "spot_return":   +0.20,    # starker Rohstoff-Anstieg
+                "usd_index":     +0.03,
+                "roll_yield":    -0.005,
+            },
+            "Schwere Rezession": {
+                "yield_change":  -0.020,   # −200bp: Flucht in Staatsanleihen
+                "credit_spread": +0.040,   # starke Spread-Ausweitung
+                "liquidity":     +0.025,
+                "spot_return":   -0.22,    # Nachfragerückgang drückt Rohstoffe
+                "usd_index":     +0.05,    # USD-Stärke in Risk-Off
+                "roll_yield":    -0.02,
+            },
+            "Tech-Blase": {
+                "yield_change":  -0.005,
+                "credit_spread": +0.010,
+                "liquidity":     +0.005,
+                "spot_return":   -0.05,
+                "usd_index":     +0.01,
+                "roll_yield":     0.00,
+            },
+            "Small Cap Rallye": {
+                "yield_change":  +0.005,
+                "credit_spread": -0.005,
+                "liquidity":      0.000,
+                "spot_return":   +0.05,
+                "usd_index":     -0.01,
+                "roll_yield":    +0.005,
+            },
         }
         sim_col1, sim_col2 = st.columns(2)
         with sim_col1:
@@ -1239,7 +1372,15 @@ with tab_sim:
             )
             schocks = szenarien[auswahl]
             verlust_pro_faktor = factors.values * schocks
-            gesamt_sz_ret = np.sum(verlust_pro_faktor) + risk_free_rate
+            gesamt_aktien_ret = np.sum(verlust_pro_faktor) + risk_free_rate
+            # --- MULTI-ASSET ERWEITERUNG: Anleihen & Rohstoffe hinzuaddieren ---
+            _asset_typen = st.session_state.get("asset_typen", {})
+            _multi_schocks = szenarien_multi[auswahl]
+            nicht_aktien_ret, nicht_aktien_details = berechne_nicht_aktien_beitrag(
+                verfuegbare, anteile, _asset_typen, _multi_schocks
+            )
+            gesamt_sz_ret  = gesamt_aktien_ret + nicht_aktien_ret
+            # ---------------------------------------------------------------
             verlust_sz_euro = endsumme * gesamt_sz_ret
             farbe_sz = "#EB5757" if gesamt_sz_ret < 0 else "#27AE60"
             st.markdown(f"""
@@ -1248,7 +1389,27 @@ with tab_sim:
                     <h2 style="margin:0; color:{farbe_sz};">{gesamt_sz_ret:.2%}</h2>
                     <p style="margin:0; font-weight:bold;">{verlust_sz_euro:,.2f} €</p>
                 </div>
-            """, unsafe_allow_html=True)    
+            """, unsafe_allow_html=True)
+            # --- MULTI-ASSET ERWEITERUNG: Aufschlüsselung Aktien vs. andere ---
+            if nicht_aktien_details:
+                st.markdown("##### Beitragsaufschlüsselung")
+                _farbe_aktien = "#EB5757" if gesamt_aktien_ret < 0 else "#27AE60"
+                st.markdown(f"""
+                    <div style="background:rgba(100,100,100,0.07); border-radius:8px; padding:10px 14px; margin-top:8px;">
+                        <span style="color:gray; font-size:13px;">📊 Aktien-Anteil (FF5-Modell)</span><br>
+                        <span style="color:{_farbe_aktien}; font-weight:bold;">{gesamt_aktien_ret:.2%}</span>
+                    </div>
+                """, unsafe_allow_html=True)
+                for d in nicht_aktien_details:
+                    _icon  = "🏦" if d["typ"] == "Anleihe" else "🪙"
+                    _farbe = "#EB5757" if d["beitrag"] < 0 else "#27AE60"
+                    st.markdown(f"""
+                        <div style="background:rgba(100,100,100,0.07); border-radius:8px; padding:10px 14px; margin-top:6px;">
+                            <span style="color:gray; font-size:13px;">{_icon} {d['ticker']} &nbsp;·&nbsp; {d['details']}</span><br>
+                            <span style="color:{_farbe}; font-weight:bold;">{d['beitrag']:+.2%}</span>
+                            <span style="color:gray; font-size:12px;"> Beitrag &nbsp;|&nbsp; {d['rendite']:+.2%} Position</span>
+                        </div>
+                    """, unsafe_allow_html=True)
         with sim_col2:
             st.markdown("### 🕹️ Benchmark-Sensitivität")
             eigener_schock = st.slider(
