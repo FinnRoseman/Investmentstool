@@ -381,14 +381,16 @@ capm_erwartung_pa = risk_free_rate + beta * (bench_arith - risk_free_rate)
 alpha = arith_mittel - capm_erwartung_pa
 active_return = arith_mittel - bench_arith
 information_ratio = active_return / tracking_error if tracking_error != 0 else np.nan
-upside_mask = bench_rendite > 0
-downside_mask = bench_rendite < 0
+port_monthly = port_rendite.resample('ME').apply(lambda x: (1 + x).prod() - 1)
+bench_monthly = bench_rendite.resample('ME').apply(lambda x: (1 + x).prod() - 1)
+upside_mask = bench_monthly > 0
+downside_mask = bench_monthly < 0
 if upside_mask.any():
-    upside_ratio = (port_rendite[upside_mask].mean() / bench_rendite[upside_mask].mean()) * 100
+    upside_ratio = (port_monthly[upside_mask].mean() / bench_monthly[upside_mask].mean()) * 100
 else:
     upside_ratio = np.nan
 if downside_mask.any():
-    downside_ratio = (port_rendite[downside_mask].mean() / bench_rendite[downside_mask].mean()) * 100
+    downside_ratio = (port_monthly[downside_mask].mean() / bench_monthly[downside_mask].mean()) * 100
 else:
     downside_ratio = np.nan
 
@@ -784,10 +786,25 @@ with tab_rend:
     with att_col2:
         st.subheader("📊 Rendite-Verteilung", help="Beitrag jeder Position zur Gesamtrendite.")
         beitraege = []
-        for t in verfuegbare:
-            einzel_ret = (1 + renditen[t]).prod() - 1
-            gewicht = anteile[verfuegbare.index(t)]
-            beitraege.append(einzel_ret * gewicht * 100)
+        if not rebalance_active:
+            for t in verfuegbare:
+                einzel_ret = (1 + renditen[t]).prod() - 1
+                gewicht = anteile[verfuegbare.index(t)]
+                beitraege.append(einzel_ret * gewicht * 100)
+        else:
+            target_w = np.array(anteile)
+            current_w = target_w.copy()
+            asset_contribs = np.zeros(len(verfuegbare))
+            rets_df = renditen[verfuegbare]
+            for i in range(len(rets_df)):
+                daily_r = rets_df.iloc[i].values
+                asset_contribs += current_w * daily_r
+                drifted = current_w * (1 + daily_r)
+                current_w = drifted / np.sum(drifted)
+                if i + 1 < len(rets_df):
+                    if rets_df.index[i+1].year > rets_df.index[i].year:
+                        current_w = target_w.copy()
+            beitraege = (asset_contribs * 100).tolist()
         df_att = pd.DataFrame({
             'Ticker': verfuegbare,
             'Name': [ticker_namen.get(t, t) for t in verfuegbare],
@@ -1235,9 +1252,21 @@ with tab_sim:
 with tab_allg:
     st.markdown("---")
     st.subheader("🧬 Faktorenanalyse", help="Diese Analyse zeigt, welche wissenschaftlichen Faktoren (Betas) dein Portfolio antreiben.")
-    try:
+    _asset_typen_fa = st.session_state.get("asset_typen", {})
+    _equity_tickers = [t for t in verfuegbare if _asset_typen_fa.get(t, {}).get("typ", "Aktie") == "Aktie"]
+    if not _equity_tickers:
+        st.info("📊 Die Fama-French-Faktorenanalyse wird angezeigt, sobald mindestens eine Aktienposition im Portfolio enthalten ist.")
+        factors = pd.Series(0.0, index=['Mkt-RF', 'SMB', 'HML', 'RMW', 'CMA'])
+    else:
+      try:
+        _equity_weights_fa = [anteile[verfuegbare.index(t)] for t in _equity_tickers]
+        _equity_weights_fa = [w / sum(_equity_weights_fa) for w in _equity_weights_fa]
+        if not rebalance_active:
+            _equity_port_ret, _ = calculate_buy_and_hold(renditen[_equity_tickers], _equity_weights_fa)
+        else:
+            _equity_port_ret = calculate_annual_rebalancing(renditen[_equity_tickers], _equity_weights_fa)
         with st.spinner("Berechne Faktor-Exposures..."):
-            result = get_factor_loadings(port_rendite)          
+            result = get_factor_loadings(_equity_port_ret)          
             if isinstance(result, dict):
                 loadings = result['loadings']
                 factors = loadings
@@ -1293,8 +1322,9 @@ with tab_allg:
                 st.markdown(f"**Alpha:** {alpha_val:.2%} {get_stars(alpha_p)} | **R²:** {r_sq:.2%}")
                 st.caption("p-Wert: * < 0.1, ** < 0.05, *** < 0.01")            
             else:
-                st.info(f"💡 {result}")          
-    except Exception as e:
+                st.info(f"💡 {result}")
+                factors = pd.Series(0.0, index=['Mkt-RF', 'SMB', 'HML', 'RMW', 'CMA'])          
+      except Exception as e:
         st.error(f"Faktoranalyse konnte nicht geladen werden: {e}")
 with tab_sim:
     def berechne_nicht_aktien_beitrag(verfuegbare, anteile, asset_typen, szenario_schocks):
@@ -1412,7 +1442,7 @@ with tab_sim:
             )
             schocks = szenarien[auswahl]
             verlust_pro_faktor = factors.values * schocks
-            gesamt_aktien_ret = np.sum(verlust_pro_faktor) + risk_free_rate
+            gesamt_aktien_ret = np.sum(verlust_pro_faktor)
             _asset_typen = st.session_state.get("asset_typen", {})
             _multi_schocks = szenarien_multi[auswahl]
             _equity_weight = sum(
@@ -1421,6 +1451,8 @@ with tab_sim:
             )
             if _equity_weight == 0:
                 gesamt_aktien_ret = 0.0
+            else:
+                gesamt_aktien_ret = gesamt_aktien_ret * _equity_weight
             nicht_aktien_ret, nicht_aktien_details = berechne_nicht_aktien_beitrag(
                 verfuegbare, szenario_gewichte, _asset_typen, _multi_schocks
             )
