@@ -175,7 +175,7 @@ for t in ticker_liste:
             with c4: ap = st.number_input("APAC", 0.0, 100.0, r_data["AP"], key=f"ap_{t}")
             with c5: af = st.number_input("Afrika", 0.0, 100.0, r_data["AF"], key=f"af_{t}")
             st.session_state.regionen_daten[t] = {"NA": na, "SA": sa, "EU": eu, "AP": ap, "AF": af}
-            st.markdown("**Asset-Typ (für Szenario-Analyse)**")
+            st.markdown("**Asset-Typ**")
             _atyp_optionen = ["Aktie", "Anleihe", "Rohstoff / Edelmetall", "Kryptowährung"]
             _atyp_default  = st.session_state.asset_typen.get(t, {}).get("typ", "Aktie")
             _atyp_idx      = _atyp_optionen.index(_atyp_default) if _atyp_default in _atyp_optionen else 0
