@@ -569,7 +569,7 @@ html_code = f"""
 <p class="header-value">{div_anzeige}</p>
 </div>
 <div class="header-card">
-<p class="header-label">Portfoliokosten (TER p.a.)</p>
+<p class="header-label">Portfoliokosten p.a. (TER)</p>
 <p class="header-value">{ter_anzeige}</p>
 </div>
 </div>
