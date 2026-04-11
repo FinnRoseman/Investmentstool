@@ -277,12 +277,16 @@ zuordnung = dict(zip(ticker_liste, anteile_orig))
 st.title("Portfolio Backtest Dashboard")
 st.markdown("""
 <style>
-    @media (prefers-color-scheme: dark) {
-        :root { --tv: #FFFFFF; --ts: #9CA3AF; --tm: #D1D5DB; --bg-badge: rgba(0,0,0,0.3); --border-subtle: rgba(255,255,255,0.05); --bg-card: rgba(100,100,100,0.1); }
+    :root {
+        --tv: var(--text-color, inherit);
+        --ts: var(--text-color, inherit);
+        --tm: var(--text-color, inherit);
+        --bg-badge: rgba(128,128,128,0.15);
+        --border-subtle: rgba(128,128,128,0.15);
+        --bg-card: rgba(128,128,128,0.08);
     }
-    @media (prefers-color-scheme: light) {
-        :root { --tv: #1a1a1a; --ts: #6B7280; --tm: #4B5563; --bg-badge: rgba(0,0,0,0.08); --border-subtle: rgba(0,0,0,0.08); --bg-card: rgba(0,0,0,0.04); }
-    }
+    .ts-opacity { opacity: 0.55; }
+    .tm-opacity { opacity: 0.7; }
 </style>
 """, unsafe_allow_html=True)
 with st.expander("Portfoliozusammensetzung — Positionen & Startgewicht"):
@@ -534,7 +538,7 @@ st.markdown("""
         border-radius: 12px;
         border-left: 5px solid #4A90E2;
     }
-    .header-label { color: var(--ts) !important; font-size: 14px !important; margin: 0 !important; }
+    .header-label { color: var(--ts) !important; opacity: 0.55 !important; font-size: 14px !important; margin: 0 !important; }
     .header-value { color: var(--tv) !important; font-size: 28px !important; font-weight: bold !important; margin: 5px 0 0 0 !important; }
 </style>
 """, unsafe_allow_html=True)
@@ -593,6 +597,7 @@ st.markdown("""
         background-color: rgba(100,100,100,0.15);
     }
     .kpi-label {
+        opacity: 0.55;
         color: var(--ts);
         font-size: 13px;
         margin: 0;
@@ -670,7 +675,7 @@ with st.expander(_drift_label):
             <div class="port-bar" style="width: {_aktuell_pct}%;"></div>
             <div class="port-ticker">{t}</div>
             <div class="port-name">{_name}</div>
-            <div style="color:var(--ts); font-size:12px; margin-left:10px; z-index:1; min-width:55px; text-align:right;">Ziel: {_ziel_pct:.1f}%</div>
+            <div style="color:var(--ts); opacity:0.55; font-size:12px; margin-left:10px; z-index:1; min-width:55px; text-align:right;">Ziel: {_ziel_pct:.1f}%</div>
             <div style="font-weight:bold; color:var(--tv); margin-left:10px; z-index:1; min-width:65px; text-align:right;">{_aktuell_pct:.1f}%</div>
             <div style="color:{_drift_farbe}; font-size:12px; margin-left:8px; z-index:1; min-width:55px; text-align:right;">{_drift_pfeil} {_drift_pct:+.1f}%</div>
         </div>"""
@@ -1060,15 +1065,15 @@ with tab_sim:
                 .opt-container { background: rgba(100,100,100,0.05); border-radius: 12px; padding: 10px; margin-bottom: 12px; }
                 .opt-row { margin-bottom: 10px; position: relative; }
                 .opt-ticker-label { color: #4A90E2; font-family: monospace; font-weight: bold; font-size: 13px; margin-bottom: 3px; }
-                .opt-name-label { color: var(--ts); font-size: 11px; margin-bottom: 4px; display: block; }
+                .opt-name-label { color: var(--ts); opacity: 0.55; font-size: 11px; margin-bottom: 4px; display: block; }
                 .bar-bg-stacked { 
                     background: rgba(255,255,255,0.05); height: 10px; border-radius: 5px; 
                     width: 100%; display: flex; overflow: hidden; margin-bottom: 4px;
                 }
                 .bar-segment-act { background: #6B7280; }
                 .bar-segment-opt { background: #4A90E2; }
-                .values-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--ts); }
-                .val-act { color: var(--tm); }
+                .values-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--ts); opacity: 0.55; }
+                .val-act { color: var(--tm); opacity: 0.7; }
                 .val-opt { color: #4A90E2; font-weight: bold; }
             </style>
             """, unsafe_allow_html=True)  
@@ -1213,9 +1218,9 @@ with tab_risk:
         flex: 1; 
         min-width: 200px; 
     }
-    .r-title { color: var(--ts); font-size: 13px; margin-bottom: 12px; text-transform: uppercase; font-weight: bold; }
+    .r-title { color: var(--ts); opacity: 0.55; font-size: 13px; margin-bottom: 12px; text-transform: uppercase; font-weight: bold; }
     .r-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
-    .r-lbl { color: var(--ts); font-size: 13px; }
+    .r-lbl { color: var(--ts); opacity: 0.55; font-size: 13px; }
     .r-val { color: var(--tv); font-size: 18px; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
@@ -1278,7 +1283,7 @@ with tab_sim:
     <style>
         .mc-container { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
         .mc-card { background: var(--bg-card); border-radius: 10px; padding: 15px; border-left: 5px solid #4A90E2; display: flex; justify-content: space-between; align-items: center; }
-        .mc-label { color: var(--ts); font-size: 14px; font-weight: 500; }
+        .mc-label { color: var(--ts); opacity: 0.55; font-size: 14px; font-weight: 500; }
         .mc-amount { display: block; color: var(--tv); font-size: 18px; font-weight: bold; }
         .mc-cagr { color: #4A90E2; font-size: 13px; font-weight: bold; }
         .pessimist { border-left-color: #E74C3C; }
