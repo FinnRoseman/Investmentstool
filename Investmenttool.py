@@ -175,7 +175,7 @@ for t in ticker_liste:
             with c4: ap = st.number_input("APAC", 0.0, 100.0, r_data["AP"], key=f"ap_{t}")
             with c5: af = st.number_input("Afrika", 0.0, 100.0, r_data["AF"], key=f"af_{t}")
             st.session_state.regionen_daten[t] = {"NA": na, "SA": sa, "EU": eu, "AP": ap, "AF": af}
-            st.markdown("**Asset-Typ**")
+            st.markdown("**Asset-Typ (für Szenario-Analyse)**")
             _atyp_optionen = ["Aktie", "Anleihe", "Rohstoff / Edelmetall", "Kryptowährung"]
             _atyp_default  = st.session_state.asset_typen.get(t, {}).get("typ", "Aktie")
             _atyp_idx      = _atyp_optionen.index(_atyp_default) if _atyp_default in _atyp_optionen else 0
@@ -205,6 +205,11 @@ for t in ticker_liste:
                                             help="Large Cap Altcoins: z.B. SOL, ADA, XRP. Small Cap: höheres Beta.")
                 _asset_info["crypto"] = _crypto
             st.session_state.asset_typen[t] = _asset_info
+            st.markdown("**Kosten (TER)**")
+            _ter_default = st.session_state.get(f"ter_val_{t}", 0.0)
+            _ter = st.number_input("TER p.a. (%)", 0.0, 10.0, _ter_default, step=0.01, format="%.2f", key=f"ter_{t}",
+                                   help="Total Expense Ratio des ETFs/Fonds. Für Einzelaktien, Anleihen oder Krypto: 0 lassen.")
+            st.session_state[f"ter_val_{t}"] = _ter
 
 st.sidebar.markdown("---")
 go_button = st.sidebar.button("Go", use_container_width=True)
@@ -364,6 +369,7 @@ if summe_anteile_input <= 0:
     st.stop()
 anteile = [anteile_orig[ticker_liste.index(t)] for t in verfuegbare]
 anteile = [a/sum(anteile) for a in anteile]
+port_ter = sum(st.session_state.get(f"ter_val_{t}", 0.0) * anteile[i] for i, t in enumerate(verfuegbare))
 
 if not rebalance_active:
     port_rendite, aktuelle_gewichte = calculate_buy_and_hold(renditen[verfuegbare], anteile)
@@ -524,11 +530,12 @@ div_wert = 0.00 if np.isnan(total_div_euro) else total_div_euro
 abs_anzeige = f"{absoluter_gewinn:,.2f} €" if startkapital > 0 else "0.00 €"
 rel_anzeige = f"{total_ret:.2%}" if startkapital > 0 else "0.00%"
 div_anzeige = f"{div_wert:,.2f} €" if startkapital > 0 else "0.00 €"
+ter_anzeige = f"{port_ter:.2f}%"
 st.markdown("""
 <style>
     .header-grid {
         display: grid;
-        grid-template-columns: 1.5fr 1.2fr 1fr 1.2fr;
+        grid-template-columns: 1.5fr 1.2fr 1fr 1.2fr 1fr;
         gap: 15px;
         margin-bottom: 25px;
     }
@@ -560,6 +567,10 @@ html_code = f"""
 <div class="header-card">
 <p class="header-label">Ausschüttungen (LTM)</p>
 <p class="header-value">{div_anzeige}</p>
+</div>
+<div class="header-card">
+<p class="header-label">Portfoliokosten (TER p.a.)</p>
+<p class="header-value">{ter_anzeige}</p>
 </div>
 </div>
 """
