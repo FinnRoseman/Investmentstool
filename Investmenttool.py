@@ -369,13 +369,13 @@ if summe_anteile_input <= 0:
     st.stop()
 anteile = [anteile_orig[ticker_liste.index(t)] for t in verfuegbare]
 anteile = [a/sum(anteile) for a in anteile]
-port_ter = sum(st.session_state.get(f"ter_val_{t}", 0.0) * anteile[i] for i, t in enumerate(verfuegbare))
 
 if not rebalance_active:
     port_rendite, aktuelle_gewichte = calculate_buy_and_hold(renditen[verfuegbare], anteile)
 else:
     port_rendite = calculate_annual_rebalancing(renditen[verfuegbare], anteile)
     aktuelle_gewichte = list(anteile)
+port_ter = sum(st.session_state.get(f"ter_val_{t}", 0.0) * aktuelle_gewichte[i] for i, t in enumerate(verfuegbare))
 bench_rendite = renditen.loc[port_rendite.index, benchmark]
 diff_rendite = port_rendite - bench_rendite
 rf_daily = (1 + risk_free_rate)**(1/252) - 1
