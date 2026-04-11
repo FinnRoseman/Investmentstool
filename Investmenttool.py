@@ -176,7 +176,7 @@ for t in ticker_liste:
             with c5: af = st.number_input("Afrika", 0.0, 100.0, r_data["AF"], key=f"af_{t}")
             st.session_state.regionen_daten[t] = {"NA": na, "SA": sa, "EU": eu, "AP": ap, "AF": af}
             st.markdown("**Asset-Typ (für Szenario-Analyse)**")
-            _atyp_optionen = ["Aktie", "Anleihe", "Rohstoff / Edelmetall"]
+            _atyp_optionen = ["Aktie", "Anleihe", "Rohstoff / Edelmetall", "Kryptowährung"]
             _atyp_default  = st.session_state.asset_typen.get(t, {}).get("typ", "Aktie")
             _atyp_idx      = _atyp_optionen.index(_atyp_default) if _atyp_default in _atyp_optionen else 0
             _asset_typ     = st.selectbox("Typ", _atyp_optionen, index=_atyp_idx, key=f"atyp_{t}")
@@ -197,6 +197,13 @@ for t in ticker_liste:
                 _rohstoff_idx  = _rohstoff_opts.index(_rohstoff_def) if _rohstoff_def in _rohstoff_opts else 0
                 _rohstoff      = st.selectbox("Rohstoff-Typ", _rohstoff_opts, index=_rohstoff_idx, key=f"rohst_{t}")
                 _asset_info["rohstoff"] = _rohstoff
+            elif _asset_typ == "Kryptowährung":
+                _crypto_opts = ["Bitcoin", "Ethereum", "Altcoin (Large Cap)", "Altcoin (Small Cap)"]
+                _crypto_def  = st.session_state.asset_typen.get(t, {}).get("crypto", "Bitcoin")
+                _crypto_idx  = _crypto_opts.index(_crypto_def) if _crypto_def in _crypto_opts else 0
+                _crypto      = st.selectbox("Krypto-Typ", _crypto_opts, index=_crypto_idx, key=f"crypto_{t}",
+                                            help="Large Cap Altcoins: z.B. SOL, ADA, XRP. Small Cap: höheres Beta.")
+                _asset_info["crypto"] = _crypto
             st.session_state.asset_typen[t] = _asset_info
 
 st.sidebar.markdown("---")
@@ -1380,6 +1387,12 @@ with tab_sim:
             "Weizen":         {"spot": 1.0, "usd": -0.45, "roll": -0.40},
             "Kupfer":         {"spot": 1.0, "usd": -0.60, "roll": -0.20},
         }
+        _CRYPTO_BETAS = {
+            "Bitcoin":              {"market_sentiment": 2.0, "usd": -1.0,  "liquidity": -0.5},
+            "Ethereum":             {"market_sentiment": 2.5, "usd": -1.0,  "liquidity": -0.7},
+            "Altcoin (Large Cap)":  {"market_sentiment": 3.0, "usd": -1.2,  "liquidity": -1.0},
+            "Altcoin (Small Cap)":  {"market_sentiment": 4.0, "usd": -1.2,  "liquidity": -1.5},
+        }
         gesamt_beitrag  = 0.0
         detail_liste    = []
         for i, t in enumerate(verfuegbare):
@@ -1411,6 +1424,18 @@ with tab_sim:
                 detail_liste.append({"ticker": t, "typ": typ,
                                      "rendite": pos_ret, "beitrag": beitrag,
                                      "details": rohstoff})
+            elif typ == "Kryptowährung":
+                crypto = info.get("crypto", "Bitcoin")
+                cb     = _CRYPTO_BETAS.get(crypto, _CRYPTO_BETAS["Bitcoin"])
+                sent_ret = cb["market_sentiment"] * szenario_schocks.get("crypto_sentiment", 0.0)
+                usd_ret  = cb["usd"]              * szenario_schocks.get("usd_index",        0.0)
+                liq_ret  = cb["liquidity"]         * szenario_schocks.get("liquidity",        0.0)
+                pos_ret  = sent_ret + usd_ret + liq_ret
+                beitrag  = gewicht * pos_ret
+                gesamt_beitrag += beitrag
+                detail_liste.append({"ticker": t, "typ": typ,
+                                     "rendite": pos_ret, "beitrag": beitrag,
+                                     "details": crypto})
         return gesamt_beitrag, detail_liste
     @st.fragment
     def render_simulation_area(factors, beta, endsumme, szenario_gewichte):
@@ -1429,6 +1454,7 @@ with tab_sim:
                 "spot_return":   +0.15,    
                 "usd_index":     +0.02,
                 "roll_yield":    -0.01,
+                "crypto_sentiment": -0.25,
             },
             "Inflation": {
                 "yield_change":  +0.020,   
@@ -1437,6 +1463,7 @@ with tab_sim:
                 "spot_return":   +0.20,    
                 "usd_index":     +0.03,
                 "roll_yield":    -0.005,
+                "crypto_sentiment": -0.10,
             },
             "Schwere Rezession": {
                 "yield_change":  -0.020,   
@@ -1445,6 +1472,7 @@ with tab_sim:
                 "spot_return":   -0.22,    
                 "usd_index":     +0.05,    
                 "roll_yield":    -0.02,
+                "crypto_sentiment": -0.35,
             },
             "Tech-Blase": {
                 "yield_change":  -0.005,
@@ -1453,6 +1481,7 @@ with tab_sim:
                 "spot_return":   -0.05,
                 "usd_index":     +0.01,
                 "roll_yield":     0.00,
+                "crypto_sentiment": -0.30,
             },
             "Small Cap Rallye": {
                 "yield_change":  +0.003,
@@ -1461,6 +1490,7 @@ with tab_sim:
                 "spot_return":   +0.02,
                 "usd_index":     -0.005,
                 "roll_yield":    +0.005,
+                "crypto_sentiment": +0.15,
             },
         }
         sim_col1, sim_col2 = st.columns(2)
