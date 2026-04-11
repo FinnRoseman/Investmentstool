@@ -423,9 +423,9 @@ mc_es_95_jahr = paths[paths <= schwellenwert].mean() * -1
 
 # Risikoverteilung
 cov_matrix = renditen[verfuegbare].cov() * 252
-port_vola = np.sqrt(np.dot(anteile, np.dot(cov_matrix, anteile)))
-marginal_contrib = np.dot(cov_matrix, anteile) / port_vola
-abs_risk_contrib = anteile * marginal_contrib
+port_vola = np.sqrt(np.dot(aktuelle_gewichte, np.dot(cov_matrix, aktuelle_gewichte)))
+marginal_contrib = np.dot(cov_matrix, aktuelle_gewichte) / port_vola
+abs_risk_contrib = aktuelle_gewichte * marginal_contrib
 rel_risk_contrib = abs_risk_contrib / port_vola
 has_negative_risk = any(val < 0 for val in rel_risk_contrib)
 
