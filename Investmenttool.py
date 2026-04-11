@@ -275,17 +275,27 @@ rebalance_active = st.sidebar.checkbox("Jährliches Rebalancing", value=False)
 
 zuordnung = dict(zip(ticker_liste, anteile_orig))
 st.title("Portfolio Backtest Dashboard")
+st.markdown("""
+<style>
+    @media (prefers-color-scheme: dark) {
+        :root { --tv: #FFFFFF; --ts: #9CA3AF; --tm: #D1D5DB; --bg-badge: rgba(0,0,0,0.3); --border-subtle: rgba(255,255,255,0.05); --bg-card: rgba(100,100,100,0.1); }
+    }
+    @media (prefers-color-scheme: light) {
+        :root { --tv: #1a1a1a; --ts: #6B7280; --tm: #4B5563; --bg-badge: rgba(0,0,0,0.08); --border-subtle: rgba(0,0,0,0.08); --bg-card: rgba(0,0,0,0.04); }
+    }
+</style>
+""", unsafe_allow_html=True)
 with st.expander("Portfoliozusammensetzung — Positionen & Startgewicht"):
     st.caption("Die hier gezeigten Gewichte sind die eingegebenen Startwerte. Die aktuelle Gewichtung (Rebalancing ja/nein) findet sich weiter unten.")
     st.markdown("""
     <style>
         .port-container { background-color: rgba(100,100,100,0.05); border-radius: 12px; padding: 5px; margin-bottom: 15px; }
-        .port-row { display: flex; align-items: center; padding: 10px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); position: relative; overflow: hidden; }
+        .port-row { display: flex; align-items: center; padding: 10px 15px; border-bottom: 1px solid var(--border-subtle); position: relative; overflow: hidden; }
         .port-row:last-child { border-bottom: none; }
         .port-bar { position: absolute; left: 0; top: 0; bottom: 0; background-color: rgba(74, 144, 226, 0.15); z-index: 0; }
-        .port-ticker { background-color: rgba(0,0,0,0.3); color: #4A90E2; padding: 2px 8px; border-radius: 5px; font-family: monospace; font-size: 12px; margin-right: 15px; z-index: 1; min-width: 80px; text-align: center; }
-        .port-name { flex: 1; color: white; font-size: 14px; z-index: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .port-weight { font-weight: bold; color: white; margin-left: 10px; z-index: 1; min-width: 60px; text-align: right; }
+        .port-ticker { background-color: var(--bg-badge); color: #4A90E2; padding: 2px 8px; border-radius: 5px; font-family: monospace; font-size: 12px; margin-right: 15px; z-index: 1; min-width: 80px; text-align: center; }
+        .port-name { flex: 1; color: var(--tv); font-size: 14px; z-index: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .port-weight { font-weight: bold; color: var(--tv); margin-left: 10px; z-index: 1; min-width: 60px; text-align: right; }
     </style>
     """, unsafe_allow_html=True)
     rows_html = ""
@@ -524,8 +534,8 @@ st.markdown("""
         border-radius: 12px;
         border-left: 5px solid #4A90E2;
     }
-    .header-label { color: #9CA3AF !important; font-size: 14px !important; margin: 0 !important; }
-    .header-value { color: white !important; font-size: 28px !important; font-weight: bold !important; margin: 5px 0 0 0 !important; }
+    .header-label { color: var(--ts) !important; font-size: 14px !important; margin: 0 !important; }
+    .header-value { color: var(--tv) !important; font-size: 28px !important; font-weight: bold !important; margin: 5px 0 0 0 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -583,12 +593,12 @@ st.markdown("""
         background-color: rgba(100,100,100,0.15);
     }
     .kpi-label {
-        color: #9CA3AF;
+        color: var(--ts);
         font-size: 13px;
         margin: 0;
     }
     .kpi-value {
-        color: white; /* Einheitliches Weiß für ALLE Werte */
+        color: var(--tv);
         font-size: 24px;
         font-weight: bold;
         margin: 5px 0 0 0;
@@ -660,8 +670,8 @@ with st.expander(_drift_label):
             <div class="port-bar" style="width: {_aktuell_pct}%;"></div>
             <div class="port-ticker">{t}</div>
             <div class="port-name">{_name}</div>
-            <div style="color:#9CA3AF; font-size:12px; margin-left:10px; z-index:1; min-width:55px; text-align:right;">Ziel: {_ziel_pct:.1f}%</div>
-            <div style="font-weight:bold; color:white; margin-left:10px; z-index:1; min-width:65px; text-align:right;">{_aktuell_pct:.1f}%</div>
+            <div style="color:var(--ts); font-size:12px; margin-left:10px; z-index:1; min-width:55px; text-align:right;">Ziel: {_ziel_pct:.1f}%</div>
+            <div style="font-weight:bold; color:var(--tv); margin-left:10px; z-index:1; min-width:65px; text-align:right;">{_aktuell_pct:.1f}%</div>
             <div style="color:{_drift_farbe}; font-size:12px; margin-left:8px; z-index:1; min-width:55px; text-align:right;">{_drift_pfeil} {_drift_pct:+.1f}%</div>
         </div>"""
     st.markdown(f'<div class="port-container">{_drift_rows}</div>', unsafe_allow_html=True)
@@ -1050,15 +1060,15 @@ with tab_sim:
                 .opt-container { background: rgba(100,100,100,0.05); border-radius: 12px; padding: 10px; margin-bottom: 12px; }
                 .opt-row { margin-bottom: 10px; position: relative; }
                 .opt-ticker-label { color: #4A90E2; font-family: monospace; font-weight: bold; font-size: 13px; margin-bottom: 3px; }
-                .opt-name-label { color: #9CA3AF; font-size: 11px; margin-bottom: 4px; display: block; }
+                .opt-name-label { color: var(--ts); font-size: 11px; margin-bottom: 4px; display: block; }
                 .bar-bg-stacked { 
                     background: rgba(255,255,255,0.05); height: 10px; border-radius: 5px; 
                     width: 100%; display: flex; overflow: hidden; margin-bottom: 4px;
                 }
                 .bar-segment-act { background: #6B7280; }
                 .bar-segment-opt { background: #4A90E2; }
-                .values-row { display: flex; justify-content: space-between; font-size: 11px; color: #9CA3AF; }
-                .val-act { color: #D1D5DB; }
+                .values-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--ts); }
+                .val-act { color: var(--tm); }
                 .val-opt { color: #4A90E2; font-weight: bold; }
             </style>
             """, unsafe_allow_html=True)  
@@ -1203,10 +1213,10 @@ with tab_risk:
         flex: 1; 
         min-width: 200px; 
     }
-    .r-title { color: #9CA3AF; font-size: 13px; margin-bottom: 12px; text-transform: uppercase; font-weight: bold; }
+    .r-title { color: var(--ts); font-size: 13px; margin-bottom: 12px; text-transform: uppercase; font-weight: bold; }
     .r-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
-    .r-lbl { color: #9CA3AF; font-size: 13px; }
-    .r-val { color: white; font-size: 18px; font-weight: bold; }
+    .r-lbl { color: var(--ts); font-size: 13px; }
+    .r-val { color: var(--tv); font-size: 18px; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
     cards_html = ""
@@ -1267,9 +1277,9 @@ with tab_sim:
     st.markdown("""
     <style>
         .mc-container { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
-        .mc-card { background: rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 15px; border-left: 5px solid #4A90E2; display: flex; justify-content: space-between; align-items: center; }
-        .mc-label { color: #9CA3AF; font-size: 14px; font-weight: 500; }
-        .mc-amount { display: block; color: white; font-size: 18px; font-weight: bold; }
+        .mc-card { background: var(--bg-card); border-radius: 10px; padding: 15px; border-left: 5px solid #4A90E2; display: flex; justify-content: space-between; align-items: center; }
+        .mc-label { color: var(--ts); font-size: 14px; font-weight: 500; }
+        .mc-amount { display: block; color: var(--tv); font-size: 18px; font-weight: bold; }
         .mc-cagr { color: #4A90E2; font-size: 13px; font-weight: bold; }
         .pessimist { border-left-color: #E74C3C; }
         .median { border-left-color: #4A90E2; }
