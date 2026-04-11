@@ -496,7 +496,7 @@ for i, t in enumerate(verfuegbare):
             if euro_zahlung_avg > 0:
                 cal_data.append({
                     "Monat": date.strftime("%B"), "Monat_Nr": date.month,
-                    "Ticker": t, "Ausschüttung": euro_zahlung_avg
+                    "Ticker": t, "Name": ticker_namen.get(t, t), "Ausschüttung": euro_zahlung_avg
                 })
         one_year_ago = pd.Timestamp.now() - pd.Timedelta(days=365)
         last_year_divs = div_history[div_history.index > one_year_ago]
@@ -906,13 +906,13 @@ with tab_allg:
     if cal_data:
         df_cal = pd.DataFrame(cal_data)
         monats_namen = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
-        df_div_plot = df_cal.groupby(['Monat_Nr', 'Ticker'])['Ausschüttung'].sum().reset_index()
+        df_div_plot = df_cal.groupby(['Monat_Nr', 'Ticker', 'Name'])['Ausschüttung'].sum().reset_index()
         df_div_plot['Monat'] = df_div_plot['Monat_Nr'].apply(lambda x: monats_namen[x-1])
         fig_div = px.bar(
             df_div_plot,
             x='Monat',
             y='Ausschüttung',
-            color='Ticker',
+            color='Name',
             category_orders={"Monat": monats_namen},
             color_discrete_sequence=px.colors.qualitative.G10, 
             text_auto='.2f', 
