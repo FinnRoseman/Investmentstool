@@ -493,7 +493,7 @@ for i, t in enumerate(verfuegbare):
                     euro_zahlung_avg = (amount * fx_faktor * stueckzahl_avg) / anzahl_jahre
             else:
                 euro_zahlung_avg = (amount * fx_faktor * stueckzahl_avg) / anzahl_jahre
-            _ezav = euro_zahlung_avg.item() if hasattr(euro_zahlung_avg, 'item') else float(euro_zahlung_avg)
+            _ezav = float(np.atleast_1d(np.array(euro_zahlung_avg)).flat[0])
             if _ezav > 0:
                 cal_data.append({
                     "Monat": date.strftime("%B"), "Monat_Nr": date.month,
