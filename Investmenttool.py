@@ -239,7 +239,7 @@ modus = st.sidebar.radio(
 )
 if modus == "Standardauswahl":
     bench_optionen = {
-        "100/0 (MSCI World)": "EUNL.DE",
+        "100/0 (MSCI ACWI IMI)": "SPYI.DE",
         "80/20 (LifeStrategy 80% Equity)": "V80A.DE",
         "60/40 (LifeStrategy 60% Equity)": "V60A.DE",
         "40/60 (LifeStrategy 40% Equity)": "V40A.DE",
