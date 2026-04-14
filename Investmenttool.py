@@ -259,7 +259,11 @@ else:
         placeholder="Ticker hier tippen...",
         key="custom_bench_input"
     ).strip().upper()
-    benchmark = custom_ticker if custom_ticker else "EUNL.DE"
+    if custom_ticker:
+        benchmark = custom_ticker
+    else:
+        st.sidebar.info("Bitte einen Benchmark-Ticker eingeben.")
+        st.stop()
 
 st.sidebar.header("Zeitraumauswahl")
 zeitraum_optionen = {
