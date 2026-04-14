@@ -465,9 +465,22 @@ for i, t in enumerate(verfuegbare):
     ticker_obj = yf.Ticker(t)
     gewicht    = float(anteile[i])
     try:
-        div_history = ticker_obj.dividends.copy()
+        _hist = ticker_obj.history(period="max", auto_adjust=False)
+        if 'Dividends' in _hist.columns:
+            div_history = _hist['Dividends'].copy()
+            div_history = div_history[div_history > 0].dropna()
+        else:
+            div_history = pd.Series(dtype=float)
+        # Fallback: falls leer, versuche .dividends Property
+        if div_history.empty:
+            _divs_fallback = ticker_obj.dividends
+            if _divs_fallback is not None and not _divs_fallback.empty:
+                div_history = _divs_fallback.copy()
     except Exception:
-        continue
+        try:
+            div_history = ticker_obj.dividends.copy()
+        except Exception:
+            continue
     if div_history.empty:
         continue
 
