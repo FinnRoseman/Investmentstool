@@ -456,86 +456,98 @@ port_current_yield = 0.0
 port_yoc = 0.0
 total_div_euro = 0.0
 cal_data = []
+def _naive(ts):
+    """Konvertiert beliebigen Timestamp sicher zu timezone-naivem pd.Timestamp."""
+    t = pd.Timestamp(ts)
+    return t.tz_convert(None) if t.tz is not None else t
+
 for i, t in enumerate(verfuegbare):
     ticker_obj = yf.Ticker(t)
-    gewicht = anteile[i]
-    div_history = ticker_obj.dividends
-    if not div_history.empty:
-        div_dates = div_history.index
-        if hasattr(div_dates, 'tz') and div_dates.tz is not None:
-            div_dates = div_dates.tz_convert(None)
-        div_history = div_history.copy()
-        div_history.index = div_dates
-        period_start = daten.index[0]
-        period_end = daten.index[-1]
-        if hasattr(period_start, 'tz') and period_start.tz is not None:
-            period_start = period_start.tz_convert(None)
-        if hasattr(period_end, 'tz') and period_end.tz is not None:
-            period_end = period_end.tz_convert(None)
-        divs_in_period = div_history[(div_history.index >= period_start) & (div_history.index <= period_end)]
-        anzahl_jahre = max(jahre, 1.0)
+    gewicht    = float(anteile[i])
+    try:
+        div_history = ticker_obj.dividends.copy()
+    except Exception:
+        continue
+    if div_history.empty:
+        continue
+
+    # Timezone aus Dividenden-Index entfernen
+    if div_history.index.tz is not None:
+        div_history.index = div_history.index.tz_convert(None)
+
+    # Zeitraum-Grenzen aus Preisdaten (ebenfalls timezone-naiv)
+    period_start = _naive(daten.index[0])
+    period_end   = _naive(daten.index[-1])
+    divs_in_period = div_history[
+        (div_history.index >= period_start) & (div_history.index <= period_end)
+    ]
+    anzahl_jahre = max(jahre, 1.0)
+
+    # FX-Faktor: Verhältnis EUR-Preis zu Originalwährung
+    try:
+        _price_raw = float(ticker_obj.history(
+            start=daten.index[-1] - pd.Timedelta(days=5),
+            end=daten.index[-1]   + pd.Timedelta(days=1)
+        )['Close'].iloc[-1])
+        fx_faktor = float(daten[t].iloc[-1]) / _price_raw
+    except Exception:
+        fx_faktor = 1.0
+
+    _ticker_fx   = fx_prices_map.get(t, None)
+    _price_last  = float(daten[t].iloc[-1])
+    _price_first = float(daten[t].iloc[0])
+
+    # Durchschnittliche Stückzahl für Kalender-Berechnung
+    _stk_start = (float(startkapital) * gewicht / _price_first) if _price_first > 0 else 0.0
+    _stk_end   = (float(endsumme)     * gewicht / _price_last)  if _price_last  > 0 else 0.0
+    _stk_avg   = (_stk_start + _stk_end) / 2
+
+    # --- Dividendenkalender ---
+    for _raw_date, _raw_amount in divs_in_period.items():
         try:
-            last_date = daten.index[-1]
-            price_raw = ticker_obj.history(start=last_date - pd.Timedelta(days=5), end=last_date + pd.Timedelta(days=1))['Close'].iloc[-1]
-            price_eur = daten[t].iloc[-1]
-            fx_faktor = float(price_eur) / float(price_raw)
-        except:
-            fx_faktor = 1.0
-        _ticker_fx = fx_prices_map.get(t, None)
-        for _raw_date, _raw_amount in divs_in_period.items():
+            date   = _naive(_raw_date)
+            amount = float(_raw_amount)
+        except Exception:
+            continue
+        if _ticker_fx is not None:
             try:
-                date = pd.Timestamp(_raw_date)
-                if date.tz is not None:
-                    date = date.tz_convert(None)
-                amount = float(np.atleast_1d(np.asarray(_raw_amount, dtype=float)).flat[0])
-                stueckzahl_start = float(startkapital * gewicht) / float(daten[t].iloc[0])
-                stueckzahl_ende  = float(endsumme * gewicht)    / float(daten[t].iloc[-1])
-                stueckzahl_avg   = (stueckzahl_start + stueckzahl_ende) / 2
-                if _ticker_fx is not None:
-                    try:
-                        actual_fx_at_date = float(_ticker_fx.asof(date))
-                        if np.isnan(actual_fx_at_date):
-                            actual_fx_at_date = fx_faktor
-                    except Exception:
-                        actual_fx_at_date = fx_faktor
-                    euro_zahlung_avg = (amount * actual_fx_at_date * stueckzahl_avg) / anzahl_jahre
-                else:
-                    euro_zahlung_avg = (amount * fx_faktor * stueckzahl_avg) / anzahl_jahre
-                if euro_zahlung_avg > 0:
-                    cal_data.append({
-                        "Monat": date.strftime("%B"), "Monat_Nr": date.month,
-                        "Ticker": t, "Name": ticker_namen.get(t, t), "Ausschüttung": euro_zahlung_avg
-                    })
+                _fx = float(_ticker_fx.asof(date))
+                if np.isnan(_fx):
+                    _fx = fx_faktor
             except Exception:
-                pass
-        one_year_ago = pd.Timestamp.now() - pd.Timedelta(days=365)
-        last_year_divs = div_history[div_history.index > one_year_ago]
-        if not last_year_divs.empty and _ticker_fx is not None:
-            last_year_divs_eur = 0.0
-            for _div_date, _div_amt in last_year_divs.items():
-                try:
-                    _div_date = pd.Timestamp(_div_date)
-                    if _div_date.tz is not None:
-                        _div_date = _div_date.tz_convert(None)
-                    _fx_at_div = float(_ticker_fx.asof(_div_date))
-                    if np.isnan(_fx_at_div):
-                        _fx_at_div = fx_faktor
-                except Exception:
-                    _fx_at_div = fx_faktor
-                last_year_divs_eur += float(np.atleast_1d(np.asarray(_div_amt, dtype=float)).flat[0]) * float(np.atleast_1d(np.asarray(_fx_at_div, dtype=float)).flat[0])
-        elif not last_year_divs.empty:
-            last_year_divs_eur = float(last_year_divs.sum()) * fx_faktor
+                _fx = fx_faktor
         else:
-            last_year_divs_eur = 0.0
-        _price_last  = float(daten[t].iloc[-1])
-        _price_first = float(daten[t].iloc[0])
-        stueckzahl_heute = (float(endsumme) * float(gewicht)) / _price_last
-        total_div_euro += last_year_divs_eur * stueckzahl_heute
-        if _price_last > 0:
-            ticker_yield = last_year_divs_eur / _price_last
-            port_current_yield += ticker_yield * float(gewicht)
-            ticker_yoc = last_year_divs_eur / _price_first if _price_first > 0 else 0.0
-            port_yoc += ticker_yoc * float(gewicht)
+            _fx = fx_faktor
+        euro_zahlung_avg = (amount * _fx * _stk_avg) / anzahl_jahre
+        if euro_zahlung_avg > 0:
+            cal_data.append({
+                "Monat": date.strftime("%B"), "Monat_Nr": date.month,
+                "Ticker": t, "Name": ticker_namen.get(t, t), "Ausschüttung": euro_zahlung_avg
+            })
+
+    # --- LTM Dividendenrendite & YoC ---
+    one_year_ago   = _naive(pd.Timestamp.now()) - pd.Timedelta(days=365)
+    last_year_divs = div_history[div_history.index > one_year_ago]
+    last_year_divs_eur = 0.0
+    for _div_date, _div_amt in last_year_divs.items():
+        try:
+            _date_n = _naive(_div_date)
+            if _ticker_fx is not None:
+                _fx = float(_ticker_fx.asof(_date_n))
+                if np.isnan(_fx):
+                    _fx = fx_faktor
+            else:
+                _fx = fx_faktor
+            last_year_divs_eur += float(_div_amt) * _fx
+        except Exception:
+            last_year_divs_eur += float(_div_amt) * fx_faktor
+
+    stueckzahl_heute = (float(endsumme) * gewicht / _price_last) if _price_last > 0 else 0.0
+    total_div_euro  += last_year_divs_eur * stueckzahl_heute
+    if _price_last > 0:
+        port_current_yield += (last_year_divs_eur / _price_last) * gewicht
+    if _price_first > 0:
+        port_yoc += (last_year_divs_eur / _price_first) * gewicht
 avg_capital = (startkapital + endsumme) / 2
 st.subheader(f"Wertentwicklung bei {startkapital:,.0f} € Investment")
 farbe_perf = "#27AE60" if absoluter_gewinn >= 0 else "#EB5757"
