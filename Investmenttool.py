@@ -533,14 +533,14 @@ for i, t in enumerate(verfuegbare):
         try:
             _date_n = _naive(_div_date)
             if _ticker_fx is not None:
-                _fx = float(_ticker_fx.asof(_date_n))
+                _fx = float(np.atleast_1d(np.asarray(_ticker_fx.asof(_date_n), dtype=float)).flat[0])
                 if np.isnan(_fx):
-                    _fx = fx_faktor
+                    _fx = float(fx_faktor)
             else:
-                _fx = fx_faktor
-            last_year_divs_eur += float(_div_amt) * _fx
+                _fx = float(fx_faktor)
+            last_year_divs_eur += float(np.atleast_1d(np.asarray(_div_amt, dtype=float)).flat[0]) * _fx
         except Exception:
-            last_year_divs_eur += float(_div_amt) * fx_faktor
+            last_year_divs_eur += float(np.atleast_1d(np.asarray(_div_amt, dtype=float)).flat[0]) * float(fx_faktor)
 
     stueckzahl_heute = (float(endsumme) * gewicht / _price_last) if _price_last > 0 else 0.0
     total_div_euro  += last_year_divs_eur * stueckzahl_heute
