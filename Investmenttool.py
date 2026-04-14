@@ -522,19 +522,20 @@ for i, t in enumerate(verfuegbare):
                         _fx_at_div = fx_faktor
                 except Exception:
                     _fx_at_div = fx_faktor
-                last_year_divs_eur += float(_div_amt) * _fx_at_div
+                last_year_divs_eur += float(_div_amt) * float(_fx_at_div)
         elif not last_year_divs.empty:
             last_year_divs_eur = float(last_year_divs.sum()) * fx_faktor
         else:
             last_year_divs_eur = 0.0
-        stueckzahl_heute = (endsumme * gewicht) / daten[t].iloc[-1]
-        total_div_euro += (last_year_divs_eur * stueckzahl_heute)
-        if daten[t].iloc[-1] > 0:
-            ticker_yield = last_year_divs_eur / daten[t].iloc[-1]
-            port_current_yield += ticker_yield * gewicht
-            price_at_start_eur = daten[t].iloc[0]
-            ticker_yoc = last_year_divs_eur / price_at_start_eur if price_at_start_eur > 0 else 0
-            port_yoc += ticker_yoc * gewicht
+        _price_last  = float(daten[t].iloc[-1])
+        _price_first = float(daten[t].iloc[0])
+        stueckzahl_heute = (float(endsumme) * float(gewicht)) / _price_last
+        total_div_euro += last_year_divs_eur * stueckzahl_heute
+        if _price_last > 0:
+            ticker_yield = last_year_divs_eur / _price_last
+            port_current_yield += ticker_yield * float(gewicht)
+            ticker_yoc = last_year_divs_eur / _price_first if _price_first > 0 else 0.0
+            port_yoc += ticker_yoc * float(gewicht)
 avg_capital = (startkapital + endsumme) / 2
 st.subheader(f"Wertentwicklung bei {startkapital:,.0f} € Investment")
 farbe_perf = "#27AE60" if absoluter_gewinn >= 0 else "#EB5757"
