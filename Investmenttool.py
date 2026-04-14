@@ -478,23 +478,32 @@ for i, t in enumerate(verfuegbare):
         except:
             fx_faktor = 1.0
         _ticker_fx = fx_prices_map.get(t, None)
-        for date, amount in divs_in_period.items():
-            date = pd.Timestamp(date)
-            stueckzahl_start = (startkapital * gewicht) / daten[t].iloc[0]
-            stueckzahl_ende = (endsumme * gewicht) / daten[t].iloc[-1]
+        for _raw_date, _raw_amount in divs_in_period.items():
+            try:
+                date = pd.to_datetime(_raw_date, utc=False)
+                if date.tzinfo is not None:
+                    date = date.tz_localize(None)
+            except Exception:
+                continue
+            amount = float(np.atleast_1d(np.array(_raw_amount)).flat[0])
+            try:
+                stueckzahl_start = float(startkapital * gewicht) / float(daten[t].iloc[0])
+                stueckzahl_ende  = float(endsumme * gewicht)    / float(daten[t].iloc[-1])
+            except Exception:
+                continue
             stueckzahl_avg = (stueckzahl_start + stueckzahl_ende) / 2
             if _ticker_fx is not None:
                 try:
                     _lookup_date = date.tz_localize(None) if hasattr(date, 'tz') and date.tz is not None else date
-                    actual_fx_at_date = _ticker_fx.asof(_lookup_date)
-                    if pd.isna(actual_fx_at_date):
-                        actual_fx_at_date = fx_faktor
-                    euro_zahlung_avg = (amount * actual_fx_at_date * stueckzahl_avg) / anzahl_jahre
-                except:
-                    euro_zahlung_avg = (amount * fx_faktor * stueckzahl_avg) / anzahl_jahre
+                    actual_fx_at_date = float(_ticker_fx.asof(_lookup_date))
+                    if np.isnan(actual_fx_at_date):
+                        actual_fx_at_date = float(fx_faktor)
+                    _ezav = (amount * actual_fx_at_date * stueckzahl_avg) / anzahl_jahre
+                except Exception:
+                    _ezav = (amount * float(fx_faktor) * stueckzahl_avg) / anzahl_jahre
             else:
-                euro_zahlung_avg = (amount * fx_faktor * stueckzahl_avg) / anzahl_jahre
-            _ezav = float(np.atleast_1d(np.array(euro_zahlung_avg)).flat[0])
+                _ezav = (amount * float(fx_faktor) * stueckzahl_avg) / anzahl_jahre
+            _ezav = float(np.atleast_1d(np.array(_ezav)).flat[0])
             if _ezav > 0:
                 cal_data.append({
                     "Monat": date.strftime("%B"), "Monat_Nr": date.month,
@@ -506,13 +515,15 @@ for i, t in enumerate(verfuegbare):
             last_year_divs_eur = 0.0
             for _div_date, _div_amt in last_year_divs.items():
                 try:
-                    _lookup = _div_date.tz_localize(None) if hasattr(_div_date, 'tz') and _div_date.tz is not None else _div_date
-                    _fx_at_div = _ticker_fx.asof(_lookup)
-                    if pd.isna(_fx_at_div):
-                        _fx_at_div = fx_faktor
-                except:
-                    _fx_at_div = fx_faktor
-                last_year_divs_eur += _div_amt * _fx_at_div
+                    _div_date = pd.to_datetime(_div_date, utc=False)
+                    if _div_date.tzinfo is not None:
+                        _div_date = _div_date.tz_localize(None)
+                    _fx_at_div = float(_ticker_fx.asof(_div_date))
+                    if np.isnan(_fx_at_div):
+                        _fx_at_div = float(fx_faktor)
+                except Exception:
+                    _fx_at_div = float(fx_faktor)
+                last_year_divs_eur += float(np.atleast_1d(np.array(_div_amt)).flat[0]) * _fx_at_div
         elif not last_year_divs.empty:
             last_year_divs_eur = last_year_divs.sum() * fx_faktor
         else:
