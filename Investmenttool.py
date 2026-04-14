@@ -487,7 +487,7 @@ for i, t in enumerate(verfuegbare):
                 date = pd.Timestamp(_raw_date)
                 if date.tz is not None:
                     date = date.tz_convert(None)
-                amount = float(_raw_amount)
+                amount = float(np.atleast_1d(np.asarray(_raw_amount, dtype=float)).flat[0])
                 stueckzahl_start = float(startkapital * gewicht) / float(daten[t].iloc[0])
                 stueckzahl_ende  = float(endsumme * gewicht)    / float(daten[t].iloc[-1])
                 stueckzahl_avg   = (stueckzahl_start + stueckzahl_ende) / 2
@@ -522,7 +522,7 @@ for i, t in enumerate(verfuegbare):
                         _fx_at_div = fx_faktor
                 except Exception:
                     _fx_at_div = fx_faktor
-                last_year_divs_eur += float(_div_amt) * float(_fx_at_div)
+                last_year_divs_eur += float(np.atleast_1d(np.asarray(_div_amt, dtype=float)).flat[0]) * float(np.atleast_1d(np.asarray(_fx_at_div, dtype=float)).flat[0])
         elif not last_year_divs.empty:
             last_year_divs_eur = float(last_year_divs.sum()) * fx_faktor
         else:
