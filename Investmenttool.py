@@ -479,6 +479,7 @@ for i, t in enumerate(verfuegbare):
             fx_faktor = 1.0
         _ticker_fx = fx_prices_map.get(t, None)
         for date, amount in divs_in_period.items():
+            date = pd.Timestamp(date)
             stueckzahl_start = (startkapital * gewicht) / daten[t].iloc[0]
             stueckzahl_ende = (endsumme * gewicht) / daten[t].iloc[-1]
             stueckzahl_avg = (stueckzahl_start + stueckzahl_ende) / 2
