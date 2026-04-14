@@ -493,10 +493,11 @@ for i, t in enumerate(verfuegbare):
                     euro_zahlung_avg = (amount * fx_faktor * stueckzahl_avg) / anzahl_jahre
             else:
                 euro_zahlung_avg = (amount * fx_faktor * stueckzahl_avg) / anzahl_jahre
-            if float(euro_zahlung_avg) > 0:
+            _ezav = euro_zahlung_avg.item() if hasattr(euro_zahlung_avg, 'item') else float(euro_zahlung_avg)
+            if _ezav > 0:
                 cal_data.append({
                     "Monat": date.strftime("%B"), "Monat_Nr": date.month,
-                    "Ticker": t, "Name": ticker_namen.get(t, t), "Ausschüttung": euro_zahlung_avg
+                    "Ticker": t, "Name": ticker_namen.get(t, t), "Ausschüttung": _ezav
                 })
         one_year_ago = pd.Timestamp.now() - pd.Timedelta(days=365)
         last_year_divs = div_history[div_history.index > one_year_ago]
