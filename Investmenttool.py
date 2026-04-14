@@ -493,7 +493,7 @@ for i, t in enumerate(verfuegbare):
                     euro_zahlung_avg = (amount * fx_faktor * stueckzahl_avg) / anzahl_jahre
             else:
                 euro_zahlung_avg = (amount * fx_faktor * stueckzahl_avg) / anzahl_jahre
-            if euro_zahlung_avg > 0:
+            if float(euro_zahlung_avg) > 0:
                 cal_data.append({
                     "Monat": date.strftime("%B"), "Monat_Nr": date.month,
                     "Ticker": t, "Name": ticker_namen.get(t, t), "Ausschüttung": euro_zahlung_avg
