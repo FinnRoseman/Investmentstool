@@ -493,10 +493,11 @@ for i, t in enumerate(verfuegbare):
                     euro_zahlung_avg = (amount * fx_faktor * stueckzahl_avg) / anzahl_jahre
             else:
                 euro_zahlung_avg = (amount * fx_faktor * stueckzahl_avg) / anzahl_jahre
-            if euro_zahlung_avg > 0:
+            _ezav = euro_zahlung_avg.item() if hasattr(euro_zahlung_avg, 'item') else float(euro_zahlung_avg)
+            if _ezav > 0:
                 cal_data.append({
                     "Monat": date.strftime("%B"), "Monat_Nr": date.month,
-                    "Ticker": t, "Name": ticker_namen.get(t, t), "Ausschüttung": euro_zahlung_avg
+                    "Ticker": t, "Name": ticker_namen.get(t, t), "Ausschüttung": _ezav
                 })
         one_year_ago = pd.Timestamp.now() - pd.Timedelta(days=365)
         last_year_divs = div_history[div_history.index > one_year_ago]
@@ -960,60 +961,70 @@ with tab_allg:
 
 # Mean-Variance-Optimization
 with tab_sim:
-    st.subheader("🎯 Mean-Variance-Optimization", help="10.000 Simulationen des Portfolios zur optimalen Gewichtung für das maximale Sharpe Ratio auf Basis der erwarteten Rendite.")
+    st.subheader("🎯 Mean-Variance-Optimization", help="Vollständig parametrische Optimierung via SLSQP-Solver. Die Efficient Frontier wird durch 150 gezielte Minimierungen entlang verschiedener Zielrenditen berechnet. Der Stern markiert das mathematisch exakte Maximum-Sharpe-Portfolio.")
     if len(verfuegbare) > 1:
-        np.random.seed(42)
-        opt_simulations = 10000
+        from scipy.optimize import minimize
         mu_list = []
         for t in verfuegbare:
             asset_beta = renditen[t].cov(bench_rendite) / bench_rendite.var()
             expected_ret = risk_free_rate + asset_beta * (bench_arith - risk_free_rate)
             mu_list.append(expected_ret)
         mu = np.array(mu_list)
-        cov = renditen[verfuegbare].cov() * 252  
-        results = np.zeros((3, opt_simulations))
-        weights_record = []
-        for i in range(opt_simulations):
-            w = np.random.random(len(verfuegbare))
-            w /= np.sum(w)
-            weights_record.append(w)
+        cov = renditen[verfuegbare].cov() * 252
+        n_assets = len(verfuegbare)
+        bounds = tuple((0.0, 1.0) for _ in range(n_assets))
+        w0 = np.ones(n_assets) / n_assets
+
+        # --- Max Sharpe Portfolio ---
+        def neg_sharpe(w):
             p_ret = np.sum(mu * w)
             p_std = np.sqrt(np.dot(w.T, np.dot(cov, w)))
-            results[0,i] = p_ret
-            results[1,i] = p_std
-            results[2,i] = (p_ret - risk_free_rate) / p_std
-        max_sharpe_idx = np.argmax(results[2])
-        best_w = weights_record[max_sharpe_idx]
-        opt_ret = results[0, max_sharpe_idx]
-        opt_vol = results[1, max_sharpe_idx]
+            if p_std == 0:
+                return 0.0
+            return -(p_ret - risk_free_rate) / p_std
+        opt_result = minimize(neg_sharpe, w0, method='SLSQP',
+                              bounds=bounds,
+                              constraints={'type': 'eq', 'fun': lambda w: np.sum(w) - 1},
+                              options={'ftol': 1e-12, 'maxiter': 1000})
+        best_w = opt_result.x
+        opt_ret = np.sum(mu * best_w)
+        opt_vol = np.sqrt(np.dot(best_w.T, np.dot(cov, best_w)))
+
+        # --- Efficient Frontier: 150 Punkte via Min-Varianz je Zielrendite ---
+        ret_min_w = minimize(lambda w: np.sqrt(np.dot(w.T, np.dot(cov, w))), w0, method='SLSQP',
+                             bounds=bounds,
+                             constraints={'type': 'eq', 'fun': lambda w: np.sum(w) - 1},
+                             options={'ftol': 1e-12, 'maxiter': 1000})
+        ret_min = np.sum(mu * ret_min_w.x)
+        ret_max = np.max(mu)
+        target_rets = np.linspace(ret_min, ret_max, 150)
+        ef_vols, ef_rets = [], []
+        for target in target_rets:
+            res = minimize(
+                lambda w: np.dot(w.T, np.dot(cov, w)),
+                w0, method='SLSQP', bounds=bounds,
+                constraints=[
+                    {'type': 'eq', 'fun': lambda w: np.sum(w) - 1},
+                    {'type': 'eq', 'fun': lambda w, t=target: np.sum(mu * w) - t}
+                ],
+                options={'ftol': 1e-12, 'maxiter': 1000}
+            )
+            if res.success:
+                ef_vols.append(np.sqrt(res.fun))
+                ef_rets.append(target)
+        ef_sharpe = [(r - risk_free_rate) / v for r, v in zip(ef_rets, ef_vols)]
+
         opt_col1, opt_col2 = st.columns([2, 1], vertical_alignment="center")
         with opt_col1:
-            df_sim = pd.DataFrame({
-                'Volatilität': results[1, :],
-                'Rendite': results[0, :],
-                'Sharpe Ratio': results[2, :]
-            })
             fig_ef = go.Figure()
             fig_ef.add_trace(go.Scatter(
-                x=df_sim['Volatilität'],
-                y=df_sim['Rendite'],
-                mode='markers',
-                marker=dict(
-                    color=df_sim['Sharpe Ratio'],
-                    colorscale='Viridis',
-                    showscale=True,
-                    colorbar=dict(
-                        title="Sharpe",
-                        thickness=15,
-                        len=0.6,
-                        yanchor="top",
-                        y=1
-                    ),
-                    opacity=0.3,
-                    size=5
-                ),
-                name='Simulationen',
-                hoverinfo='skip' 
+                x=ef_vols,
+                y=ef_rets,
+                mode='lines',
+                line=dict(color='rgba(74,144,226,0.9)', width=3),
+                name='Efficient Frontier',
+                customdata=ef_sharpe,
+                hovertemplate="<b>Efficient Frontier</b><br>Vola: %{x:.2%}<br>Rendite: %{y:.2%}<br>Sharpe: %{customdata:.2f}<extra></extra>"
             ))
             fig_ef.add_trace(go.Scatter(
                 x=[vola], 
