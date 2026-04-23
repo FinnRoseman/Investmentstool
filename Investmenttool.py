@@ -10,6 +10,7 @@ import requests
 import zipfile
 import io
 import statsmodels.api as sm
+import pandas_datareader.data as web
 
 # --- CACHING FUNKTION ---
 @st.cache_data(show_spinner="Marktdaten werden geladen...")
@@ -90,6 +91,97 @@ def clean_fx_series(fx_prices, z_thresh=5.0, max_daily_move=0.10):
     # Lücken schließen: erst forward, dann backward (für Lücken am Anfang)
     fx_clean = fx_clean.ffill().bfill()
     return fx_clean
+
+def get_fx_series(yahoo_pair, period):
+    """
+    Holt FX-Kurs (z.B. SEKEUR=X) zuerst von Yahoo Finance.
+    Falls Daten unvollständig sind (weniger als 80% der erwarteten Handelstage),
+    wird auf FRED (Federal Reserve Bank of St. Louis) als Fallback zurückgegriffen.
+    FRED-Daten sind Zentralbankdaten und gehen für alle unterstützten Währungen
+    bis in die 1970er zurück – zuverlässiger als Yahoo für lange Zeiträume.
+
+    Unterstützte Währungspaare: SEKEUR=X, JPYEUR=X, GBPEUR=X, CHFEUR=X,
+                                CADEUR=X, USDEUR=X
+
+    Gibt eine bereinigte pd.Series zurück, oder None bei vollständigem Fehler.
+    """
+    # Zeitraum in Jahre umrechnen für Vollständigkeitsprüfung und FRED-Abfrage
+    years_map = {"1y": 1, "3y": 3, "5y": 5, "10y": 10, "20y": 20}
+    years = years_map.get(period, 5)
+    end_date   = pd.Timestamp.today()
+    start_date = end_date - pd.DateOffset(years=years)
+
+    # --- Versuch 1: Yahoo Finance ---
+    try:
+        fx_df = yf.download(yahoo_pair, period=period, progress=False)
+        if not fx_df.empty:
+            fx_prices = (
+                fx_df['Close'].iloc[:, 0]
+                if isinstance(fx_df.columns, pd.MultiIndex)
+                else fx_df['Close']
+            )
+            expected_days = years * 252
+            if len(fx_prices.dropna()) >= expected_days * 0.80:
+                return clean_fx_series(fx_prices)
+    except Exception:
+        pass
+
+    # --- Versuch 2: FRED (Fallback) ---
+    # Alle Rates werden als "EUR pro 1 Einheit Fremdwährung" zurückgegeben,
+    # identisch zur Yahoo-Konvention für XEUR=X.
+    #
+    # FRED-Kürzel:
+    #   DEXSDUS  = SEK pro USD   (SEK/USD)
+    #   DEXJPUS  = JPY pro USD   (JPY/USD)
+    #   DEXSZUS  = CHF pro USD   (CHF/USD)
+    #   DEXCAUS  = CAD pro USD   (CAD/USD)
+    #   DEXUSUK  = USD pro GBP   (USD/GBP) ← invertiert!
+    #   DEXUSEU  = USD pro EUR   (USD/EUR) ← invertiert!
+    #
+    # Umrechnung auf EUR/X:
+    #   SEK/EUR = 1 / (DEXSDUS * DEXUSEU)
+    #   JPY/EUR = 1 / (DEXJPUS * DEXUSEU)
+    #   CHF/EUR = 1 / (DEXSZUS * DEXUSEU)
+    #   CAD/EUR = 1 / (DEXCAUS * DEXUSEU)
+    #   GBP/EUR = DEXUSUK / DEXUSEU
+    #   USD/EUR = 1 / DEXUSEU
+
+    FRED_MAP = {
+        "SEKEUR=X": ("divide", "DEXSDUS", "DEXUSEU"),
+        "JPYEUR=X": ("divide", "DEXJPUS", "DEXUSEU"),
+        "CHFEUR=X": ("divide", "DEXSZUS", "DEXUSEU"),
+        "CADEUR=X": ("divide", "DEXCAUS", "DEXUSEU"),
+        "GBPEUR=X": ("gbp",    "DEXUSUK", "DEXUSEU"),
+        "USDEUR=X": ("usd",    "DEXUSEU", None),
+    }
+
+    if yahoo_pair not in FRED_MAP:
+        st.warning(f"⚠️ Kein FRED-Fallback für {yahoo_pair} verfügbar. Bitte manuell prüfen.")
+        return None
+
+    try:
+        mode, code1, code2 = FRED_MAP[yahoo_pair]
+        s1 = web.DataReader(code1, "fred", start_date, end_date)[code1]
+
+        if mode == "divide":
+            s2   = web.DataReader(code2, "fred", start_date, end_date)[code2]
+            both = pd.concat([s1, s2], axis=1).ffill().dropna()
+            fx_series = 1.0 / (both[code1] * both[code2])
+        elif mode == "gbp":
+            s2   = web.DataReader(code2, "fred", start_date, end_date)[code2]
+            both = pd.concat([s1, s2], axis=1).ffill().dropna()
+            fx_series = both[code1] / both[code2]
+        elif mode == "usd":
+            fx_series = 1.0 / s1
+
+        fx_series.index = pd.to_datetime(fx_series.index)
+        fx_series.name  = yahoo_pair
+        return clean_fx_series(fx_series)
+
+    except Exception as e:
+        st.warning(f"⚠️ FRED-Fallback für {yahoo_pair} fehlgeschlagen: {e}")
+        return None
+
 
 def get_factor_loadings(portfolio_returns):
     try:
@@ -383,10 +475,8 @@ for t in alle_ticker:
         st.error(f"⚠️ Keine Daten für {t}")
         st.stop()
     if t in fx_map:
-        fx_df = yf.download(fx_map[t], period=period_yf, progress=False)
-        if not fx_df.empty:
-            fx_prices = fx_df['Close'].iloc[:, 0] if isinstance(fx_df.columns, pd.MultiIndex) else fx_df['Close']
-            fx_prices = clean_fx_series(fx_prices)   # Ausreißer & fehlerhafte Datenpunkte bereinigen
+        fx_prices = get_fx_series(fx_map[t], period_yf)
+        if fx_prices is not None and not fx_prices.dropna().empty:
             fx_prices_map[t] = fx_prices
             combined = pd.concat([price, fx_prices], axis=1)
             combined = combined.ffill().dropna()
