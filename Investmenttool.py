@@ -428,11 +428,11 @@ else:
     downside_ratio = np.nan
 
 # Risikokennzahlen
-var_95_para = -(arith_mittel - 1.645 * vola)
+var_95_para = 1.645 * vola - arith_mittel
+es_95_para = 2.063 * vola - arith_mittel
 rolling_1y_rets = port_rendite.rolling(252).apply(lambda x: (1 + x).prod() - 1)
-var_95_hist = abs(rolling_1y_rets.dropna().quantile(0.05))
-es_95_para = -(arith_mittel - 2.063 * vola)
 es_95_tag_hist = rolling_1y_rets.dropna().quantile(0.05)
+var_95_hist = abs(es_95_tag_hist)
 es_95_hist = abs(rolling_1y_rets.dropna()[rolling_1y_rets.dropna() <= es_95_tag_hist].mean())
 
 # Monte Carlo
