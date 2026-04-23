@@ -135,20 +135,8 @@ def get_fx_series(yahoo_pair, period):
     end_date   = pd.Timestamp.today()
     start_date = end_date - pd.DateOffset(years=years)
 
-    # --- Versuch 1: Yahoo Finance ---
-    try:
-        fx_df = yf.download(yahoo_pair, period=period, progress=False)
-        if not fx_df.empty:
-            fx_prices = (
-                fx_df['Close'].iloc[:, 0]
-                if isinstance(fx_df.columns, pd.MultiIndex)
-                else fx_df['Close']
-            )
-            expected_days = years * 252
-            if len(fx_prices.dropna()) >= expected_days * 0.80:
-                return clean_fx_series(fx_prices)
-    except Exception:
-        pass
+    # --- Immer FRED (Federal Reserve Bank of St. Louis) ---
+    # Zentralbankdaten, vollständig ab 1970er, stabil für alle Zeiträume.
 
     # --- Versuch 2: FRED direkt per HTTP (kein pandas_datareader) ---
     #
