@@ -7,4 +7,3 @@ requests
 statsmodels
 setuptools
 plotly
-pandas-datareader
