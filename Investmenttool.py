@@ -10,7 +10,6 @@ import requests
 import zipfile
 import io
 import statsmodels.api as sm
-import pandas_datareader.data as web
 
 # --- CACHING FUNKTION ---
 @st.cache_data(show_spinner="Marktdaten werden geladen...")
@@ -92,6 +91,31 @@ def clean_fx_series(fx_prices, z_thresh=5.0, max_daily_move=0.10):
     fx_clean = fx_clean.ffill().bfill()
     return fx_clean
 
+def _fred_series(fred_code, start_date, end_date):
+    """
+    Lädt eine einzelne FRED-Zeitreihe direkt per HTTP-CSV-Download.
+    Kein API-Key nötig, keine externe Abhängigkeit – nutzt requests + io,
+    die bereits im Projekt vorhanden sind.
+    """
+    url = (
+        f"https://fred.stlouisfed.org/graph/fredgraph.csv"
+        f"?id={fred_code}"
+        f"&vintage_date={end_date.strftime('%Y-%m-%d')}"
+    )
+    resp = requests.get(url, timeout=15)
+    resp.raise_for_status()
+    df = pd.read_csv(
+        io.StringIO(resp.text),
+        index_col=0,
+        parse_dates=True,
+        na_values="."
+    )
+    df.columns = [fred_code]
+    series = df[fred_code].astype(float).dropna()
+    series.index = pd.to_datetime(series.index)
+    return series.loc[start_date:end_date]
+
+
 def get_fx_series(yahoo_pair, period):
     """
     Holt FX-Kurs (z.B. SEKEUR=X) zuerst von Yahoo Finance.
@@ -99,15 +123,15 @@ def get_fx_series(yahoo_pair, period):
     wird auf FRED (Federal Reserve Bank of St. Louis) als Fallback zurückgegriffen.
     FRED-Daten sind Zentralbankdaten und gehen für alle unterstützten Währungen
     bis in die 1970er zurück – zuverlässiger als Yahoo für lange Zeiträume.
+    Der Abruf erfolgt direkt per HTTP ohne externe Bibliothek (kein API-Key nötig).
 
     Unterstützte Währungspaare: SEKEUR=X, JPYEUR=X, GBPEUR=X, CHFEUR=X,
                                 CADEUR=X, USDEUR=X
 
     Gibt eine bereinigte pd.Series zurück, oder None bei vollständigem Fehler.
     """
-    # Zeitraum in Jahre umrechnen für Vollständigkeitsprüfung und FRED-Abfrage
     years_map = {"1y": 1, "3y": 3, "5y": 5, "10y": 10, "20y": 20}
-    years = years_map.get(period, 5)
+    years      = years_map.get(period, 5)
     end_date   = pd.Timestamp.today()
     start_date = end_date - pd.DateOffset(years=years)
 
@@ -126,9 +150,7 @@ def get_fx_series(yahoo_pair, period):
     except Exception:
         pass
 
-    # --- Versuch 2: FRED (Fallback) ---
-    # Alle Rates werden als "EUR pro 1 Einheit Fremdwährung" zurückgegeben,
-    # identisch zur Yahoo-Konvention für XEUR=X.
+    # --- Versuch 2: FRED direkt per HTTP (kein pandas_datareader) ---
     #
     # FRED-Kürzel:
     #   DEXSDUS  = SEK pro USD   (SEK/USD)
@@ -138,7 +160,7 @@ def get_fx_series(yahoo_pair, period):
     #   DEXUSUK  = USD pro GBP   (USD/GBP) ← invertiert!
     #   DEXUSEU  = USD pro EUR   (USD/EUR) ← invertiert!
     #
-    # Umrechnung auf EUR/X:
+    # Umrechnung auf EUR/X (= Yahoo XEUR=X Konvention):
     #   SEK/EUR = 1 / (DEXSDUS * DEXUSEU)
     #   JPY/EUR = 1 / (DEXJPUS * DEXUSEU)
     #   CHF/EUR = 1 / (DEXSZUS * DEXUSEU)
@@ -156,19 +178,19 @@ def get_fx_series(yahoo_pair, period):
     }
 
     if yahoo_pair not in FRED_MAP:
-        st.warning(f"⚠️ Kein FRED-Fallback für {yahoo_pair} verfügbar. Bitte manuell prüfen.")
+        st.warning(f"⚠️ Kein FRED-Fallback für {yahoo_pair} verfügbar.")
         return None
 
     try:
         mode, code1, code2 = FRED_MAP[yahoo_pair]
-        s1 = web.DataReader(code1, "fred", start_date, end_date)[code1]
+        s1 = _fred_series(code1, start_date, end_date)
 
         if mode == "divide":
-            s2   = web.DataReader(code2, "fred", start_date, end_date)[code2]
+            s2   = _fred_series(code2, start_date, end_date)
             both = pd.concat([s1, s2], axis=1).ffill().dropna()
             fx_series = 1.0 / (both[code1] * both[code2])
         elif mode == "gbp":
-            s2   = web.DataReader(code2, "fred", start_date, end_date)[code2]
+            s2   = _fred_series(code2, start_date, end_date)
             both = pd.concat([s1, s2], axis=1).ffill().dropna()
             fx_series = both[code1] / both[code2]
         elif mode == "usd":
