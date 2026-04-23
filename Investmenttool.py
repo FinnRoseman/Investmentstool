@@ -60,6 +60,37 @@ def calculate_buy_and_hold(returns_df, start_weights):
     final_weights = (position_values.iloc[-1] / port_value.iloc[-1]).values
     return port_returns, final_weights
 
+def clean_fx_series(fx_prices, z_thresh=5.0, max_daily_move=0.10):
+    """
+    Bereinigt FX-Zeitreihen von fehlerhaften Yahoo Finance-Datenpunkten.
+    Erkennt Ausreißer über Z-Score der täglichen Renditen und absolute Grenzwerte.
+    Ersetzt fehlerhafte Werte durch NaN und schließt Lücken per Forward-/Backward-Fill.
+
+    Parameter:
+        fx_prices     : pd.Series mit den Rohkursen der Währungspaar-Zeitreihe
+        z_thresh      : Z-Score-Schwelle für tägliche Renditen (Standard: 5.0)
+        max_daily_move: Maximale absolute Tagesbewegung in % (Standard: 10%)
+    """
+    fx_clean = fx_prices.copy().astype(float)
+
+    # Negative oder Null-Werte sind fundamental fehlerhaft
+    fx_clean[fx_clean <= 0] = np.nan
+
+    # Tägliche Renditen für Ausreißer-Erkennung
+    daily_ret = fx_clean.pct_change()
+    ret_mean  = daily_ret.mean()
+    ret_std   = daily_ret.std()
+
+    if ret_std > 0:
+        z_scores     = (daily_ret - ret_mean).abs() / ret_std
+        # Ausreißer: Z-Score zu hoch ODER absolute Bewegung zu groß
+        outlier_mask = (z_scores > z_thresh) | (daily_ret.abs() > max_daily_move)
+        fx_clean[outlier_mask] = np.nan
+
+    # Lücken schließen: erst forward, dann backward (für Lücken am Anfang)
+    fx_clean = fx_clean.ffill().bfill()
+    return fx_clean
+
 def get_factor_loadings(portfolio_returns):
     try:
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_5_Factors_2x3_CSV.zip"
@@ -355,6 +386,7 @@ for t in alle_ticker:
         fx_df = yf.download(fx_map[t], period=period_yf, progress=False)
         if not fx_df.empty:
             fx_prices = fx_df['Close'].iloc[:, 0] if isinstance(fx_df.columns, pd.MultiIndex) else fx_df['Close']
+            fx_prices = clean_fx_series(fx_prices)   # Ausreißer & fehlerhafte Datenpunkte bereinigen
             fx_prices_map[t] = fx_prices
             combined = pd.concat([price, fx_prices], axis=1)
             combined = combined.ffill().dropna()
