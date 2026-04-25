@@ -23,10 +23,6 @@ def get_ticker_name(t):
     except:
         return t
 def calculate_annual_rebalancing(returns_df, target_weights):
-    """
-    Berechnet die Portfolio-Rendite lückenlos mit jährlichem Rebalancing.
-    Verhindert Datenverlust an Jahresübergängen und berücksichtigt Weight Drift.
-    """
     n_assets = len(target_weights)
     target_weights = np.array(target_weights)
     portfolio_returns = pd.Series(index=returns_df.index, dtype=float)
@@ -43,12 +39,6 @@ def calculate_annual_rebalancing(returns_df, target_weights):
     return portfolio_returns
 
 def calculate_buy_and_hold(returns_df, start_weights):
-    """
-    Berechnet Portfolio-Rendite bei reinem Buy & Hold.
-    Startgewichte gelten nur am ersten Tag — danach driften die Positionen
-    frei je nach ihrer individuellen Kursentwicklung, ohne Rebalancing.
-    Gibt die täglichen Portfolio-Renditen und die finalen gedrifteten Gewichte zurück.
-    """
     weights = np.array(start_weights)
     cum_returns = (1 + returns_df).cumprod()
     position_values = cum_returns.multiply(weights, axis=1)
@@ -61,42 +51,18 @@ def calculate_buy_and_hold(returns_df, start_weights):
     return port_returns, final_weights
 
 def clean_fx_series(fx_prices, z_thresh=5.0, max_daily_move=0.10):
-    """
-    Bereinigt FX-Zeitreihen von fehlerhaften Yahoo Finance-Datenpunkten.
-    Erkennt Ausreißer über Z-Score der täglichen Renditen und absolute Grenzwerte.
-    Ersetzt fehlerhafte Werte durch NaN und schließt Lücken per Forward-/Backward-Fill.
-
-    Parameter:
-        fx_prices     : pd.Series mit den Rohkursen der Währungspaar-Zeitreihe
-        z_thresh      : Z-Score-Schwelle für tägliche Renditen (Standard: 5.0)
-        max_daily_move: Maximale absolute Tagesbewegung in % (Standard: 10%)
-    """
     fx_clean = fx_prices.copy().astype(float)
-
-    # Negative oder Null-Werte sind fundamental fehlerhaft
     fx_clean[fx_clean <= 0] = np.nan
-
-    # Tägliche Renditen für Ausreißer-Erkennung
     daily_ret = fx_clean.pct_change()
     ret_mean  = daily_ret.mean()
     ret_std   = daily_ret.std()
-
     if ret_std > 0:
         z_scores     = (daily_ret - ret_mean).abs() / ret_std
-        # Ausreißer: Z-Score zu hoch ODER absolute Bewegung zu groß
         outlier_mask = (z_scores > z_thresh) | (daily_ret.abs() > max_daily_move)
         fx_clean[outlier_mask] = np.nan
-
-    # Lücken schließen: erst forward, dann backward (für Lücken am Anfang)
     fx_clean = fx_clean.ffill().bfill()
     return fx_clean
-
 def _fred_series(fred_code, start_date, end_date):
-    """
-    Lädt eine einzelne FRED-Zeitreihe direkt per HTTP-CSV-Download.
-    Kein API-Key nötig, keine externe Abhängigkeit – nutzt requests + io,
-    die bereits im Projekt vorhanden sind.
-    """
     url = (
         f"https://fred.stlouisfed.org/graph/fredgraph.csv"
         f"?id={fred_code}"
@@ -114,48 +80,13 @@ def _fred_series(fred_code, start_date, end_date):
     series = df[fred_code].astype(float).dropna()
     series.index = pd.to_datetime(series.index)
     return series.loc[start_date:end_date]
-
-
+    
 def get_fx_series(yahoo_pair, period):
-    """
-    Holt FX-Kurs (z.B. SEKEUR=X) zuerst von Yahoo Finance.
-    Falls Daten unvollständig sind (weniger als 80% der erwarteten Handelstage),
-    wird auf FRED (Federal Reserve Bank of St. Louis) als Fallback zurückgegriffen.
-    FRED-Daten sind Zentralbankdaten und gehen für alle unterstützten Währungen
-    bis in die 1970er zurück – zuverlässiger als Yahoo für lange Zeiträume.
-    Der Abruf erfolgt direkt per HTTP ohne externe Bibliothek (kein API-Key nötig).
-
-    Unterstützte Währungspaare: SEKEUR=X, JPYEUR=X, GBPEUR=X, CHFEUR=X,
-                                CADEUR=X, USDEUR=X
-
-    Gibt eine bereinigte pd.Series zurück, oder None bei vollständigem Fehler.
-    """
     years_map = {"1y": 1, "3y": 3, "5y": 5, "10y": 10, "20y": 20}
     years      = years_map.get(period, 5)
     end_date   = pd.Timestamp.today()
     start_date = end_date - pd.DateOffset(years=years)
-
-    # --- Immer FRED (Federal Reserve Bank of St. Louis) ---
-    # Zentralbankdaten, vollständig ab 1970er, stabil für alle Zeiträume.
-
-    # --- Versuch 2: FRED direkt per HTTP (kein pandas_datareader) ---
-    #
-    # FRED-Kürzel:
-    #   DEXSDUS  = SEK pro USD   (SEK/USD)
-    #   DEXJPUS  = JPY pro USD   (JPY/USD)
-    #   DEXSZUS  = CHF pro USD   (CHF/USD)
-    #   DEXCAUS  = CAD pro USD   (CAD/USD)
-    #   DEXUSUK  = USD pro GBP   (USD/GBP) ← invertiert!
-    #   DEXUSEU  = USD pro EUR   (USD/EUR) ← invertiert!
-    #
-    # Umrechnung auf EUR/X (= Yahoo XEUR=X Konvention):
-    #   SEK/EUR = 1 / (DEXSDUS * DEXUSEU)
-    #   JPY/EUR = 1 / (DEXJPUS * DEXUSEU)
-    #   CHF/EUR = 1 / (DEXSZUS * DEXUSEU)
-    #   CAD/EUR = 1 / (DEXCAUS * DEXUSEU)
-    #   GBP/EUR = DEXUSUK / DEXUSEU
-    #   USD/EUR = 1 / DEXUSEU
-
+    
     FRED_MAP = {
         "SEKEUR=X": ("divide", "DEXSDUS", "DEXUSEU"),
         "JPYEUR=X": ("divide", "DEXJPUS", "DEXUSEU"),
@@ -168,7 +99,6 @@ def get_fx_series(yahoo_pair, period):
     if yahoo_pair not in FRED_MAP:
         st.warning(f"⚠️ Kein FRED-Fallback für {yahoo_pair} verfügbar.")
         return None
-
     try:
         mode, code1, code2 = FRED_MAP[yahoo_pair]
         s1 = _fred_series(code1, start_date, end_date)
@@ -191,8 +121,6 @@ def get_fx_series(yahoo_pair, period):
     except Exception as e:
         st.warning(f"⚠️ FRED-Fallback für {yahoo_pair} fehlgeschlagen: {e}")
         return None
-
-
 def get_factor_loadings(portfolio_returns):
     try:
         url = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/F-F_Research_Data_5_Factors_2x3_CSV.zip"
