@@ -93,6 +93,7 @@ def get_fx_series(yahoo_pair, period):
         "CHFEUR=X": ("divide", "DEXSZUS", "DEXUSEU"),
         "CADEUR=X": ("divide", "DEXCAUS", "DEXUSEU"),
         "GBPEUR=X": ("gbp",    "DEXUSUK", "DEXUSEU"),
+        "AUDEUR=X": ("divide", "DEXUSAL", "DEXUSEU"),
         "USDEUR=X": ("usd",    "DEXUSEU", None),
     }
 
@@ -215,7 +216,7 @@ for t in ticker_liste:
             anteile_orig.append(gewicht / 100)
             fremd_check = st.checkbox(f"In EUR umrechnen?", key=f"check_{t}")
             if fremd_check:
-                w_options = ["USD", "JPY", "GBP", "CHF", "SEK", "CAD"]
+                w_options = ["USD", "JPY", "GBP", "CHF", "SEK", "CAD", "AUD"]
                 if f"val_{t}" not in st.session_state:
                     st.session_state[f"val_{t}"] = "USD"
                 waehrung = st.selectbox(
