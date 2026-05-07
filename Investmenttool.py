@@ -330,8 +330,8 @@ with st.sidebar.expander("📂 CSV-Upload (aktive Fonds / NAV)"):
                     st.session_state.meine_ticker.append(_label)
                 st.session_state.run_analysis = False
                 st.success(f"✅ '{_label}' hinzugefügt ({len(_series)} Datenpunkte, "
-                           f"{_series.index[0].strftime('%d.%m.%Y')} – "
-                           f"{_series.index[-1].strftime('%d.%m.%Y')})")
+                           f"{_series.index[0].strftime('%d.%m.%Y') if pd.notna(_series.index[0]) else '?'} – "
+                           f"{_series.index[-1].strftime('%d.%m.%Y') if pd.notna(_series.index[-1]) else '?'}")
                 st.rerun()
 
     # Übersicht bereits hochgeladener CSV-Positionen
