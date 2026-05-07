@@ -167,6 +167,116 @@ def get_factor_loadings(portfolio_returns):
     except Exception as e:
         return f"Technischer Fehler in der Analyse: {str(e)}"
 
+def parse_csv_to_series(uploaded_file):
+    """
+    Robuster Parser für NAV-CSVs verschiedener Fondsanbieter.
+    Erkennt automatisch: Trennzeichen (Komma/Semikolon), Datumsformat
+    (deutsch/englisch), und die relevante Kursspalte.
+    """
+    try:
+        content = uploaded_file.read()
+        text = None
+        for encoding in ['utf-8', 'latin-1', 'cp1252']:
+            try:
+                text = content.decode(encoding)
+                break
+            except Exception:
+                continue
+        if text is None:
+            st.error("CSV-Datei konnte nicht gelesen werden (Encoding-Problem).")
+            return None
+
+        # Trennzeichen erkennen
+        sample = text[:3000]
+        sep = ';' if sample.count(';') > sample.count(',') else ','
+
+        # Dezimalzeichen: bei Semikolon-Dateien meist Komma, sonst Punkt
+        decimal = ',' if sep == ';' else '.'
+        thousands = '.' if sep == ';' else ','
+
+        df = pd.read_csv(
+            io.StringIO(text),
+            sep=sep,
+            thousands=thousands,
+            decimal=decimal,
+            skipinitialspace=True
+        )
+        df.columns = df.columns.str.strip()
+
+        # Falls decimal-Erkennung fehlschlug: Fallback mit vertauschten Zeichen
+        if df.empty or len(df.columns) < 2:
+            df = pd.read_csv(io.StringIO(text), sep=sep, skipinitialspace=True)
+            df.columns = df.columns.str.strip()
+
+        # Datumsspalte finden
+        date_col = None
+        for col in df.columns:
+            col_l = str(col).lower().strip()
+            if any(x in col_l for x in ['datum', 'date', 'tag', 'time', 'day']):
+                date_col = col
+                break
+        if date_col is None:
+            date_col = df.columns[0]
+
+        # Kursspalte finden
+        price_col = None
+        priority_keywords = ['nav', 'kurs', 'preis', 'price', 'close',
+                             'schlusskurs', 'wert', 'value', 'rücknahme']
+        for col in df.columns:
+            if col == date_col:
+                continue
+            col_l = str(col).lower().strip()
+            if any(x in col_l for x in priority_keywords):
+                price_col = col
+                break
+
+        if price_col is None:
+            # Erste numerisch parsbare Spalte nehmen
+            for col in df.columns:
+                if col == date_col:
+                    continue
+                try:
+                    test = df[col].astype(str).str.strip() \
+                                  .str.replace('.', '', regex=False) \
+                                  .str.replace(',', '.', regex=False)
+                    pd.to_numeric(test, errors='raise')
+                    price_col = col
+                    break
+                except Exception:
+                    continue
+
+        if price_col is None:
+            st.error("Keine Kursspalte in der CSV gefunden. Bitte sicherstellen, "
+                     "dass eine Spalte mit 'Kurs', 'NAV', 'Price' o.ä. vorhanden ist.")
+            return None
+
+        # Datumsformat parsen (dayfirst=True für deutsches Format TT.MM.JJJJ)
+        dates = pd.to_datetime(df[date_col].astype(str).str.strip(),
+                               dayfirst=True, infer_datetime_format=True,
+                               errors='coerce')
+
+        # Kurse parsen – deutsche Notation (1.234,56) berücksichtigen
+        raw_prices = df[price_col].astype(str).str.strip()
+        # Falls Tausenderpunkte vorhanden: entfernen, dann Komma → Punkt
+        raw_prices = raw_prices.str.replace(r'\.(?=\d{3}[,\s])', '', regex=True)
+        raw_prices = raw_prices.str.replace(',', '.', regex=False)
+        raw_prices = raw_prices.str.replace(' ', '', regex=False)
+        prices = pd.to_numeric(raw_prices, errors='coerce')
+
+        series = pd.Series(prices.values, index=dates, name='price')
+        series = series.dropna().sort_index()
+
+        if len(series) < 5:
+            st.error(f"Zu wenig gültige Datenpunkte in der CSV ({len(series)} Zeilen). "
+                     "Bitte Datums- und Kursspalte prüfen.")
+            return None
+
+        return series
+
+    except Exception as e:
+        st.error(f"Fehler beim Einlesen der CSV: {e}")
+        return None
+
 # --- STREAMLIT PAGE CONFIGURATION ---
 st.set_page_config(page_title="Portfolio Analyzer", layout="wide")
 
@@ -183,6 +293,10 @@ if 'regionen_daten' not in st.session_state:
     st.session_state.regionen_daten = {}
 if 'asset_typen' not in st.session_state:
     st.session_state.asset_typen = {}
+if 'csv_uploads' not in st.session_state:
+    st.session_state.csv_uploads = {}      # {label: pd.Series mit NAV-Kursen}
+if 'csv_positionen' not in st.session_state:
+    st.session_state.csv_positionen = set()  # Labels die aus CSV kommen
 st.sidebar.text_input("Ticker-Symbol eingeben & Enter", key="widget_eingabe", on_change=clear_ticker_input)
 ticker_input = st.session_state.get('ticker_temp', None)
 if ticker_input:
@@ -192,6 +306,51 @@ if ticker_input:
         st.session_state.run_analysis = False 
     st.session_state.ticker_temp = None
     st.rerun()
+
+# --- CSV-UPLOAD FÜR AKTIVE FONDS ---
+st.sidebar.markdown("---")
+with st.sidebar.expander("📂 CSV-Upload (aktive Fonds / NAV)"):
+    st.caption("Lade eine NAV-CSV eines aktiven Fonds hoch (z.B. von DWS, Robeco, fondsweb). "
+               "Das Tool erkennt Trennzeichen und Datumsformat automatisch.")
+    _csv_file  = st.file_uploader("CSV-Datei", type=["csv"], key="csv_file_uploader")
+    _csv_label = st.text_input("Bezeichnung (Positionsname)", placeholder="z.B. DWS_ESG_ASIEN",
+                               key="csv_label_input")
+    if st.button("Position hinzufügen", key="csv_add_btn"):
+        if _csv_file is None:
+            st.warning("Bitte zuerst eine CSV-Datei auswählen.")
+        elif not _csv_label.strip():
+            st.warning("Bitte eine Bezeichnung eingeben.")
+        else:
+            _label = _csv_label.strip().upper().replace(" ", "_")
+            _series = parse_csv_to_series(_csv_file)
+            if _series is not None:
+                st.session_state.csv_uploads[_label]    = _series
+                st.session_state.csv_positionen.add(_label)
+                if _label not in st.session_state.meine_ticker:
+                    st.session_state.meine_ticker.append(_label)
+                st.session_state.run_analysis = False
+                st.success(f"✅ '{_label}' hinzugefügt ({len(_series)} Datenpunkte, "
+                           f"{_series.index[0].strftime('%d.%m.%Y')} – "
+                           f"{_series.index[-1].strftime('%d.%m.%Y')})")
+                st.rerun()
+
+    # Übersicht bereits hochgeladener CSV-Positionen
+    _vorhandene_csvs = [t for t in st.session_state.csv_positionen
+                        if t in st.session_state.csv_uploads]
+    if _vorhandene_csvs:
+        st.markdown("**Hochgeladene Positionen:**")
+        for _lbl in _vorhandene_csvs:
+            _s = st.session_state.csv_uploads[_lbl]
+            col_a, col_b = st.columns([3, 1])
+            col_a.markdown(f"`{_lbl}` · {len(_s)} Punkte")
+            if col_b.button("✕", key=f"del_csv_{_lbl}"):
+                del st.session_state.csv_uploads[_lbl]
+                st.session_state.csv_positionen.discard(_lbl)
+                if _lbl in st.session_state.meine_ticker:
+                    st.session_state.meine_ticker.remove(_lbl)
+                st.session_state.run_analysis = False
+                st.rerun()
+
 ticker_liste = st.sidebar.multiselect(
     "Aktive Auswahl:",
     options=st.session_state.meine_ticker,
@@ -376,9 +535,12 @@ with st.expander("Portfoliozusammensetzung — Positionen & Startgewicht"):
     rows_html = ""
     ticker_namen = {t: t for t in ticker_liste} 
     analysis_active = st.session_state.get("run_analysis", False)
+    _csv_pos = st.session_state.get('csv_positionen', set())
     for t in ticker_liste:
-        name = get_ticker_name(t) if analysis_active else t
-        ticker_namen[t] = name
+        if t in _csv_pos:
+            ticker_namen[t] = t  # CSV-Position: Label als Name verwenden
+        elif analysis_active:
+            ticker_namen[t] = get_ticker_name(t)
         anteil_val = zuordnung.get(t, 0)
         anteil_pct = anteil_val * 100
         rows_html += f"""
@@ -400,11 +562,17 @@ if not ticker_liste:
 if not st.session_state.get("run_analysis", False):
     st.warning("👈 Gewichtung einstellen und auf 'Go' klicken, um die Analyse zu starten.")
     st.stop()
-alle_ticker = tuple(ticker_liste + [benchmark])
+_csv_pos_set = st.session_state.get('csv_positionen', set())
+_yahoo_ticker_liste = [t for t in ticker_liste if t not in _csv_pos_set]
+_csv_ticker_liste   = [t for t in ticker_liste if t in _csv_pos_set]
+
+alle_ticker = tuple(_yahoo_ticker_liste + [benchmark])
 data_full = get_cached_data(alle_ticker, period_yf)
 
 raw_data = {}
 fx_prices_map = {}
+
+# --- Yahoo-Positionen laden ---
 for t in alle_ticker:
     if isinstance(data_full.columns, pd.MultiIndex):
         price = data_full['Close'][t].copy()
@@ -420,8 +588,22 @@ for t in alle_ticker:
             combined = pd.concat([price, fx_prices], axis=1)
             combined = combined.ffill().dropna()
             price = combined.iloc[:, 0] * combined.iloc[:, 1]
-            
     raw_data[t] = price
+
+# --- CSV-Positionen laden ---
+_years_map = {"1y": 1, "3y": 3, "5y": 5, "10y": 10, "20y": 20}
+_csv_years = _years_map.get(period_yf, 5)
+_csv_start = pd.Timestamp.today() - pd.DateOffset(years=_csv_years)
+for t in _csv_ticker_liste:
+    _csv_series = st.session_state.csv_uploads.get(t)
+    if _csv_series is None or _csv_series.dropna().empty:
+        st.error(f"⚠️ Keine CSV-Daten für '{t}'. Bitte Position erneut hochladen.")
+        st.stop()
+    _csv_filtered = _csv_series[_csv_series.index >= _csv_start]
+    if _csv_filtered.dropna().empty:
+        st.warning(f"⚠️ Zu wenig CSV-Daten für '{t}' im gewählten Zeitraum – verwende gesamten verfügbaren Zeitraum.")
+        _csv_filtered = _csv_series
+    raw_data[t] = _csv_filtered.copy()
 
 daten = pd.concat(raw_data, axis=1).ffill().dropna()
 renditen = daten.pct_change().dropna()
@@ -527,6 +709,8 @@ def _naive(ts):
     return t.tz_convert(None) if t.tz is not None else t
 
 for i, t in enumerate(verfuegbare):
+    if t in st.session_state.get('csv_positionen', set()):
+        continue  # Keine Dividendendaten für CSV-Positionen verfügbar
     ticker_obj = yf.Ticker(t)
     gewicht    = float(anteile[i])
     try:
