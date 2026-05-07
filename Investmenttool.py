@@ -541,6 +541,7 @@ with st.expander("Portfoliozusammensetzung — Positionen & Startgewicht"):
             ticker_namen[t] = t  # CSV-Position: Label als Name verwenden
         elif analysis_active:
             ticker_namen[t] = get_ticker_name(t)
+        name = ticker_namen[t]
         anteil_val = zuordnung.get(t, 0)
         anteil_pct = anteil_val * 100
         rows_html += f"""
