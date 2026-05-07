@@ -252,8 +252,8 @@ def parse_csv_to_series(uploaded_file):
 
         # Datumsformat parsen (dayfirst=True für deutsches Format TT.MM.JJJJ)
         dates = pd.to_datetime(df[date_col].astype(str).str.strip(),
-                               dayfirst=True, infer_datetime_format=True,
-                               errors='coerce')
+                       dayfirst=True,
+                       errors='coerce')
 
         # Kurse parsen – deutsche Notation (1.234,56) berücksichtigen
         raw_prices = df[price_col].astype(str).str.strip()
