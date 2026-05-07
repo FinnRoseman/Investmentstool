@@ -606,7 +606,7 @@ for t in _csv_ticker_liste:
         _csv_filtered = _csv_series
     raw_data[t] = _csv_filtered.copy()
 
-daten = pd.concat(raw_data, axis=1).ffill().dropna()
+daten = pd.concat(raw_data, axis=1).dropna()
 renditen = daten.pct_change().dropna()
 
 # --- 3. KENNZAHLEN ---
