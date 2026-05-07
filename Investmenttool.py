@@ -168,11 +168,6 @@ def get_factor_loadings(portfolio_returns):
         return f"Technischer Fehler in der Analyse: {str(e)}"
 
 def parse_csv_to_series(uploaded_file):
-    """
-    Robuster Parser für NAV-CSVs verschiedener Fondsanbieter.
-    Erkennt automatisch: Trennzeichen (Komma/Semikolon), Datumsformat
-    (deutsch/englisch), und die relevante Kursspalte.
-    """
     try:
         content = uploaded_file.read()
         text = None
@@ -185,15 +180,10 @@ def parse_csv_to_series(uploaded_file):
         if text is None:
             st.error("CSV-Datei konnte nicht gelesen werden (Encoding-Problem).")
             return None
-
-        # Trennzeichen erkennen
         sample = text[:3000]
         sep = ';' if sample.count(';') > sample.count(',') else ','
-
-        # Dezimalzeichen: bei Semikolon-Dateien meist Komma, sonst Punkt
         decimal = ',' if sep == ';' else '.'
         thousands = '.' if sep == ';' else ','
-
         df = pd.read_csv(
             io.StringIO(text),
             sep=sep,
@@ -202,13 +192,9 @@ def parse_csv_to_series(uploaded_file):
             skipinitialspace=True
         )
         df.columns = df.columns.str.strip()
-
-        # Falls decimal-Erkennung fehlschlug: Fallback mit vertauschten Zeichen
         if df.empty or len(df.columns) < 2:
             df = pd.read_csv(io.StringIO(text), sep=sep, skipinitialspace=True)
             df.columns = df.columns.str.strip()
-
-        # Datumsspalte finden
         date_col = None
         for col in df.columns:
             col_l = str(col).lower().strip()
@@ -217,8 +203,6 @@ def parse_csv_to_series(uploaded_file):
                 break
         if date_col is None:
             date_col = df.columns[0]
-
-        # Kursspalte finden
         price_col = None
         priority_keywords = ['nav', 'kurs', 'preis', 'price', 'close',
                              'schlusskurs', 'wert', 'value', 'rücknahme']
@@ -229,9 +213,7 @@ def parse_csv_to_series(uploaded_file):
             if any(x in col_l for x in priority_keywords):
                 price_col = col
                 break
-
         if price_col is None:
-            # Erste numerisch parsbare Spalte nehmen
             for col in df.columns:
                 if col == date_col:
                     continue
@@ -244,28 +226,20 @@ def parse_csv_to_series(uploaded_file):
                     break
                 except Exception:
                     continue
-
         if price_col is None:
             st.error("Keine Kursspalte in der CSV gefunden. Bitte sicherstellen, "
                      "dass eine Spalte mit 'Kurs', 'NAV', 'Price' o.ä. vorhanden ist.")
             return None
-
-        # Datumsformat parsen (dayfirst=True für deutsches Format TT.MM.JJJJ)
         dates = pd.to_datetime(df[date_col].astype(str).str.strip(),
                        dayfirst=True,
                        errors='coerce')
-
-        # Kurse parsen – deutsche Notation (1.234,56) berücksichtigen
         raw_prices = df[price_col].astype(str).str.strip()
-        # Falls Tausenderpunkte vorhanden: entfernen, dann Komma → Punkt
         raw_prices = raw_prices.str.replace(r'\.(?=\d{3}[,\s])', '', regex=True)
         raw_prices = raw_prices.str.replace(',', '.', regex=False)
         raw_prices = raw_prices.str.replace(' ', '', regex=False)
         prices = pd.to_numeric(raw_prices, errors='coerce')
-
         series = pd.Series(prices.values, index=dates, name='price')
         series = series[series.index.notna()].dropna().sort_index()
-
         if len(series) < 5:
             st.error(f"Zu wenig gültige Datenpunkte in der CSV ({len(series)} Zeilen). "
                      "Bitte Datums- und Kursspalte prüfen.")
@@ -294,9 +268,9 @@ if 'regionen_daten' not in st.session_state:
 if 'asset_typen' not in st.session_state:
     st.session_state.asset_typen = {}
 if 'csv_uploads' not in st.session_state:
-    st.session_state.csv_uploads = {}      # {label: pd.Series mit NAV-Kursen}
+    st.session_state.csv_uploads = {}     
 if 'csv_positionen' not in st.session_state:
-    st.session_state.csv_positionen = set()  # Labels die aus CSV kommen
+    st.session_state.csv_positionen = set() 
 st.sidebar.text_input("Ticker-Symbol eingeben & Enter", key="widget_eingabe", on_change=clear_ticker_input)
 ticker_input = st.session_state.get('ticker_temp', None)
 if ticker_input:
@@ -309,11 +283,9 @@ if ticker_input:
 
 # --- CSV-UPLOAD FÜR AKTIVE FONDS ---
 st.sidebar.markdown("---")
-with st.sidebar.expander("📂 CSV-Upload (aktive Fonds / NAV)"):
-    st.caption("Lade eine NAV-CSV eines aktiven Fonds hoch (z.B. von DWS, Robeco, fondsweb). "
-               "Das Tool erkennt Trennzeichen und Datumsformat automatisch.")
+with st.sidebar.expander("CSV-Upload"):
     _csv_file  = st.file_uploader("CSV-Datei", type=["csv"], key="csv_file_uploader")
-    _csv_label = st.text_input("Bezeichnung (Positionsname)", placeholder="z.B. DWS_ESG_ASIEN",
+    _csv_label = st.text_input("Bezeichnung", placeholder="z.B. DWS Akkumula",
                                key="csv_label_input")
     if st.button("Position hinzufügen", key="csv_add_btn"):
         if _csv_file is None:
@@ -333,8 +305,6 @@ with st.sidebar.expander("📂 CSV-Upload (aktive Fonds / NAV)"):
                            f"{_series.index[0].strftime('%d.%m.%Y') if pd.notna(_series.index[0]) else '?'} – "
                            f"{_series.index[-1].strftime('%d.%m.%Y') if pd.notna(_series.index[-1]) else '?'}")
                 st.rerun()
-
-    # Übersicht bereits hochgeladener CSV-Positionen
     _vorhandene_csvs = [t for t in st.session_state.csv_positionen
                         if t in st.session_state.csv_uploads]
     if _vorhandene_csvs:
@@ -538,7 +508,7 @@ with st.expander("Portfoliozusammensetzung — Positionen & Startgewicht"):
     _csv_pos = st.session_state.get('csv_positionen', set())
     for t in ticker_liste:
         if t in _csv_pos:
-            ticker_namen[t] = t  # CSV-Position: Label als Name verwenden
+            ticker_namen[t] = t 
         elif analysis_active:
             ticker_namen[t] = get_ticker_name(t)
         name = ticker_namen[t]
@@ -711,7 +681,7 @@ def _naive(ts):
 
 for i, t in enumerate(verfuegbare):
     if t in st.session_state.get('csv_positionen', set()):
-        continue  # Keine Dividendendaten für CSV-Positionen verfügbar
+        continue  
     ticker_obj = yf.Ticker(t)
     gewicht    = float(anteile[i])
     try:
@@ -721,7 +691,6 @@ for i, t in enumerate(verfuegbare):
             div_history = div_history[div_history > 0].dropna()
         else:
             div_history = pd.Series(dtype=float)
-        # Fallback: falls leer, versuche .dividends Property
         if div_history.empty:
             _divs_fallback = ticker_obj.dividends
             if _divs_fallback is not None and not _divs_fallback.empty:
@@ -733,20 +702,14 @@ for i, t in enumerate(verfuegbare):
             continue
     if div_history.empty:
         continue
-
-    # Timezone aus Dividenden-Index entfernen
     if div_history.index.tz is not None:
         div_history.index = div_history.index.tz_convert(None)
-
-    # Zeitraum-Grenzen aus Preisdaten (ebenfalls timezone-naiv)
     period_start = _naive(daten.index[0])
     period_end   = _naive(daten.index[-1])
     divs_in_period = div_history[
         (div_history.index >= period_start) & (div_history.index <= period_end)
     ]
     anzahl_jahre = max(jahre, 1.0)
-
-    # FX-Faktor: Verhältnis EUR-Preis zu Originalwährung
     try:
         _price_raw = float(ticker_obj.history(
             start=daten.index[-1] - pd.Timedelta(days=5),
@@ -759,8 +722,6 @@ for i, t in enumerate(verfuegbare):
     _ticker_fx   = fx_prices_map.get(t, None)
     _price_last  = float(daten[t].iloc[-1])
     _price_first = float(daten[t].iloc[0])
-
-    # Durchschnittliche Stückzahl für Kalender-Berechnung
     _stk_start = (float(startkapital) * gewicht / _price_first) if _price_first > 0 else 0.0
     _stk_end   = (float(endsumme)     * gewicht / _price_last)  if _price_last  > 0 else 0.0
     _stk_avg   = (_stk_start + _stk_end) / 2
