@@ -264,7 +264,7 @@ def parse_csv_to_series(uploaded_file):
         prices = pd.to_numeric(raw_prices, errors='coerce')
 
         series = pd.Series(prices.values, index=dates, name='price')
-        series = series.dropna().sort_index()
+        series = series[series.index.notna()].dropna().sort_index()
 
         if len(series) < 5:
             st.error(f"Zu wenig gültige Datenpunkte in der CSV ({len(series)} Zeilen). "
