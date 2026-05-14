@@ -1601,7 +1601,7 @@ with tab_allg:
                 }          
                 factor_names_with_stars = [display_map[idx] for idx in loadings.index]
                 bar_labels = [f"{val:.3f} {get_stars(p_values[idx])}" for idx, val in loadings.items()]
-                colors_fac = ['#4A90E2', '#27AE60', '#F2994A', '#9B51E0', '#D488FF']         
+                colors_fac = ['#970C1A', '#C11021', '#DE1226', '#EF3E4F', '#F36876']         
                 fig_fac = go.Figure(go.Bar(
                     x=loadings.values,
                     y=factor_names_with_stars, 
