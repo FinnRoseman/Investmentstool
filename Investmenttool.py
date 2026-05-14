@@ -996,7 +996,7 @@ with tab_allg:
     st.subheader("🌎 Regionale Verteilung", help="Geografische Gewichtung des Portfolios.")
     reg_labels = ['Nordamerika', 'Südamerika', 'Europa', 'Asien-Pazifik', 'Afrika']
     reg_values = [total_na, total_sa, total_eu, total_ap, total_af]
-    reg_colors = ['#003366', '#004080', '#0059b3', '#0073e6', '#3399ff']
+    reg_colors = ['#0C4497', '#1057C1', '#1264DE', '#3E85EF', '#68A0F3']
     labels_f = [l for l, v in zip(reg_labels, reg_values) if v > 0]
     values_f = [v for v in reg_values if v > 0]
     colors_f = [c for c, v in zip(reg_colors, reg_values) if v > 0]
