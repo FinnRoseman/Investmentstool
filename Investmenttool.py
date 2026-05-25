@@ -1046,19 +1046,19 @@ with tab_rend:
     )
     fig_yearly.update_traces(marker_color=colors_y)
     if period_rets:
-    df_periods = pd.DataFrame({
-        'Zeitraum': list(period_rets.keys()),
-        'Kumuliert (%)': list(period_rets.values())
-    })
-    fig_periods = px.bar(
-        df_periods,
-        x='Zeitraum',
-        y='Kumuliert (%)',
-        color_discrete_sequence=colors_p
-    )
+        df_periods = pd.DataFrame({
+            'Zeitraum': list(period_rets.keys()),
+            'Kumuliert (%)': list(period_rets.values())
+        })
+        fig_periods = px.bar(
+            df_periods,
+            x='Zeitraum',
+            y='Kumuliert (%)',
+            color_discrete_sequence=colors_p
+        )
     else:
-    st.warning("Nicht genug Daten für diesen Zeitraum verfügbar.")
-    fig_periods = px.bar()  # leeres Chart als Fallback
+        st.warning("Nicht genug Daten für diesen Zeitraum verfügbar.")
+        fig_periods = px.bar()  # leeres Chart als Fallback
     for fig in [fig_yearly, fig_periods]:
         fig.update_layout(
             template='plotly_dark', 
