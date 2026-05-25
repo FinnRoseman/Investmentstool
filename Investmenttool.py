@@ -1058,7 +1058,7 @@ with tab_rend:
         )
     else:
         st.warning("Nicht genug Daten für diesen Zeitraum verfügbar.")
-        fig_periods = px.bar()  # leeres Chart als Fallback
+        fig_periods = px.bar() 
     for fig in [fig_yearly, fig_periods]:
         fig.update_layout(
             template='plotly_dark', 
